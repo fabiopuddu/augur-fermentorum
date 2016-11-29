@@ -1,0 +1,246 @@
+#!/usr/bin/env perl
+
+# Author:       mh23
+# Maintainer:   mh23
+# Created: 		Oktober 2015
+# Name:			Ty1-5Estimator.pl
+# Test: 		perl /lustre/scratch109/sanger/mh23/Transposons/Ty1-5Estimator.pl -i SC_MFY5616297.merged.bam.Ty.bam
+
+use Carp;
+use strict;
+use warnings;
+use Getopt::Long;
+
+###############
+## Get input ##
+###############
+
+
+#Get the bam file as input
+my ($input);
+
+GetOptions
+(
+'i|input=s'         => \$input,
+);
+
+( $input && -f $input ) or die qq[Usage: $0 -i <input vcf>\n];
+
+
+##########################
+## Get name of Bam file ##
+##########################
+my $bam_file='';
+my $path = $input;
+
+my @n = split( /\t/, $path );
+
+foreach my $frag (@n){
+	if ($frag =~ /.bam/){
+		$bam_file = $frag;
+	}
+}
+
+
+######################
+## Define variables ##
+######################
+my $ty1; my $ty2;
+my $ty3; my $ty4;
+my $ty5;
+
+
+
+#########
+## TY1 ##
+#########
+
+#>YDRWTy1-5  Chr 4   from 1203704 to 1215621  
+#Control:   YDRWTy1-5:100-2699
+#Ty1:       YDRWTy1-5:4000-5999
+
+my $ty1_ctrl = 'YDRWTy1-5:100-2699';
+my $ty1_reg = 'YDRWTy1-5:4000-6999';
+
+my @control1 = mpile($ty1_ctrl);
+my @sample1 = mpile($ty1_reg);
+
+my $av_c = average(\@control1);
+my $av_s = average(\@sample1);
+
+if ($av_c != 0){
+	$ty1 = $av_s/$av_c; }
+else {$ty1 = 0;}
+
+#print ("TY1= $ty1\n");
+
+
+#########
+## TY2 ##
+#########
+
+#>YLRWTy2-1  Chr 12   from 938192 to 950150  
+#Control:   YLRWTy2-1:100-2699
+#Ty2:       YLRWTy2-1:4000-5999
+
+my $ty2_ctrl = 'YLRWTy2-1:100-2699';
+my $ty2_reg = 'YLRWTy2-1:4000-6999';
+
+my @control2 = mpile($ty2_ctrl);
+my @sample2 = mpile($ty2_reg);
+
+$av_c = average(\@control2);
+$av_s = average(\@sample2);
+
+if ($av_c != 0){
+	$ty2 = $av_s/$av_c; }
+else {$ty2 = 0;}
+
+#print ("TY2= $ty2\n");
+
+#########
+## TY3 ##
+#########
+
+#>YILWTy3-1  Chr 9   from 202220 to 213647  
+#Control:   YILWTy3-1:100-2099
+#Ty3:       YILWTy3-1:4000-5999
+
+my $ty3_ctrl = 'YILWTy3-1:100-2099';
+my $ty3_reg = 'YILWTy3-1:4000-5999';
+
+my @control3 = mpile($ty3_ctrl);
+my @sample3 = mpile($ty3_reg);
+
+$av_c = average(\@control3);
+$av_s = average(\@sample3);
+
+if ($av_c != 0){
+	$ty3 = $av_s/$av_c; }
+else {$ty3 = 0;}
+
+#print ("TY3= $ty3\n");
+
+#########
+## TY4 ##
+#########
+
+#>YHLWTy4-1  Chr 8   from 82539 to 94761  
+#Control: YHLWTy4-1:100-2099
+#Ty4:      YHLWTy4-1:4000-5999
+
+my $ty4_ctrl = 'YHLWTy4-1:100-2099';
+my $ty4_reg = 'YHLWTy4-1:4000-5999';
+
+my @control4 = mpile($ty4_ctrl);
+my @sample4 = mpile($ty4_reg);
+
+$av_c = average(\@control4);
+$av_s = average(\@sample4);
+
+if ($av_c != 0){
+	$ty4 = $av_s/$av_c; }
+else {$ty4 = 0;}
+
+#print ("TY4= $ty4\n");
+
+
+#########
+## TY5 ##
+#########
+
+#>YCLWTy5-1  Chr 3   from 679 to 7322 
+#Control:  YCLWTy5-1:2000-2999
+#Ty5:      YCLWTy5-1:5000-5999
+
+
+my $ty5_ctrl = 'YCLWTy5-1:2000-2999';
+my $ty5_reg = 'YCLWTy5-1:5000-5999';
+
+my @control5 = mpile($ty5_ctrl);
+my @sample5 = mpile($ty5_reg);
+
+$av_c = average(\@control5);
+$av_s = average(\@sample5);
+
+if ($av_c != 0){
+	$ty5 = $av_s/$av_c; }
+else {$ty5 = 0;}
+
+#print ("TY5= $ty5\n");
+
+
+
+######################
+## print the result ##
+######################
+
+print ("$bam_file\t$ty1\t$ty2\t$ty3\t$ty4\t$ty5\n");
+
+
+
+
+
+
+###########################################
+## subroutine to calculate mean coverage ##
+###########################################
+
+sub average{
+		my @numbers = @{$_[0]};
+		my $data = scalar @numbers;
+        if (not $data) {return 0;}
+        my $total = 0;
+        foreach my $n (@numbers) {
+        	#print "$n\n";
+        	$total = $total + $n;
+        }
+       my $average = $total / $data;
+       return $average;
+}
+
+
+##############################################
+## use samtools mpileup to get the coverage ##
+##############################################
+
+sub mpile {
+	my $region = $_[0];
+	my @values;
+	my $ifh;
+	open($ifh,"samtools mpileup  -A -Q 0 -r $region -f /Applications/premiata-forneria/mpileup_defaults/Ty_ref/Ty1-5.fa $input 2>/dev/null |") || die "Failed: $!\n";
+	while (my $l = <$ifh> )
+	{
+  	chomp( $l );    
+  	my @s = split( /\t/, $l );
+  	push(@values, $s[3]);
+	}
+ return @values;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
