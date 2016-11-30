@@ -75,7 +75,7 @@ my %CI_higher;
 
 # Sample	rDNA	CUP1	Ty1		Ty2		Ty3		Ty4		Ty5		Genome_wide_median	 ERS	 Del
 
-#Get the average
+##Get the average
 # open(PS,"cat $input | grep 'WT' |") || die "Failed: $!\n";
 # while ( <PS> )
 # {
@@ -405,79 +405,79 @@ while( my $l = <$ifh> ){
 	#read the cover into a hash
 	chomp( $l );
     my @s = split( /\t/, $l );
-	$samples{$s[0]}=$s[11];
+	$samples{$s[0]}=$s[12];
 	###################### rDNA ##########################
 	if ($s[1] < $CI_lower{'rDNA'})  { 
-		$rDNA_Sig_low{$s[0]} =  $s[11];
+		$rDNA_Sig_low{$s[0]} =  $s[12];
 		#print "$s[0]\t$s[11]\n";
 	}
 	if ($s[1] > $CI_higher{'rDNA'}) { 
-		$rDNA_Sig_high{$s[0]} =  $s[11];
+		$rDNA_Sig_high{$s[0]} =  $s[12];
 	}
 	###################### CUP1 ##########################
 	if ($s[2] < $CI_lower{'CUP1'})  { 
-		$CUP1_Sig_low{$s[0]} =  $s[11];
+		$CUP1_Sig_low{$s[0]} =  $s[12];
 		#print "$s[0]\t$s[11]\n";
 	}
 	if ($s[2] > $CI_higher{'CUP1'}) { 
-		$CUP1_Sig_high{$s[0]} =  $s[11];
+		$CUP1_Sig_high{$s[0]} =  $s[12];
 	} 
 	###################### Mito ##########################
-	if ($s[2] < $CI_lower{'Mito'})  { 
-		$Mito_Sig_low{$s[0]} =  $s[11];
+	if ($s[3] < $CI_lower{'Mito'})  { 
+		$Mito_Sig_low{$s[0]} =  $s[12];
 		#print "$s[0]\t$s[11]\n";
 	}
-	if ($s[2] > $CI_higher{'Mito'}) { 
-		$Mito_Sig_high{$s[0]} =  $s[11];
+	if ($s[3] > $CI_higher{'Mito'}) { 
+		$Mito_Sig_high{$s[0]} =  $s[12];
 	} 
 	###################### Ty1 ##########################
 	#print ("$s[3] thresh: $CI_lower{'Ty1'}\n");
-	if ($s[3] < $CI_lower{'Ty1'})  { 
-		$Ty1_Sig_low{$s[0]} =  $s[11];
+	if ($s[4] < $CI_lower{'Ty1'})  { 
+		$Ty1_Sig_low{$s[0]} =  $s[12];
 		#print "$s[0]\t$s[11]\n";
 	}
-	if ($s[3] > $CI_higher{'Ty1'}) { 
-		$Ty1_Sig_high{$s[0]} =  $s[11];
+	if ($s[4] > $CI_higher{'Ty1'}) { 
+		$Ty1_Sig_high{$s[0]} =  $s[12];
 	}
 	###################### Ty2 ##########################
-	if ($s[4] < $CI_lower{'Ty2'})  { 
-		$Ty2_Sig_low{$s[0]} =  $s[11];
+	if ($s[5] < $CI_lower{'Ty2'})  { 
+		$Ty2_Sig_low{$s[0]} =  $s[12];
 		#print "$s[0]\t$s[11]\n";
 	}
-	if ($s[4] > $CI_higher{'Ty2'}) { 
-		$Ty2_Sig_high{$s[0]} =  $s[11];
+	if ($s[5] > $CI_higher{'Ty2'}) { 
+		$Ty2_Sig_high{$s[0]} =  $s[12];
 	}
 	###################### Ty3 ##########################
-	if ($s[5] < $CI_lower{'Ty3'})  { 
-		$Ty3_Sig_low{$s[0]} =  $s[11];
+	if ($s[6] < $CI_lower{'Ty3'})  { 
+		$Ty3_Sig_low{$s[0]} =  $s[12];
 		#print "$s[0]\t$s[11]\n";
 	}
-	if ($s[5] > $CI_higher{'Ty3'}) { 
-		$Ty3_Sig_high{$s[0]} =  $s[11];
+	if ($s[6] > $CI_higher{'Ty3'}) { 
+		$Ty3_Sig_high{$s[0]} =  $s[12];
 	}
 	###################### Ty4 ##########################
-	if ($s[6] < $CI_lower{'Ty4'})  { 
-		$Ty4_Sig_low{$s[0]} =  $s[11];
+	if ($s[7] < $CI_lower{'Ty4'})  { 
+		$Ty4_Sig_low{$s[0]} =  $s[12];
 		#print "$s[0]\t$s[11]\n";
 	}
-	if ($s[6] > $CI_higher{'Ty4'}) { 
-		$Ty4_Sig_high{$s[0]} =  $s[11];
+	if ($s[7] > $CI_higher{'Ty4'}) { 
+		$Ty4_Sig_high{$s[0]} =  $s[12];
 	}
 	###################### Ty5 ##########################
-	if ($s[7] < $CI_lower{'Ty5'})  { 
-		$Ty5_Sig_low{$s[0]} =  $s[11];
+	if ($s[8] < $CI_lower{'Ty5'})  { 
+		$Ty5_Sig_low{$s[0]} =  $s[12];
 		#print "$s[0]\t$s[11]\n";
 	}
-	if ($s[7] > $CI_higher{'Ty5'}) { 
-		$Ty5_Sig_high{$s[0]} =  $s[11];
+	if ($s[8] > $CI_higher{'Ty5'}) { 
+		$Ty5_Sig_high{$s[0]} =  $s[12];
 	}
 	###################### Tel ##########################
-	if ($s[9] < $CI_lower{'Tel'})  { 
-		$Tel_Sig_low{$s[0]} =  $s[11];
+	if ($s[10] < $CI_lower{'Tel'})  { 
+		$Tel_Sig_low{$s[0]} =  $s[12];
 		#print "$s[0]\t$s[11]\n";
 	}
-	if ($s[9] > $CI_higher{'Tel'}) { 
-		$Tel_Sig_high{$s[0]} =  $s[11];
+	if ($s[10] > $CI_higher{'Tel'}) { 
+		$Tel_Sig_high{$s[0]} =  $s[12];
 	}
 			
 }
