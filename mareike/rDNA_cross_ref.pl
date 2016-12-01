@@ -18,7 +18,7 @@ open(F, $genelist ) or die ("Unable to open file $genelist: $!\n" );
         #go through file line by line
         while ( my $line = <F>) {
            #print "$.\n";
-	   next if ($line !~ /Del/);
+	   	   next if ($line !~ /Del/);
            #print $line;
            chomp $line;
            my $gene = 'NA';
@@ -31,6 +31,7 @@ open(F, $genelist ) or die ("Unable to open file $genelist: $!\n" );
            
            #check its existence in the mito_cand_genes_SGD.txt file  
            my $command = "cat /mnt/scratch/jackson/fp305/results/rDNA_cand_genes_kobayashi.txt | grep $gene -w";
+           #my $command = "cat /mnt/scratch/jackson/fp305/results/rep.txt | grep $gene -w";
            my $result = `$command`;       
            if ($result eq ''){
            	print "$gene\tNot_on_Kobayashi\n";
