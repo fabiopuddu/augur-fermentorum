@@ -133,7 +133,7 @@ $cup1_estimate = sprintf("%.0f", $cup1_estimate);
 print "$cup1_estimate\t";
 
 my $mito_loc = 'Mito:14000-20000';
-my $mito_estimate = repeat_estimate($input,$mito_loc,$ref_genome);
+my $mito_estimate = repeat_estimate($input,$mito_loc,$ref_genome)*$ploidy;
 $mito_estimate = sprintf("%.0f", $mito_estimate);
 print "$mito_estimate\t";
 
