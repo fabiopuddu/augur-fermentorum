@@ -30,14 +30,17 @@ open(F, $genelist ) or die ("Unable to open file $genelist: $!\n" );
 			}
            
            #check its existence in the mito_cand_genes_SGD.txt file  
-           my $command = "cat /mnt/scratch/jackson/fp305/results/rDNA_cand_genes_kobayashi.txt | grep $gene -w";
+           #my $command = "cat /mnt/scratch/jackson/fp305/results/rDNA_cand_genes_kobayashi.txt | grep $gene -w";
+           my $command = "cat /mnt/scratch/jackson/fp305/results/rDNA_cand_genes_kobayashi_all.txt   | grep $gene -w";
            #my $command = "cat /mnt/scratch/jackson/fp305/results/rep.txt | grep $gene -w";
            my $result = `$command`;       
            if ($result eq ''){
            	print "$gene\tNot_on_Kobayashi\n";
            }
            else{
-           	print "$result";
+           	my @p = split "\n", $result;
+           	#print "$result";
+           	print "$p[0]\n";
            } 
            #exit if $. == 10;     
                 
