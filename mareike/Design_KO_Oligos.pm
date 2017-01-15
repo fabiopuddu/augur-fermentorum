@@ -1,6 +1,3 @@
-
-
-
 #!/usr/bin/perl
 # Author:       mh23
 # Maintainer:   mh23
@@ -83,6 +80,7 @@ sub Design_KO_Oligos {
 	my $start = $gene->start();
 	my $end = $gene->end();
 	my $strand = $gene->strand();
+	my $gene_name = $gene->external_name();
 
 
 	####################################
@@ -192,6 +190,7 @@ sub Design_KO_Oligos {
 
 	#Fill Output
 	$output{'Name'}=$stable_id;
+	$output{'Standard'}=$gene_name;
 	$output{'Location'}=$chr.':'.$start.'-'.$end;
 	$output{'Strand'}=$strand;
 	$output{'F1'}=$F1_oligo;
