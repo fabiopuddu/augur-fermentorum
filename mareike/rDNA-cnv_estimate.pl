@@ -39,7 +39,7 @@ use IO::File;
 #DEFAULTS
 my $input = '0';
 my $help = 0;
-my $ploidy = 1; #default ploidy
+my $ploidy = 0; #default ploidy
 #Get the location of the reference genome
 my $script_location = abs_path($0);
 my @path = split ('/', $script_location);
