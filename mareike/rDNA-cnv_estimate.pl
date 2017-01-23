@@ -59,7 +59,7 @@ pod2usage(1) if $help;
 ## If no input argument were given, then allow STDIN to be used only
 ## if it's not connected to a terminal (otherwise print usage)
 pod2usage("$0: No input given.")  if (($input eq 0) && (-t STDIN));
-
+pod2usage("$0: No ploidy given.")  if ($ploidy eq 0);
 #Check that input is a bam file (at least in name: checks that file ends in .bam)
 pod2usage("$0: No .bam file given.")  if ($input !~ /\.bam$/i); 
 
