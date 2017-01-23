@@ -90,7 +90,7 @@ waitpid($pid, 0);
 seek CATCHERR, 0, 0;
 while( <CATCHERR> ) {pod2usage("$0: Samtools is not installed properly.");}
 waitpid($pid, 0);
-pod2usage("$0: File $input does not seem to have a ChrXII.")  if ( $check == 0);
+pod2usage("$0: File $input does not seem to be S. cerevisiae. It does not have a ChrXII.")  if ( $check == 0);
 
 #check that either of the genome coverage commands works
 my $bed_command = '';
