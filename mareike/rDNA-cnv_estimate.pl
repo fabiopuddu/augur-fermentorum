@@ -59,7 +59,7 @@ pod2usage(1) if $help;
 ## If no input argument were given, then allow STDIN to be used only
 ## if it's not connected to a terminal (otherwise print usage)
 pod2usage("$0: No input given.")  if (($input eq 0) && (-t STDIN));
-
+pod2usage("$0: No ploidy given.")  if ($ploidy eq 0);
 #Check that input is a bam file (at least in name: checks that file ends in .bam)
 pod2usage("$0: No .bam file given.")  if ($input !~ /\.bam$/i); 
 
@@ -90,7 +90,7 @@ waitpid($pid, 0);
 seek CATCHERR, 0, 0;
 while( <CATCHERR> ) {pod2usage("$0: Samtools is not installed properly.");}
 waitpid($pid, 0);
-pod2usage("$0: File $input does not seem to have a ChrXII.")  if ( $check == 0);
+pod2usage("$0: File $input does not seem to be S. cerevisiae. It does not have a ChrXII.")  if ( $check == 0);
 
 #check that either of the genome coverage commands works
 my $bed_command = '';
@@ -133,7 +133,7 @@ $cup1_estimate = sprintf("%.0f", $cup1_estimate);
 print "$cup1_estimate\t";
 
 my $mito_loc = 'Mito:14000-20000';
-my $mito_estimate = repeat_estimate($input,$mito_loc,$ref_genome);
+my $mito_estimate = repeat_estimate($input,$mito_loc,$ref_genome)*$ploidy;
 $mito_estimate = sprintf("%.0f", $mito_estimate);
 print "$mito_estimate\t";
 
