@@ -1,4 +1,5 @@
-	use Carp;
+#!/usr/bin/env perl
+use Carp;
 use strict;
 use warnings;
 use Getopt::Long;
@@ -66,7 +67,7 @@ open (my $out, '>>', "highlights.txt");
 while (my $line=<$fh>){
 	chomp $line;
 	my @linea=split("\t",$line);
-	print join("\t",@linea),"\n";
+	#print join("\t",@linea),"\n";
 	if ($linea[3]<0.15){
 		printf $out "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=blue\n";
 	}
@@ -93,7 +94,7 @@ sub mean {
 sub chrom_cov{
 	# execute samtools mpileup as a systems command and store the output in an array
 	# define a subroutine to calculate the mean
-    my $c = $_[0];
+    	my $c = $_[0];
 	my @mpileup_out =  `samtools view -b $input \'$c\'| genomeCoverageBed -d -ibam stdin -g | grep -w \'$c\'`; 
 	#print @mpileup_out;
 	# declare variables
@@ -102,13 +103,13 @@ sub chrom_cov{
 	my @values;
 	#go through the mpileup array and extract the position and coverage 
 	foreach my $l (@mpileup_out){
-        chomp( $l );    
-        my @s = split( /\t/, $l );
-        #the position is $s[1] & coverage is $s[3]
-        #make it into a hash and arrays
-        $mpileup_hash{$s[1]} = $s[2];
-        push(@positions, $s[1]); 
-        push(@values, $s[2]); 
+	        chomp( $l );    
+	        my @s = split( /\t/, $l );
+	        #the position is $s[1] & coverage is $s[3]
+	        #make it into a hash and arrays
+	        $mpileup_hash{$s[1]} = $s[2];
+	        push(@positions, $s[1]); 
+	        push(@values, $s[2]); 
  	}
 	#go through the hash and take the mean of each 25	
 	#get length of array to determine how long the for loop should be
@@ -122,13 +123,13 @@ sub chrom_cov{
        		 my @mean_values=();
        		 @mean_values = splice (@values, 0, $bin_size);
        		 my @mean_positions=();
-        	 @mean_positions = splice (@positions, 0, $bin_size); 
-        	 #get the first position from the list of 25
-        	 my $pos = shift @mean_positions;
+        	 	 @mean_positions = splice (@positions, 0, $bin_size); 
+        		 #get the first position from the list of 25
+        		 my $pos = shift @mean_positions;
        		 #get the mean of the 25 coverage values
        		 my $mean = eval(join("+", @mean_values)) / @mean_values; 
        	 	 #put the output into a hash
-        	 $output{$pos}=$mean;
+        		 $output{$pos}=$mean;
 	}
 	return %output;	  
 }
