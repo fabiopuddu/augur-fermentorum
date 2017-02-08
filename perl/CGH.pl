@@ -1,10 +1,4 @@
-#!/usr/bin/env perl
-# Author:       mh23
-# Maintainer:   mh23
-# Created: 		July 2014
-# Name:			rDNA_cov_extract.pl
-# Test: 		perl /nfs/users/nfs_m/mh23/Scripts/rDNA_attempt.pl <bam_file>
-use Carp;
+	use Carp;
 use strict;
 use warnings;
 use Getopt::Long;
@@ -18,7 +12,7 @@ GetOptions
 'i|input=s'         => \$input,
 'p|ploidy=s'         => \$ploidy,
 );
-( $ploidy && $input && -f $input ) or die qq[Usage: $0 -i <input vcf> -p <ploidy 1,2>\n];
+( $ploidy && $input && -f $input ) or die qq[Usage: $0 -i <input .bam file> -p <ploidy 1,2,...>\n];
 
 my $bin_size=200; #define the size of the bin to make averages
 
