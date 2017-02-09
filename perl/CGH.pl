@@ -8,17 +8,31 @@ use Data::Dumper;
 #Get the bam file as input
 my ($input);
 my ($ploidy);
+my $fil;
 GetOptions
 (
-'i|input=s'         => \$input,
-'p|ploidy=s'         => \$ploidy,
+'f|filter'   => \$fil,
+'i|input=s'  => \$input,
+'p|ploidy=s' => \$ploidy,
 );
 ( $ploidy && $input && -f $input ) or die qq[Usage: $0 -i <input .bam file> -p <ploidy 1,2,...>\n];
 
 my $bin_size=200; #define the size of the bin to make averages
-
 my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
-
+my %filter;
+#Load the regions to be filtered from file into a hash
+if ($fil){
+	open (my $ff, '<', "region-filter.txt") or die;
+	while (my $line=<$ff>){
+		chomp $line;
+		my @linea=split("\t",$line);
+		my $chr=$linea[0];
+		my @insert_val=($linea[1],$linea[2]);
+		push(@{$filter{$chr}}, \@insert_val);
+	} 
+	close ($ff);
+#	print Dumper(\%filter);
+}
 my @val;
 foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI'){
 	print "processing chromosome $chrom\n";
@@ -92,9 +106,16 @@ sub mean {
     return sum(@_)/@_;
 }
 sub chrom_cov{
+	#Get current chromosome
+	my $c = $_[0];
+	#first of all, check wether we have filtering on
+	#and if so import the coordinates of the regions to be excluded
+       	my @curr_filt;
+       	if ($fil){
+       		 @curr_filt=@{$filter{$c}};
+       	}
 	# execute samtools mpileup as a systems command and store the output in an array
 	# define a subroutine to calculate the mean
-    	my $c = $_[0];
 	my @mpileup_out =  `samtools view -b $input \'$c\'| genomeCoverageBed -d -ibam stdin -g | grep -w \'$c\'`; 
 	#print @mpileup_out;
 	# declare variables
@@ -119,11 +140,28 @@ sub chrom_cov{
 	my %output;
 	#calculate the average every 25 
 	for (my $i=0; $i < $length; $i++) {
-       		 #get a subset of 25 values at a time
+		 #get a subset of 25 values at a time
        		 my @mean_values=();
        		 @mean_values = splice (@values, 0, $bin_size);
        		 my @mean_positions=();
         	 	 @mean_positions = splice (@positions, 0, $bin_size); 
+        		 #check wether filtering is on
+		 #print Dumper(\@curr_filt);
+	 	if ($fil){
+ 		 	 foreach my $range(@curr_filt){
+# 		 	 print $range->[0] . "\n";
+		 	 #check wether the current slice overlaps any of the ranges
+		 	 	if (($mean_positions[0] > $range->[0] and $mean_positions[0] < $range->[1] ) or 
+		 	 	    ($mean_positions[-1] > $range->[0] and $mean_positions[-1] < $range->[1]) or
+		 	 	    ($mean_positions[0] < $range->[0] and $mean_positions[-1] > $range->[0] ) or
+		 	 	    ($mean_positions[0] < $range->[1] and $mean_positions[-1] > $range->[1])
+		 	 	    ){
+		 	 	print "Filter triggered:: Start: $mean_positions[0] End: $mean_positions[-1] Filter start: $range->[0] Filter ends: $range->[1] \n";  
+		 	 	}
+		 	 }
+		 } 
+        		 
+        		 
         		 #get the first position from the list of 25
         		 my $pos = shift @mean_positions;
        		 #get the mean of the 25 coverage values
