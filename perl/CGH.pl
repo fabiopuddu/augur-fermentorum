@@ -5,6 +5,9 @@ use warnings;
 use Getopt::Long;
 use List::Util qw(sum);
 use Data::Dumper;
+
+system("if [ -e ploidy_data.txt ]; rm ploidy_data.txt; fi")
+
 #Get the bam file as input
 my ($input);
 my ($ploidy);
@@ -71,6 +74,7 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 	elsif ($chrom eq 'XVI'){ $cn='16'}
 	foreach my $pos (sort {$a <=> $b} keys %c_c) {
 		my $end = $pos+($bin_size-1);
+    	#print "chr$cn\t$pos\t$end\t$c_c{$pos}\n";
     	printf $fh "chr$cn\t$pos\t$end\t$c_c{$pos}\n";	
 	}
 	close ($fh);
@@ -137,7 +141,6 @@ sub chrom_cov{
        		 @curr_filt=@{$filter{$c}};
        	}
 	my %output;
-	my $skip=0;
 	#calculate the average every 25 
 	for (my $i=0; $i < $length; $i++) {
 		#get a subset of 25 values at a time
@@ -146,6 +149,7 @@ sub chrom_cov{
        		my @mean_positions=();
         	 	@mean_positions = splice (@positions, 0, $bin_size); 
         		#check wether filtering is on
+	 	my $skip=0;
 	 	if ($fil){
  			foreach my $range(@curr_filt){
 				#check wether the current slice overlaps any of the ranges
@@ -160,13 +164,16 @@ sub chrom_cov{
 		 	 	}
 		 	 }
 		 } 
+		 #print "$skip\n";
 		 next if $skip;
         		 #get the first position from the list of 25
         		 my $pos = shift @mean_positions;
        		 #get the mean of the 25 coverage values
        		 my $mean = eval(join("+", @mean_values)) / @mean_values; 
        	 	 #put the output into a hash
+       	 	 #print "Position = $pos\n";
         		 $output{$pos}=$mean;
 	}
+	#print Dumper(\%output);
 	return %output;	  
 }
