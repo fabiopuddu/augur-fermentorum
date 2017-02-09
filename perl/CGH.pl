@@ -108,12 +108,6 @@ sub mean {
 sub chrom_cov{
 	#Get current chromosome
 	my $c = $_[0];
-	#first of all, check wether we have filtering on
-	#and if so import the coordinates of the regions to be excluded
-       	my @curr_filt;
-       	if ($fil){
-       		 @curr_filt=@{$filter{$c}};
-       	}
 	# execute samtools mpileup as a systems command and store the output in an array
 	# define a subroutine to calculate the mean
 	my @mpileup_out =  `samtools view -b $input \'$c\'| genomeCoverageBed -d -ibam stdin -g | grep -w \'$c\'`; 
@@ -137,31 +131,36 @@ sub chrom_cov{
 	my $length_ar = scalar @positions;
 	my $length = $length_ar/$bin_size;
 		#declare variable 
+	#first of all, check wether we have filtering on and if so import the coordinates of the regions to be excluded
+       	my @curr_filt;
+       	if ($fil){
+       		 @curr_filt=@{$filter{$c}};
+       	}
 	my %output;
+	my $skip=0;
 	#calculate the average every 25 
 	for (my $i=0; $i < $length; $i++) {
-		 #get a subset of 25 values at a time
-       		 my @mean_values=();
-       		 @mean_values = splice (@values, 0, $bin_size);
-       		 my @mean_positions=();
-        	 	 @mean_positions = splice (@positions, 0, $bin_size); 
-        		 #check wether filtering is on
-		 #print Dumper(\@curr_filt);
+		#get a subset of 25 values at a time
+       		my @mean_values=();
+       		@mean_values = splice (@values, 0, $bin_size);
+       		my @mean_positions=();
+        	 	@mean_positions = splice (@positions, 0, $bin_size); 
+        		#check wether filtering is on
 	 	if ($fil){
- 		 	 foreach my $range(@curr_filt){
-# 		 	 print $range->[0] . "\n";
-		 	 #check wether the current slice overlaps any of the ranges
+ 			foreach my $range(@curr_filt){
+				#check wether the current slice overlaps any of the ranges
 		 	 	if (($mean_positions[0] > $range->[0] and $mean_positions[0] < $range->[1] ) or 
 		 	 	    ($mean_positions[-1] > $range->[0] and $mean_positions[-1] < $range->[1]) or
 		 	 	    ($mean_positions[0] < $range->[0] and $mean_positions[-1] > $range->[0] ) or
 		 	 	    ($mean_positions[0] < $range->[1] and $mean_positions[-1] > $range->[1])
 		 	 	    ){
-		 	 	print "Filter triggered:: Start: $mean_positions[0] End: $mean_positions[-1] Filter start: $range->[0] Filter ends: $range->[1] \n";  
+					$skip=1;	 	 	    
+		 	 		print "Filter triggered:: Start: $mean_positions[0] End: $mean_positions[-1] Filter start: $range->[0] Filter ends: $range->[1] \n";  
+		 	 		last;
 		 	 	}
 		 	 }
 		 } 
-        		 
-        		 
+		 next if $skip;
         		 #get the first position from the list of 25
         		 my $pos = shift @mean_positions;
        		 #get the mean of the 25 coverage values
