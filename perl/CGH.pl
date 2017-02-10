@@ -80,18 +80,35 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 	close ($fh);
 }
 
-open (my $fh, '<', "ploidy_data.txt");
+
+open (my $fplo, '<', "ploidy_data.txt");
 open (my $out, '>', "highlights.txt");
-while (my $line=<$fh>){
-	chomp $line;
-	my @linea=split("\t",$line);
-	#print join("\t",@linea),"\n";
-	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5) ){
-		printf $out "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=blue\n";
+chomp(my @PLO = <$fplo>);
+my @highlight_block;
+foreach my $line (@PLO){
+	my @linea=split("\t",$line); 
+	#if the line is a "hit" push the line into an highlight array
+	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5)){
+		push @highlight_block, "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=blue\n";
 	}
+	#if the line is not a hit we need to print out the previous block of highlights
+	else { 
+	#but only if the size of the highlight array is greater than 3
+		if (scalar (@highlight_block) >=3 ){
+			#print the block of highlights
+			for my $output_line (@highlight_block){
+				printf $out $output_line;
+				#print "$output_line\n";
+			}
+		}
+		#always re-initialise the @highlight_block array
+		@highlight_block=(); 
+	}
+	
 } 
-close ($fh);
+close ($fplo);
 close ($out);
+
 
 sub median {
  my @vals = sort {$a <=> $b} @_;
@@ -159,7 +176,7 @@ sub chrom_cov{
 		 	 	    ($mean_positions[0] < $range->[1] and $mean_positions[-1] > $range->[1])
 		 	 	    ){
 					$skip=1;	 	 	    
-		 	 		print "Filter triggered:: Start: $mean_positions[0] End: $mean_positions[-1] Filter start: $range->[0] Filter ends: $range->[1] \n";  
+		 	 		#print "Filter triggered:: Start: $mean_positions[0] End: $mean_positions[-1] Filter start: $range->[0] Filter ends: $range->[1] \n";  
 		 	 		last;
 		 	 	}
 		 	 }
