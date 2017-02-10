@@ -6,7 +6,7 @@ use Getopt::Long;
 use List::Util qw(sum);
 use Data::Dumper;
 
-system("if [ -e ploidy_data.txt ]; rm ploidy_data.txt; fi")
+system("if [ -e ploidy_data.txt ]; then rm ploidy_data.txt; fi");
 
 #Get the bam file as input
 my ($input);
@@ -18,7 +18,7 @@ GetOptions
 'i|input=s'  => \$input,
 'p|ploidy=s' => \$ploidy,
 );
-( $ploidy && $input && -f $input ) or die qq[Usage: $0 -i <input .bam file> -p <ploidy 1,2,...>\n];
+( $ploidy && $input && -f $input ) or die qq[Usage: $0 -i <input .bam file> -p <ploidy 1,2,...> -f (filter)	\n];
 
 my $bin_size=200; #define the size of the bin to make averages
 my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
@@ -81,12 +81,12 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 }
 
 open (my $fh, '<', "ploidy_data.txt");
-open (my $out, '>>', "highlights.txt");
+open (my $out, '>', "highlights.txt");
 while (my $line=<$fh>){
 	chomp $line;
 	my @linea=split("\t",$line);
 	#print join("\t",@linea),"\n";
-	if ($linea[3]<0.15){
+	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5) ){
 		printf $out "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=blue\n";
 	}
 } 
