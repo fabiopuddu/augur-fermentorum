@@ -25,7 +25,8 @@ GetOptions
 );
 ( $ploidy && $input && -f $input ) or die qq[Usage: $0 -i <input .bam file> -p <ploidy 1,2,...> -f (filter)	\n];
 
-my $sample_name = $input =~ s/.bam//r;
+my $sample_name = (split "/",$input)[-1];
+$sample_name =~ s/.bam//;
 
 my $bin_size=200; #define the size of the bin to make averages
 my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
