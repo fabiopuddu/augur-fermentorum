@@ -5,6 +5,11 @@ use warnings;
 use Getopt::Long;
 use List::Util qw(sum);
 use Data::Dumper;
+use Cwd 'abs_path';
+
+my @path = split( '/' , abs_path($0));
+pop(@path);
+my $local_folder = join('/',@path);
 
 system("if [ -e ploidy_data.txt ]; then rm ploidy_data.txt; fi");
 
@@ -20,12 +25,14 @@ GetOptions
 );
 ( $ploidy && $input && -f $input ) or die qq[Usage: $0 -i <input .bam file> -p <ploidy 1,2,...> -f (filter)	\n];
 
+my $sample_name = $input =~ s/.bam//r;
+
 my $bin_size=200; #define the size of the bin to make averages
 my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
 my %filter;
 #Load the regions to be filtered from file into a hash
 if ($fil){
-	open (my $ff, '<', "region-filter.txt") or die;
+	open (my $ff, '<', "$local_folder/../defaults/region-filter.txt") or die;
 	while (my $line=<$ff>){
 		chomp $line;
 		my @linea=split("\t",$line);
@@ -108,7 +115,10 @@ foreach my $line (@PLO){
 } 
 close ($fplo);
 close ($out);
-
+print "Executing circos";
+system ("circos -conf $local_folder/../defaults/circos_aneuploidy.conf -outputfile ".$sample_name.".png");
+system ("mv ploidy_data.txt  ".$sample_name."_ploidy_data.txt");
+system ("mv highlights.txt  ".$sample_name."_highlights.txt");
 
 sub median {
  my @vals = sort {$a <=> $b} @_;
