@@ -17,17 +17,27 @@ system("if [ -e ploidy_data.txt ]; then rm ploidy_data.txt; fi");
 my ($input);
 my ($ploidy);
 my $fil;
+my $label;
+my @labels;
 GetOptions
 (
 'f|filter'   => \$fil,
 'i|input=s'  => \$input,
 'p|ploidy=s' => \$ploidy,
+'l|label=s' => \$label,
 );
-( $ploidy && $input && -f $input ) or die qq[Usage: $0 -i <input .bam file> -p <ploidy 1,2,...> -f (filter)	\n];
+( $ploidy && $input && -f $input ) or die qq[Usage: $0 \n
+					 	-i <input .bam file> \n
+						-p <ploidy 1,2,...> \n
+						-f (optional:filter LRT, transposons and telomeres) \n
+						-l (optional: label circos plots with strain name in the form of yfg1∆:Del1234:SD1234b")\n];
 
 my $sample_name = (split "/",$input)[-1];
 $sample_name =~ s/.bam//;
-
+if (defined $label and length $label>0) {
+	 @labels=split(":",$label);
+	 (scalar @labels == 3) or die qq"Not enough arguments in label";
+}
 my $bin_size=200; #define the size of the bin to make averages
 my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
 my %filter;
@@ -116,8 +126,17 @@ foreach my $line (@PLO){
 } 
 close ($fplo);
 close ($out);
+
 print "Executing circos";
-system ("circos -conf $local_folder/../defaults/circos_aneuploidy.conf -outputfile ".$sample_name.".png");
+#Execute circos silently
+system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -outputfile ".$sample_name.".png");
+#If labels have been defined write annotation on the png file
+if (scalar @labels>0){
+	my $command="convert ".$sample_name.".png -font Helvetica -weight 70  -gravity center -pointsize 60 -annotate 0 \"$labels[0]\n\n \"  -pointsize 30 -annotate 0 \"$labels[1]   $labels[2]\" out.png";
+	system($command);
+}
+
+system ("mv out.png  ".$sample_name.".png");
 system ("mv ploidy_data.txt  ".$sample_name."_ploidy_data.txt");
 system ("mv highlights.txt  ".$sample_name."_highlights.txt");
 
