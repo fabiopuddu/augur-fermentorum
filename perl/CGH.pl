@@ -5,20 +5,55 @@ use warnings;
 use Getopt::Long;
 use List::Util qw(sum);
 use Data::Dumper;
+use Cwd 'abs_path';
+
+my @path = split( '/' , abs_path($0));
+pop(@path);
+my $local_folder = join('/',@path);
+
+system("if [ -e ploidy_data.txt ]; then rm ploidy_data.txt; fi");
+
 #Get the bam file as input
 my ($input);
 my ($ploidy);
+my $fil;
+my $label;
+my @labels;
 GetOptions
 (
-'i|input=s'         => \$input,
-'p|ploidy=s'         => \$ploidy,
+'f|filter'   => \$fil,
+'i|input=s'  => \$input,
+'p|ploidy=s' => \$ploidy,
+'l|label=s' => \$label,
 );
-( $ploidy && $input && -f $input ) or die qq[Usage: $0 -i <input .bam file> -p <ploidy 1,2,...>\n];
+( $ploidy && $input && -f $input ) or die qq[Usage: $0 \n
+					 	-i <input .bam file> \n
+						-p <ploidy 1,2,...> \n
+						-f (optional:filter LRT, transposons and telomeres) \n
+						-l (optional: label circos plots with strain name in the form of yfg1∆:Del1234:SD1234b")\n];
 
+my $sample_name = (split "/",$input)[-1];
+$sample_name =~ s/.bam//;
+if (defined $label and length $label>0) {
+	 @labels=split(":",$label);
+	 (scalar @labels == 3) or die qq"Not enough arguments in label";
+}
 my $bin_size=200; #define the size of the bin to make averages
-
 my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
-
+my %filter;
+#Load the regions to be filtered from file into a hash
+if ($fil){
+	open (my $ff, '<', "$local_folder/../defaults/region-filter.txt") or die;
+	while (my $line=<$ff>){
+		chomp $line;
+		my @linea=split("\t",$line);
+		my $chr=$linea[0];
+		my @insert_val=($linea[1],$linea[2]);
+		push(@{$filter{$chr}}, \@insert_val);
+	} 
+	close ($ff);
+#	print Dumper(\%filter);
+}
 my @val;
 foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI'){
 	print "processing chromosome $chrom\n";
@@ -57,23 +92,53 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 	elsif ($chrom eq 'XVI'){ $cn='16'}
 	foreach my $pos (sort {$a <=> $b} keys %c_c) {
 		my $end = $pos+($bin_size-1);
+    	#print "chr$cn\t$pos\t$end\t$c_c{$pos}\n";
     	printf $fh "chr$cn\t$pos\t$end\t$c_c{$pos}\n";	
 	}
 	close ($fh);
 }
 
-open (my $fh, '<', "ploidy_data.txt");
-open (my $out, '>>', "highlights.txt");
-while (my $line=<$fh>){
-	chomp $line;
-	my @linea=split("\t",$line);
-	#print join("\t",@linea),"\n";
-	if ($linea[3]<0.15){
-		printf $out "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=blue\n";
+
+open (my $fplo, '<', "ploidy_data.txt");
+open (my $out, '>', "highlights.txt");
+chomp(my @PLO = <$fplo>);
+my @highlight_block;
+foreach my $line (@PLO){
+	my @linea=split("\t",$line); 
+	#if the line is a "hit" push the line into an highlight array
+	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5)){
+		push @highlight_block, "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=blue\n";
 	}
+	#if the line is not a hit we need to print out the previous block of highlights
+	else { 
+	#but only if the size of the highlight array is greater than 3
+		if (scalar (@highlight_block) >=3 ){
+			#print the block of highlights
+			for my $output_line (@highlight_block){
+				printf $out $output_line;
+				#print "$output_line\n";
+			}
+		}
+		#always re-initialise the @highlight_block array
+		@highlight_block=(); 
+	}
+	
 } 
-close ($fh);
+close ($fplo);
 close ($out);
+
+print "Executing circos";
+#Execute circos silently
+system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -outputfile ".$sample_name.".png");
+#If labels have been defined write annotation on the png file
+if (scalar @labels>0){
+	my $command="convert ".$sample_name.".png -font Helvetica -weight 70  -gravity center -pointsize 60 -annotate 0 \"$labels[0]\n\n \"  -pointsize 30 -annotate 0 \"$labels[1]   $labels[2]\" out.png";
+	system($command);
+}
+
+system ("mv out.png  ".$sample_name.".png");
+system ("mv ploidy_data.txt  ".$sample_name."_ploidy_data.txt");
+system ("mv highlights.txt  ".$sample_name."_highlights.txt");
 
 sub median {
  my @vals = sort {$a <=> $b} @_;
@@ -92,9 +157,10 @@ sub mean {
     return sum(@_)/@_;
 }
 sub chrom_cov{
+	#Get current chromosome
+	my $c = $_[0];
 	# execute samtools mpileup as a systems command and store the output in an array
 	# define a subroutine to calculate the mean
-    	my $c = $_[0];
 	my @mpileup_out =  `samtools view -b $input \'$c\'| genomeCoverageBed -d -ibam stdin -g | grep -w \'$c\'`; 
 	#print @mpileup_out;
 	# declare variables
@@ -116,20 +182,45 @@ sub chrom_cov{
 	my $length_ar = scalar @positions;
 	my $length = $length_ar/$bin_size;
 		#declare variable 
+	#first of all, check wether we have filtering on and if so import the coordinates of the regions to be excluded
+       	my @curr_filt;
+       	if ($fil){
+       		 @curr_filt=@{$filter{$c}};
+       	}
 	my %output;
 	#calculate the average every 25 
 	for (my $i=0; $i < $length; $i++) {
-       		 #get a subset of 25 values at a time
-       		 my @mean_values=();
-       		 @mean_values = splice (@values, 0, $bin_size);
-       		 my @mean_positions=();
-        	 	 @mean_positions = splice (@positions, 0, $bin_size); 
+		#get a subset of 25 values at a time
+       		my @mean_values=();
+       		@mean_values = splice (@values, 0, $bin_size);
+       		my @mean_positions=();
+        	 	@mean_positions = splice (@positions, 0, $bin_size); 
+        		#check wether filtering is on
+	 	my $skip=0;
+	 	if ($fil){
+ 			foreach my $range(@curr_filt){
+				#check wether the current slice overlaps any of the ranges
+		 	 	if (($mean_positions[0] > $range->[0] and $mean_positions[0] < $range->[1] ) or 
+		 	 	    ($mean_positions[-1] > $range->[0] and $mean_positions[-1] < $range->[1]) or
+		 	 	    ($mean_positions[0] < $range->[0] and $mean_positions[-1] > $range->[0] ) or
+		 	 	    ($mean_positions[0] < $range->[1] and $mean_positions[-1] > $range->[1])
+		 	 	    ){
+					$skip=1;	 	 	    
+		 	 		#print "Filter triggered:: Start: $mean_positions[0] End: $mean_positions[-1] Filter start: $range->[0] Filter ends: $range->[1] \n";  
+		 	 		last;
+		 	 	}
+		 	 }
+		 } 
+		 #print "$skip\n";
+		 next if $skip;
         		 #get the first position from the list of 25
         		 my $pos = shift @mean_positions;
        		 #get the mean of the 25 coverage values
        		 my $mean = eval(join("+", @mean_values)) / @mean_values; 
        	 	 #put the output into a hash
+       	 	 #print "Position = $pos\n";
         		 $output{$pos}=$mean;
 	}
+	#print Dumper(\%output);
 	return %output;	  
 }
