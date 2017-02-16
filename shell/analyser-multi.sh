@@ -35,7 +35,7 @@ printf "\n"
 #############################################
 #   GET   AND CHECK COMMAND LINE OPTIONS    #
 #############################################
-while getopts "sn:hfle:c:C:xvrtF" opt
+while getopts "sn:hfle:c:C:xvrtFa" opt
     do  case "$opt" in
                         h)  printf "############   HELP   ###############\nOPTIONS\n"
                             printf "\t-h\tThis Help\n"    
@@ -239,10 +239,10 @@ if [[ $aneup == 1 ]]
          proclist=''
          cat ../bams_for_mpileup |{ while read line; do
          		code1=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1` #SCMFY or #SD code
-         		code2=`grep ${code1} ../name\ conversion.tsv | cut -f 6`
-         		name=`grep ${code1} ../name\ conversion.tsv | cut -f 2`
-         		command= "CGH.pl -i $line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
-         		print ${command}
+         		code2=`grep ${code1} ../../name\ conversion.tsv | cut -f 6`
+         		name=`grep ${code1} ../../name\ conversion.tsv | cut -f 2`
+         		command="CGH.pl -i ../$line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
+         		echo ${command}
          		PROC1=$(sbatch --wrap="${command}" | sed 's/Submitted batch job //g') 
          		proclist="${proclist}\|${PROC1}"
          done
