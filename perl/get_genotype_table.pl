@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Term::ANSIColor;
+use Getopt::Long;
 
 #################################################
 #                                               #
@@ -12,6 +13,18 @@ use Term::ANSIColor;
 
 ##convert output into genotypes
 #create genotype tables with both common names and systematic names; add 'NONAME' whenever a non standard gene name is found
+
+my ($s);
+my ($input);
+GetOptions
+(
+'s|show_synonymous'   => \$s,
+'i|input=s'	  => \$input,
+);
+( $input && -f $input ) or die qq[Usage: $0 \n
+					 	-i <input file>\n
+					 	-s <show synonymous mutations (default: no)> \n
+						];
 
 my $rad5='YLR032W:missense_variant:1603:535:G>R';  #check for the presence of rad5-535
 my $rad50S='YNL250W:missense_variant:242:81:K>I';  #check for the presence of rad50S mutation
@@ -29,7 +42,7 @@ foreach my $file (@files) {
 	foreach my $line (@mutation_list){
 		next if $line !~ m/$sample_name/;
 		(undef, undef, undef, my $mut, my $system_name, my $common_name,undef,undef,undef,undef)=split("\t", $line);
-		if (defined $common_name){
+		if ((defined $common_name) and (not $common_name eq '""') ){
 			push (@genotype, $common_name."-".$mut);
 		}
 		else{
@@ -44,7 +57,7 @@ print "\n=======================================================================
 foreach my $gt (sort keys %mutations){
 	print "$gt\t";
 	for my $mut(@{$mutations{$gt}}){
-		if (($mut =~ m/FS@/) or ($mut =~ m/∆/)){
+		if (($mut =~ m/FS@/) or ($mut =~ m/£Δ/)){
 		$mut=~ s/£//g;
 		print color("red"), "$mut\t", color("reset");
 		}
@@ -53,9 +66,9 @@ foreach my $gt (sort keys %mutations){
 		$mut=~ s/x//;
 		print color("yellow"), "$mut\t", color("reset");
 		}
-		elsif ($mut =~ m/>/){
+		elsif ($mut =~ m/>/) {
 		$mut=~ s/£//g;
-		print color("blue"), "$mut\t", color("reset");
+		print color("blue"), "$mut\t", color("reset") if ($s);
 		}
 		elsif (($mut =~ m/£II/) or ($mut =~ m/£ID/)){
 		$mut=~ s/£//g;
@@ -74,65 +87,7 @@ foreach my $gt (sort keys %mutations){
 
 #shell code follows
 
-# 
-# for x in ERS*.vcf.gz
-#     do  n=$(echo $x | sed 's/.vcf.gz//g')
-#         samp_name=`cat "../../name conversion.tsv" | grep -w $n | cut -f2`;    
-#         num=$(echo $n | sed 's/ERS//g')
-#         geno_common=`grep $n hom.table.file |grep Y.[LR]........... -o |  tr "\t" ";" | sed 's/Y[ABCDEFGHIJKLMNOP][LR][0123456789][0123456789][0123456789][WC]-*[ABCD]*;//g' | sed 's/;.*$//' | sed 's/""/NONAME/g' | sed 's/-[ABCDEF]""/NONAME/g' | tr '\n' '\t'`
-#         geno_systematic=`grep $n hom.table.file | grep Y.[LR].......... -o | tr "\t" ";" |  sed -e 's/(//g' |sed -e 's/[[:space:]][A-Z][A-Z][A-Z][0123456789]*//g' | sed 's/""//g' | sed 's/;.*$//g' | tr '\n' '\t'`
-#         geno_details=`cat hom.table.file | grep $n | grep -o £.*£ | sed 's/£//g' | tr '\n' '\t'`
-#         if [[ "$control" =~ "$num" ]]
-#             then    if [[ $rad5 != "0" ]] #print rad5-535 if the mutation is present
-#                         then add_gen="\e[31mrad5-535\e[0m"
-#                         else add_gen=''
-#                     fi
-#                     if [[ $mut != "0" ]] #print the mutation to be checked, if the mutation is present
-#                         then add_gen="$add_gen\t\e[96m$mut_check\e[0m"
-#                         else add_gen="$add_gen"
-#                     fi
-#                     printf "$n\t$samp_name\t++++\t$add_gen\n" >> common_name.file
-#             else    printf "$n\t$samp_name\t.\t$geno_common\n" >> common_name.file
-#         fi
-#         printf "$n\t$samp_name\t$geno_systematic\n" >>systematic_name.file
-#         printf "$n\t$samp_name\t$geno_details\n" >>mutation.file
-#     done
-# # identify the samples with known resistant genes
-# top1=`cat hom.table.file | grep TOP1 | grep -o ERS...... | tr '\n' '\t'`
-# pdr=`cat hom.table.file | grep PDR | grep -o ERS...... | tr '\n' '\t'` #pleiotropic drug resistance
-# #zds=`cat hom.table.file | grep ZDS | grep -o ERS...... | tr '\n' '\t'` #zillion different screens
-# #print headers
-# printf "\nDIFFERENTIAL GENOTYPE\n"
-# if [[ $ploidy == "2" ]]
-#         then printf "ERS NUMBER\tSAMPLE NAME\tREF\tHOMOZYGOUS GENOTYPE"
-#         else printf "ERS NUMBER\tSAMPLE NAME\tREF\tGENOTYPE"
-# fi
-# printf "\n=========================================================================================================================================================\n"
-# l=0
-# r=0
-# #parse common name genotype table and substitute the corresponding systematic name when 'NONAME' is found
-# cat common_name.file | while read line
-#     do
-#         l=$(($l+1))
-#         c=0
-#         if [[ "$l" != '1' ]]
-#             then printf "\n"
-#         fi
-#         for tab in $line
-#                 do
-#                     c=$(($c+1))
-#                     column=$(($c-1))
-# 
-#                     if [[ $c -eq 1 ]]
-#                             then    if [[ $top1 =~ $tab || $pdr =~ $tab || $zds =~ $tab ]] #if the sample contains mutations in known suppressors (top1, pdr1, pdr3,zds1,zds2) write the sample name in grey
-#                                     then    printf "\e[31m$l $tab\t\e[0m" | tr "\n" "\t"
-#                                     else    printf "\e[0m$l $tab\t" | tr "\n" "\t"
-#                                 fi
-#                     fi
-#                     if [[ $c -eq 2 ]]
-#                             then printf "\e[0m$tab\t" | tr "\n" "\t"
-#                     fi
-#                     if [[ $c -eq 3 ]]
+
 #                             then printf "\e[0m$tab\t" | tr "\n" "\t"
 #                     fi
 #                     if [[ $c -gt 3 ]]
