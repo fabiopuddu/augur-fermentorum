@@ -126,10 +126,10 @@ foreach my $line (@PLO){
 } 
 close ($fplo);
 close ($out);
-
+sleep 10;
 print "Executing circos";
 #Execute circos silently 
-system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -param highlights/highlight/file=SC_MFY5784096_highlights.txt -param plots/plot/file=SC_MFY5784096_ploidy_data.txt -outputfile ".$sample_name);
+system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -param highlights/highlight/file=".$sample_name."_highlights.txt -param plots/plot/file=".$sample_name."_ploidy_data.txt -outputfile ".$sample_name);
 #If labels have been defined write annotation on the png file
 if (scalar @labels>0){
 	my $command="convert ".$sample_name.".png -font Helvetica -weight 70  -gravity center -pointsize 60 -annotate 0 \"$labels[0]\n\n \"  -pointsize 30 -annotate 0 \"$labels[1]   $labels[2]\" out.".$sample_name.".png";

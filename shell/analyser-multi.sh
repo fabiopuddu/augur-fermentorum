@@ -132,6 +132,7 @@ if [[ $hard_force_rewrite == '1' ]]
         rm -rf analysis
         rm -rf repDNA
         rm -rf transposons
+        rm -rf ploidy_data
 fi
 if [[ -d analysis ]] 
     then first_run=0
