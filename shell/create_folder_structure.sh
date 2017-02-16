@@ -4,6 +4,12 @@
 #
 sort -nu samples.tsv > sorted_samples.tsv
 mv sorted_samples.tsv samples.tsv
+#specify default source path
+source_path='/mnt/scratch/jackson/fp305/from_CGP/CGP_BAM'
+if [[ -z $1 ]]
+	then source_path='/mnt/scratch/jackson/fp305/from_CGP/CGP_BAM'
+	else source_path=$1
+fi
 cat samples.tsv | while read line
 	do 	t=1
 			for tab in $line
@@ -22,10 +28,10 @@ cat samples.tsv | while read line
 			mkdir -p "BAM"
 				cd BAM
 				for fname in $fnames
-					do  ln -s /mnt/scratch/jackson/fp305/from_CGP/CGP_BAM/$fname/$fname.bam $PWD/$fname.bam
-						ln -s /mnt/scratch/jackson/fp305/from_CGP/CGP_BAM/$fname/$fname.bam.bai $PWD/$fname.bam.bai
-						ln -s /mnt/scratch/jackson/fp305/from_CGP/CGP_BAM/$fname/$fname.fq1.gz $PWD/$fname.fq1.gz
-						ln -s /mnt/scratch/jackson/fp305/from_CGP/CGP_BAM/$fname/$fname.fq2.gz $PWD/$fname.fq2.gz
+					do  ln -s "${source_path}/$fname/$fname.bam" "$PWD/$fname.bam"
+						ln -s "${source_path}/$fname/$fname.bam.bai" "$PWD/$fname.bam.bai"
+						ln -s "${source_path}/$fname/$fname.fq1.gz" "$PWD/$fname.fq1.gz"
+						ln -s "${source_path}/$fname/$fname.fq2.gz" "$PWD/$fname.fq2.gz"
 					done
 				cd ..	
 			cd ..
