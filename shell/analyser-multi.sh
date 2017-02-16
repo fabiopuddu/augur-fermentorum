@@ -17,6 +17,7 @@ no_ctrl=0
 v=0
 show_syno=0
 hard_force_rewrite=0
+aneup=0;
 #############################################
 #  FUNCTIONS                                #
 #############################################
@@ -46,7 +47,8 @@ while getopts "sn:hfle:c:C:xvrtF" opt
                             printf "\t-n\tSet ploidy of samples (1 or 2)\n"
                             printf "\t-r\tanalyse repetitive regions in the samples\n"
                             printf "\t-v\tverbose: print out detailed analysis progression\n"
-                            printf "\t-s\tsynonimous: print out detailed analysis progression\n"
+                            printf "\t-s\tsynonimous: print out details on synonimous mutations\n"
+                            printf "\t-a\taneuploidy: generate ploidy circos charts for every file analysed\n"
                             exit 0
                         ;;
                         F)
@@ -76,6 +78,9 @@ while getopts "sn:hfle:c:C:xvrtF" opt
                         ;;
                         r)
                         rDNA=1
+                        ;;
+                        a)
+                        aneup=1
                         ;;
                         
         esac
@@ -198,22 +203,22 @@ if [[   $rDNA == 1 ]]
             mkdir -p ../repDNA
         	cd ../repDNA
         	proclist=''
-            cat ../bams_for_mpileup |{ while read line
-            	do  name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
+            cat ../bams_for_mpileup |{ while read line; do  
+            	name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
                     command="rDNA-cnv_estimate.pl -i ../$line > $name.txt" 
                     echo $command
                     PROC1=$(sbatch --wrap="${command}" | sed 's/Submitted batch job //g') 
                     proclist="${proclist}\|${PROC1}"
-      		    command="zcat ../BAM/${name}.fq1.gz ../BAM/${name}.fq2.gz | telomeres.pl 5  > ${name}.tel"
+      		command="zcat ../BAM/${name}.fq1.gz ../BAM/${name}.fq2.gz | telomeres.pl 5  > ${name}.tel"
                     PROC1=$(sbatch --wrap="${command}" | sed 's/Submitted batch job //g') 
                     proclist="${proclist}\|${PROC1}"  	 
-                done
+             done
             waitforcompletion "${proclist}"
             }                
             ls *.txt | while read line
                        do 	result=`cat $line`
- 		                name=`echo $line | sed 's|\.txt||g'`
-				telomere=`cat $name.tel`
+ 		          name=`echo $line | sed 's|\.txt||g'`
+		          telomere=`cat $name.tel`
                         	ERSnum=`cat "../../name conversion.tsv" | grep -w $name | cut -f7` ############################################### Might have to be changed back to f6
                      	  	Delname=`cat "../../name conversion.tsv" | grep -w $name | cut -f2`
 	                       	printf "$result\t${telomere}\t$ERSnum\t$Delname\n" >> results.txt
@@ -221,6 +226,29 @@ if [[   $rDNA == 1 ]]
             cd ../analysis
 fi
 sleep 5
+
+#########################################
+##        Analyse and report ploidy      ##
+#########################################
+
+if [[ $aneup == 1 ]]
+    then printf "Analysing ploidy"
+         cd ..
+         mkdir ploidy_data 
+         cd ploidy_data
+         proclist=''
+         cat ../bams_for_mpileup |{ while read line; do
+         		code1=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1` #SCMFY or #SD code
+         		code2=`grep ${code1} ../name\ conversion.tsv | cut -f 6`
+         		name=`grep ${code1} ../name\ conversion.tsv | cut -f 2`
+         		command= "CGH.pl -i $line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
+         		PROC1=$(sbatch --wrap="${command}" | sed 's/Submitted batch job //g') 
+         		proclist="${proclist}\|${PROC1}"
+         done
+          waitforcompletion "${proclist}"
+         }
+         cd ../analysis	
+fi
 
 #####################################
 #### START MUTATION ANALYSIS     #####
