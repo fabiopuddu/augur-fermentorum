@@ -242,6 +242,7 @@ if [[ $aneup == 1 ]]
          		code2=`grep ${code1} ../name\ conversion.tsv | cut -f 6`
          		name=`grep ${code1} ../name\ conversion.tsv | cut -f 2`
          		command= "CGH.pl -i $line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
+         		print ${command}
          		PROC1=$(sbatch --wrap="${command}" | sed 's/Submitted batch job //g') 
          		proclist="${proclist}\|${PROC1}"
          done
