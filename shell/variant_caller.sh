@@ -56,11 +56,11 @@ sort bams_for_mpileup > sorted_bams_for_mpileup
 cat sorted_bams_for_mpileup | grep -v 'sorted' > sieved_bams_for_mpileup #remove'sorted' files, which come from re-alignments for ty and rDNA analysis
 #index files if the index does not exist
 cat sieved_bams_for_mpileup | parallel -j20 --no-notice ' x={};
-													 n=`echo {} | tr '/' "\n" | tail -n1 | sed 's/.bam//g'`; 
-	    											 printf "\r\033[K  Indexing $n"
-													 if [[ ! -a $x.bai || $force_rewrite == 1  ]] #if the file does not exist or if force_rewrite is called
-                											then    samtools index $x
-        											 fi'
+				n=`echo {} | tr '/' "\n" | tail -n1 | sed 's/.bam//g'`; 
+	    			printf "\r\033[K  Indexing $n"
+		 		if [[ ! -a $x.bai || $force_rewrite == 1  ]] #if the file does not exist or if force_rewrite is called
+                				then    samtools index $x
+        				fi'
 printf "\n"
 cat sieved_bams_for_mpileup | grep 'merged' > merged_bams_for_mpileup #generate a list of already merged BAM files
 #remove from sieved bams for mpileup any reference to files that have already been merged
@@ -122,7 +122,7 @@ cat ../bams_for_mpileup |  while read line
 		ers=`grep -w $n ../../name\ conversion.tsv | tr "\t" "\n" | tail -n 1`
 		printf "\r\033[K  Processing $ers"
 #		if [[ ! -a $m.vcf.gz ]] 
-		 	 sbatch -n1 -N1 -p1604 --mem 100 --exclude="cb-node17" -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --wrap="samtools mpileup -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -g -t DP,DV -C0 -pm3 -F0.2 -d10000 ../$line | bcftools call -vm -f GQ | bgzip -f > $ers.vcf.gz "  > /dev/null
+		 	 sbatch -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --wrap="samtools mpileup -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -g -t DP,DV -C0 -pm3 -F0.2 -d10000 ../$line | bcftools call -vm -f GQ | bgzip -f > $ers.vcf.gz "  > /dev/null
 		 	#I set the -C flag from 50 to 0 because when many artificially introduced mutantions fall within the same read, it downgraded mapping quality too much resulting in those 			mutations not being called.					
  #		fi
  	done

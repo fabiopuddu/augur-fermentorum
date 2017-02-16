@@ -72,7 +72,7 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 			$c_c{$k}=$c_c{$k}/$gw_median*$ploidy; 
 		
 	}
-	open( my $fh, '>>', "ploidy_data.txt");
+	open( my $fh, '>>', $sample_name."_ploidy_data.txt");
 	my $cn;
 	if ($chrom eq 'I'){$cn='01'}
 	elsif ($chrom eq 'II'){ $cn='02'}
@@ -99,15 +99,15 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 }
 
 
-open (my $fplo, '<', "ploidy_data.txt");
-open (my $out, '>', "highlights.txt");
+open (my $fplo, '<', $sample_name."_ploidy_data.txt");
+open (my $out, '>', $sample_name."_highlights.txt");
 chomp(my @PLO = <$fplo>);
 my @highlight_block;
 foreach my $line (@PLO){
 	my @linea=split("\t",$line); 
 	#if the line is a "hit" push the line into an highlight array
 	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5)){
-		push @highlight_block, "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=blue\n";
+		push @highlight_block, "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=red\n";
 	}
 	#if the line is not a hit we need to print out the previous block of highlights
 	else { 
@@ -126,19 +126,17 @@ foreach my $line (@PLO){
 } 
 close ($fplo);
 close ($out);
-
+sleep 10;
 print "Executing circos";
-#Execute circos silently
-system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -outputfile ".$sample_name.".png");
+#Execute circos silently 
+system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -param highlights/highlight/file=".$sample_name."_highlights.txt -param plots/plot/file=".$sample_name."_ploidy_data.txt -outputfile ".$sample_name);
 #If labels have been defined write annotation on the png file
 if (scalar @labels>0){
-	my $command="convert ".$sample_name.".png -font Helvetica -weight 70  -gravity center -pointsize 60 -annotate 0 \"$labels[0]\n\n \"  -pointsize 30 -annotate 0 \"$labels[1]   $labels[2]\" out.png";
+	my $command="convert ".$sample_name.".png -font Helvetica -weight 70  -gravity center -pointsize 60 -annotate 0 \"$labels[0]\n\n \"  -pointsize 30 -annotate 0 \"$labels[1]   $labels[2]\" out.".$sample_name.".png";
 	system($command);
 }
 
-system ("mv out.png  ".$sample_name.".png");
-system ("mv ploidy_data.txt  ".$sample_name."_ploidy_data.txt");
-system ("mv highlights.txt  ".$sample_name."_highlights.txt");
+system ("mv out.".$sample_name.".png  ".$sample_name.".png");
 
 sub median {
  my @vals = sort {$a <=> $b} @_;
