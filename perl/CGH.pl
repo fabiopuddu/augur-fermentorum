@@ -7,6 +7,12 @@ use List::Util qw(sum);
 use Data::Dumper;
 use Cwd 'abs_path';
 
+
+
+my $bin_size=200; #define the size of the bin to make averages in base pairs
+my $min_span_highlight=2000; #define the minimum lenght of a jump in ploidy to be reported in highlights
+my $threshold=int($min_span_highlight / $bin_size);
+
 my @path = split( '/' , abs_path($0));
 pop(@path);
 my $local_folder = join('/',@path);
@@ -38,7 +44,6 @@ if (defined $label and length $label>0) {
 	 @labels=split(":",$label);
 	 (scalar @labels == 3) or die qq"Not enough arguments in label";
 }
-my $bin_size=200; #define the size of the bin to make averages
 my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
 my %filter;
 #Load the regions to be filtered from file into a hash
@@ -112,7 +117,7 @@ foreach my $line (@PLO){
 	#if the line is not a hit we need to print out the previous block of highlights
 	else { 
 	#but only if the size of the highlight array is greater than 3
-		if (scalar (@highlight_block) >=3 ){
+		if (scalar (@highlight_block) >= $threshold ){
 			#print the block of highlights
 			for my $output_line (@highlight_block){
 				printf $out $output_line;
