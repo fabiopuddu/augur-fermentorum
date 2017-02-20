@@ -240,7 +240,7 @@ if [[ $aneup == 1 ]]
          proclist=''
          cat ../bams_for_mpileup |{ while read line; do
          		code1=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1` #SCMFY or #SD code
-         		code2=`grep ${code1} ../../name\ conversion.tsv | cut -f 6`
+         		code2=`grep ${code1} ../../name\ conversion.tsv | cut -f 7`
          		name=`grep ${code1} ../../name\ conversion.tsv | cut -f 2`
          		command="CGH.pl -i ../$line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
          		echo ${command}
@@ -249,7 +249,8 @@ if [[ $aneup == 1 ]]
          done
           waitforcompletion "${proclist}"
          }
-         cd ../analysis	
+        montage -geometry 1200x1200 png/*.png aneuploidy_report.png #mount all the images in a single file
+	cd ../analysis	
 fi
 
 #####################################

@@ -132,6 +132,7 @@ foreach my $line (@PLO){
 close ($fplo);
 close ($out);
 sleep 10;
+system("mkdir png; mkdir svg");
 print "Executing circos";
 #Execute circos silently 
 system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -param highlights/highlight/file=".$sample_name."_highlights.txt -param plots/plot/file=".$sample_name."_ploidy_data.txt -outputfile ".$sample_name);
@@ -142,6 +143,8 @@ if (scalar @labels>0){
 }
 
 system ("mv out.".$sample_name.".png  ".$sample_name.".png");
+system("mv ".$sample_name.".png png/; mv ".$sample_name.".svg svg/");
+
 
 sub median {
  my @vals = sort {$a <=> $b} @_;
