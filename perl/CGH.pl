@@ -140,11 +140,10 @@ system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -
 if (scalar @labels>0){
 	my $command="convert ".$sample_name.".png -font Helvetica -weight 70  -gravity center -pointsize 60 -annotate 0 \"$labels[0]\n\n \"  -pointsize 30 -annotate 0 \"$labels[1]   $labels[2]\" out.".$sample_name.".png";
 	system($command);
+	system ("mv out.".$sample_name.".png  ".$sample_name.".png");
 }
-
-system ("mv out.".$sample_name.".png  ".$sample_name.".png");
 system("mv ".$sample_name.".png png/; mv ".$sample_name.".svg svg/");
-
+system("convert png/".$sample_name.".png -quality 96 -resize 500x500  png/".$sample_name."_web.jpg");
 
 sub median {
  my @vals = sort {$a <=> $b} @_;
