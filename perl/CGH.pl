@@ -6,19 +6,16 @@ use Getopt::Long;
 use List::Util qw(sum);
 use Data::Dumper;
 use Cwd 'abs_path';
-
-
-
+#####
 my $bin_size=200; #define the size of the bin to make averages in base pairs
 my $min_span_highlight=2000; #define the minimum lenght of a jump in ploidy to be reported in highlights
 my $threshold=int($min_span_highlight / $bin_size);
+#####
 
 my @path = split( '/' , abs_path($0));
 pop(@path);
 my $local_folder = join('/',@path);
-
-system("if [ -e ploidy_data.txt ]; then rm ploidy_data.txt; fi");
-
+#system("if [ -e ploidy_data.txt ]; then rm ploidy_data.txt; fi");
 #Get the bam file as input
 my ($input);
 my ($ploidy);
@@ -74,8 +71,7 @@ print "Genome wide median: $gw_median\n";
 foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI'){
 	my %c_c = %{$genome{$chrom}};
 	foreach my $k (keys %c_c){
-			$c_c{$k}=$c_c{$k}/$gw_median*$ploidy; 
-		
+			$c_c{$k}=$c_c{$k}/$gw_median*$ploidy; 		
 	}
 	open( my $fh, '>>', $sample_name."_ploidy_data.txt");
 	my $cn;
@@ -106,9 +102,30 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 
 open (my $fplo, '<', $sample_name."_ploidy_data.txt");
 open (my $out, '>', $sample_name."_highlights.txt");
+open (my $firstdev, '>', $sample_name."_deriv.txt");
+
 chomp(my @PLO = <$fplo>);
 my @highlight_block;
+#get starting ploidy data from the first line of the file
+my @firstline=split("\t",$PLO[0]);
+my $prev_plo=$firstline[3];
+#initialise the value of the previous chromosome
+my $chrom_end=0;
+
+my $prev_pos=0;
+my @average_array;
+my $i=0;
+my $average;
+my $flag_up=0;
+my $flag_down=0;
+my $flag_end=0;
+my $brkpt1='';
+my $brkpt2='';
 foreach my $line (@PLO){
+
+	#THE FIRST BLOCK OF CODE IDENTIFIES REGIONS WITH "SIGNIFICANT" PLOIDY CHANGES 
+	#AND HIGHLIGHTS THEM IN A FILE
+
 	my @linea=split("\t",$line); 
 	#if the line is a "hit" push the line into an highlight array
 	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5)){
@@ -127,10 +144,57 @@ foreach my $line (@PLO){
 		#always re-initialise the @highlight_block array
 		@highlight_block=(); 
 	}
+
+	#THE SECOND BLOCK OF CODE TRIES TO DETECT THE COORDINATES OF THE BREAKPOINTS
 	
+	my @next_line = split("\t",$PLO[$i+1]);
+	my $next_line_chr = $next_line[0];
+	print "$PLO[$i+1]\n";
+	printf "cur line $linea[1] cur chr $linea[0] next chr $next_line_chr\n";
+	if ($linea[0] ne $next_line_chr){
+		$chrom_end=1
+	}
+	#push into average array
+	push @average_array, $linea[3];
+	#if n=20 average the array and report
+	if (($i==40) or $chrom_end){
+		$i=0;
+		$average=sum(@average_array)/scalar(@average_array);
+		#printf "$average\n";
+		@average_array=();
+		#calculate dx and report
+		#my $dx=-$prev_pos;
+		my $dy=($average-$prev_plo);
+		printf $firstdev "$linea[0]\t$dy\n";
+		#Determine if dy is outside a threshold
+		if ($dy > 0.4){$flag_up = 1; $brkpt1=$linea[1];print"up $linea[0] $linea[1]\n";}
+		elsif ($dy < -0.4) {$flag_down = 1; $brkpt2=$linea[1];print"down $linea[0] $linea[1]\n"}
+		elsif ($chrom_end){$flag_end=1}
+		if (($flag_up && $flag_down ) || (($flag_down || $flag_up) && $flag_end) ) {
+			print "Curr_line $linea[1] Flags: up $flag_up down $flag_down end $flag_end\n";
+			$brkpt1=$linea[1] unless $flag_up;
+			$brkpt2=$linea[1] unless $flag_down;
+			if ($brkpt1>$brkpt2){
+				print "Breakpoint: $linea[0]\t$brkpt2\t$brkpt1\n";
+			}
+			else {
+				print "Breakpoint: $linea[0]\t$brkpt1\t$brkpt2\n";
+			}
+			$flag_up = 0;
+			$flag_down = 0;
+			$brkpt1 = 0;
+			$brkpt2 = 0;
+		}
+
+		$prev_pos=$linea[1];
+		$prev_plo=$average;
+	}
+	$i++;
+
 } 
 close ($fplo);
 close ($out);
+close ($firstdev);
 sleep 10;
 system("mkdir png; mkdir svg");
 print "Executing circos";
