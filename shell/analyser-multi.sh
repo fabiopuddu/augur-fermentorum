@@ -522,7 +522,7 @@ if [[ $v == '1' ]] ; then     printf "\n\n\n" ;fi
         do
             n=$(echo $x | sed 's/.isec.vcf//g' | sed 's/sort.//g')
             num=$(echo $n | sed 's/ERS//g')
-            name=`cat ../../name\ conversion.tsv | grep $n | cut -f2`
+            name=`cat ../../name\ conversion.tsv | grep $n | cut -f4`
             #count SNPs
             SNPtot=`grep '##' $x -v | grep '#CHROM' -v | grep 'INDEL' -v | grep '\./\.' -v | wc -l` #homo+hetero mutations from het-unmasked control
             SNPHOMREV=`grep '##' inverse_intersection/$x -v | grep '#CHROM' -v | grep 'INDEL' -v | grep "1/1\|2/2" | grep PASS | wc -l | tr -d ' '` #homozigous reversion to ref (i.e. control 1/1, sample 0/0)
