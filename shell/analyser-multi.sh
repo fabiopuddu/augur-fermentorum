@@ -188,8 +188,8 @@ ls mito.ERS*.vcf.gz | { while read line
 		do if [[ ! -a csq.$line ]]
 				then command1="variant_effect_predictor.pl --species saccharomyces_cerevisiae -i $line  --format vcf -o vep.$line.txt --no_progress --force_overwrite --offline"
 					 command2="vcf2consequences_vep -v $line -i vep.$line.txt 2>/dev/null | bgzip > csq.$line"
-					 PROC1=$(sbatch --wrap="${command1}" | sed 's/Submitted batch job //g') 
-					 PROC2=$(sbatch --dependency=afterok:${PROC1} --wrap="${command2}" | sed 's/Submitted batch job //g')
+					 PROC1=$(sbatch -F ${DIR}/../defaults/nodefile.slurm  --wrap="${command1}" | sed 's/Submitted batch job //g') 
+					 PROC2=$(sbatch -F ${DIR}/../defaults/nodefile.slurm  --dependency=afterok:${PROC1} --wrap="${command2}" | sed 's/Submitted batch job //g')
 		   			 proclist="${proclist}\|${PROC2}"
 		   fi
 		done
@@ -208,10 +208,10 @@ if [[   $rDNA == 1 ]]
             	name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
                     command="rDNA-cnv_estimate.pl -i ../$line > $name.txt" 
                     echo $command
-                    PROC1=$(sbatch --wrap="${command}" | sed 's/Submitted batch job //g') 
+                    PROC1=$(sbatch -F ${DIR}/../defaults/nodefile.slurm  --wrap="${command}" | sed 's/Submitted batch job //g') 
                     proclist="${proclist}\|${PROC1}"
       		command="zcat ../BAM/${name}.fq1.gz ../BAM/${name}.fq2.gz | telomeres.pl 5  > ${name}.tel"
-                    PROC1=$(sbatch --wrap="${command}" | sed 's/Submitted batch job //g') 
+                    PROC1=$(sbatch -F ${DIR}/../defaults/nodefile.slurm  --wrap="${command}" | sed 's/Submitted batch job //g') 
                     proclist="${proclist}\|${PROC1}"  	 
              done
             waitforcompletion "${proclist}"
@@ -244,7 +244,7 @@ if [[ $aneup == 1 ]]
          		name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
          		command="CGH.pl -i ../$line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
          		echo ${command}
-         		PROC1=$(sbatch --wrap="${command}" | sed 's/Submitted batch job //g') 
+         		PROC1=$(sbatch -F ${DIR}/../defaults/nodefile.slurm  --wrap="${command}" | sed 's/Submitted batch job //g') 
          		proclist="${proclist}\|${PROC1}"
          done
           waitforcompletion "${proclist}"
