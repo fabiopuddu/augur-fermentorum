@@ -25,8 +25,8 @@ printf "\n"
 }
 
 ##MAIN##
-cd raw_from_CGP
-mkdir -p /mnt/scratch/jackson/fp305/data/CGP_temp  
+#cd raw_from_CGP
+mkdir -p /mnt/scratch/jackson/fp305/from_CGP/CGP_temp  
 printf "Decrypting...\n"
 
 for line in *SD*.gpg
@@ -41,7 +41,7 @@ for line in *SD*.gpg
     done
     
 waitforcompletion
-cd /mnt/scratch/jackson/fp305/data/CGP_temp
+cd /mnt/scratch/jackson/fp305/from_CGP/CGP_temp
 printf "Expanding...\n"
 for line in SD*.tar.gz
     do submit_sbatch " " "tar xvf $line"  > /dev/null
