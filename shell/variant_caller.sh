@@ -48,9 +48,9 @@ if [[ -a bams_for_mpileup ]]
     then rm bams_for_mpileup
 fi
 #create a list of BAM files to analyse
-ls BAM/*/*/*/*.bam >> bams_for_mpileup
-ls BAM/*/*/*.bam >> bams_for_mpileup
-ls BAM/*/*.bam >> bams_for_mpileup
+#ls BAM/*/*/*/*.bam >> bams_for_mpileup
+#ls BAM/*/*/*.bam >> bams_for_mpileup
+#	ls BAM/*/*.bam >> bams_for_mpileup
 ls BAM/*.bam >> bams_for_mpileup
 sort bams_for_mpileup > sorted_bams_for_mpileup
 cat sorted_bams_for_mpileup | grep -v 'sorted' > sieved_bams_for_mpileup #remove'sorted' files, which come from re-alignments for ty and rDNA analysis
@@ -122,7 +122,7 @@ cat ../bams_for_mpileup |  while read line
 		ers=`grep -w $n ../../name\ conversion.tsv | tr "\t" "\n" | tail -n 1`
 		printf "\r\033[K  Processing $ers"
 #		if [[ ! -a $m.vcf.gz ]] 
-		 	 sbatch -F ${DIR}/../defaults/nodefile.slurm  -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --wrap="samtools mpileup -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -g -t DP,DV -C0 -pm3 -F0.2 -d10000 ../$line | bcftools call -vm -f GQ | bgzip -f > $ers.vcf.gz "
+		 	 sbatch -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --wrap="samtools mpileup -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -g -t DP,DV -C0 -pm3 -F0.2 -d10000 ../$line | bcftools call -vm -f GQ | bgzip -f > $ers.vcf.gz "
 			sleep 1
 		 	#I set the -C flag from 50 to 0 because when many artificially introduced mutantions fall within the same read, it downgraded mapping quality too much resulting in those 			mutations not being called.					
  #		fi

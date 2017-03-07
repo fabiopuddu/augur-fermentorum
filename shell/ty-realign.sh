@@ -4,7 +4,10 @@
 
 #sorting bam files based on read name
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-
+if [[ ! -a bams_for_mpileup ]]
+	then echo "Run the variant calling first!!!"
+	exit 1
+fi
 mkdir -p TR_BAMS
 cat bams_for_mpileup | while read line
  	do 	percorso=`echo ${line} | sed "s|[A-Z_]*[0123456789b]*.[a-z]*.bam||g"`
