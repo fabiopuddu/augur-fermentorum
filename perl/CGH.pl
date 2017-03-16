@@ -6,6 +6,7 @@ use Getopt::Long;
 use List::Util qw(sum);
 use Data::Dumper;
 use Cwd 'abs_path';
+use Math::Round;
 #####
 my $bin_size=200; #define the size of the bin to make averages in base pairs
 my $min_span_highlight=2000; #define the minimum lenght of a jump in ploidy to be reported in highlights
@@ -102,16 +103,21 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 
 open (my $fplo, '<', $sample_name."_ploidy_data.txt");
 open (my $out, '>', $sample_name."_highlights.txt");
+open (my $statout, '>', $sample_name."_plstats.txt");#
 open (my $firstdev, '>', $sample_name."_deriv.txt");
 
 chomp(my @PLO = <$fplo>);
 my @highlight_block;
+my @chromosome_block;
+my $chr_len=10;
+my $prev_chr='chr01';
 #get starting ploidy data from the first line of the file
 my @firstline=split("\t",$PLO[0]);
 my $prev_plo=$firstline[3];
+my $count=0;
 #initialise the value of the previous chromosome
 my $chrom_end=0;
-
+my $aneup_fract;
 my $prev_pos=0;
 my @average_array;
 my $i=0;
@@ -121,15 +127,34 @@ my $flag_down=0;
 my $flag_end=0;
 my $brkpt1='';
 my $brkpt2='';
+print ($statout "Chromosome\tPred. ploidy\tFr.deviating\n");
 foreach my $line (@PLO){
 
 	#THE FIRST BLOCK OF CODE IDENTIFIES REGIONS WITH "SIGNIFICANT" PLOIDY CHANGES 
 	#AND HIGHLIGHTS THEM IN A FILE
 
 	my @linea=split("\t",$line); 
+	if ( $prev_chr ne $linea[0]){
+		my $mean_ploidy;
+		$aneup_fract=$count/$chr_len;
+		if ($aneup_fract <0.25 or $aneup_fract > 0.75){
+			$mean_ploidy=ploidy_mode(@chromosome_block);
+		}
+		else{
+			$mean_ploidy="-1"
+		}
+		$chr_len=0;
+		$count=0;
+		print ($statout "$prev_chr\t$mean_ploidy\t$aneup_fract\n")	;
+		@chromosome_block=();
+	}
+	$chr_len++;
+	$prev_chr=$linea[0];
 	#if the line is a "hit" push the line into an highlight array
+	push @chromosome_block, "$linea[3]";	
 	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5)){
 		push @highlight_block, "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=red\n";
+		$count++;
 	}
 	#if the line is not a hit we need to print out the previous block of highlights
 	else { 
@@ -147,51 +172,64 @@ foreach my $line (@PLO){
 
 	#THE SECOND BLOCK OF CODE TRIES TO DETECT THE COORDINATES OF THE BREAKPOINTS
 	
-	my @next_line = split("\t",$PLO[$i+1]);
-	my $next_line_chr = $next_line[0];
-	print "$PLO[$i+1]\n";
-	printf "cur line $linea[1] cur chr $linea[0] next chr $next_line_chr\n";
-	if ($linea[0] ne $next_line_chr){
-		$chrom_end=1
-	}
-	#push into average array
-	push @average_array, $linea[3];
-	#if n=20 average the array and report
-	if (($i==40) or $chrom_end){
-		$i=0;
-		$average=sum(@average_array)/scalar(@average_array);
-		#printf "$average\n";
-		@average_array=();
-		#calculate dx and report
-		#my $dx=-$prev_pos;
-		my $dy=($average-$prev_plo);
-		printf $firstdev "$linea[0]\t$dy\n";
-		#Determine if dy is outside a threshold
-		if ($dy > 0.4){$flag_up = 1; $brkpt1=$linea[1];print"up $linea[0] $linea[1]\n";}
-		elsif ($dy < -0.4) {$flag_down = 1; $brkpt2=$linea[1];print"down $linea[0] $linea[1]\n"}
-		elsif ($chrom_end){$flag_end=1}
-		if (($flag_up && $flag_down ) || (($flag_down || $flag_up) && $flag_end) ) {
-			print "Curr_line $linea[1] Flags: up $flag_up down $flag_down end $flag_end\n";
-			$brkpt1=$linea[1] unless $flag_up;
-			$brkpt2=$linea[1] unless $flag_down;
-			if ($brkpt1>$brkpt2){
-				print "Breakpoint: $linea[0]\t$brkpt2\t$brkpt1\n";
-			}
-			else {
-				print "Breakpoint: $linea[0]\t$brkpt1\t$brkpt2\n";
-			}
-			$flag_up = 0;
-			$flag_down = 0;
-			$brkpt1 = 0;
-			$brkpt2 = 0;
-		}
-
-		$prev_pos=$linea[1];
-		$prev_plo=$average;
-	}
-	$i++;
+	
+	
+	
+# 	my @next_line = split("\t",$PLO[$i+1]);
+# 	my $next_line_chr = $next_line[0];
+# 	print "$PLO[$i+1]\n";
+# 	printf "cur line $linea[1] cur chr $linea[0] next chr $next_line_chr\n";
+# 	if ($linea[0] ne $next_line_chr){
+# 		$chrom_end=1
+# 	}
+# 	#push into average array
+# 	push @average_array, $linea[3];
+# 	#if n=20 average the array and report
+# 	if (($i==40) or $chrom_end){
+# 		$i=0;
+# 		$average=sum(@average_array)/scalar(@average_array);
+# 		#printf "$average\n";
+# 		@average_array=();
+# 		#calculate dx and report
+# 		#my $dx=-$prev_pos;
+# 		my $dy=($average-$prev_plo);
+# 		printf $firstdev "$linea[0]\t$dy\n";
+# 		#Determine if dy is outside a threshold
+# 		if ($dy > 0.4){$flag_up = 1; $brkpt1=$linea[1];print"up $linea[0] $linea[1]\n";}
+# 		elsif ($dy < -0.4) {$flag_down = 1; $brkpt2=$linea[1];print"down $linea[0] $linea[1]\n"}
+# 		elsif ($chrom_end){$flag_end=1}
+# 		if (($flag_up && $flag_down ) || (($flag_down || $flag_up) && $flag_end) ) {
+# 			print "Curr_line $linea[1] Flags: up $flag_up down $flag_down end $flag_end\n";
+# 			$brkpt1=$linea[1] unless $flag_up;
+# 			$brkpt2=$linea[1] unless $flag_down;
+# 			if ($brkpt1>$brkpt2){
+# 				print "Breakpoint: $linea[0]\t$brkpt2\t$brkpt1\n";
+# 			}
+# 			else {
+# 				print "Breakpoint: $linea[0]\t$brkpt1\t$brkpt2\n";
+# 			}
+# 			$flag_up = 0;
+# 			$flag_down = 0;
+# 			$brkpt1 = 0;
+# 			$brkpt2 = 0;
+# 		}
+# 
+# 		$prev_pos=$linea[1];
+# 		$prev_plo=$average;
+# 	}
+# 	$i++;
 
 } 
+my $mean_ploidy;
+$aneup_fract=$count/$chr_len;
+if ($aneup_fract <0.25 or $aneup_fract > 0.75){
+			$mean_ploidy=ploidy_mode(@chromosome_block);
+		}
+		else{
+			$mean_ploidy="."
+		}
+print ($statout "$prev_chr\t$mean_ploidy\t$aneup_fract\n");
+close ($statout);
 close ($fplo);
 close ($out);
 close ($firstdev);
@@ -226,6 +264,26 @@ sub median {
 sub mean {
     return sum(@_)/@_;
 }
+
+sub geomean{
+my $product=1;
+foreach my $number (@_){
+	$product=$number*$product;
+}
+my $log_e = log($product);
+return exp($log_e/@_);
+}
+
+sub ploidy_mode{
+        my %counts;
+        foreach my $element (@_){
+                $element=round($element);
+                $counts{$element}++;
+        }
+	my @sorted_array = sort { $counts{$a} <=> $counts{$b} } keys %counts;
+        return $sorted_array[-1];
+}
+
 sub chrom_cov{
 	#Get current chromosome
 	my $c = $_[0];
