@@ -12,7 +12,27 @@ my $bin_size=200; #define the size of the bin to make averages in base pairs
 my $min_span_highlight=2000; #define the minimum lenght of a jump in ploidy to be reported in highlights
 my $threshold=int($min_span_highlight / $bin_size);
 #####
+#define a hash of centromere coordinates(+5000 bp on both sides)
+my %centromere=(
+	chr01    => [ "146465", "156582" ],
+    	chr02    => [ "233207", "243323" ],
+    	chr03    => [ "109385", "119501" ],
+   	chr04    => [ "444711", "454821" ],
+        chr05    => [ "146987", "157104" ],
+        chr06    => [ "143510", "153627" ],
+   	chr07    => [ "491920", "502038" ],
+        chr08    => [ "100586", "110703" ],
+        chr09    => [ "350629", "360745" ],
+   	chr10    => [ "431307", "441425" ],
+        chr11    => [ "435129", "445246" ],
+        chr12    => [ "145828", "155947" ],
+   	chr13    => [ "263031", "273149" ],
+        chr14    => [ "623758", "633875" ],
+        chr15    => [ "321584", "331702" ],
+   	chr16    => [ "550957", "561073" ],
+);
 
+#####
 my @path = split( '/' , abs_path($0));
 pop(@path);
 my $local_folder = join('/',@path);
@@ -109,6 +129,7 @@ open (my $firstdev, '>', $sample_name."_deriv.txt");
 chomp(my @PLO = <$fplo>);
 my @highlight_block;
 my @chromosome_block;
+my @centromere_block;
 my $chr_len=10;
 my $prev_chr='chr01';
 #get starting ploidy data from the first line of the file
@@ -129,12 +150,9 @@ my $brkpt1='';
 my $brkpt2='';
 print ($statout "Chromosome\tPred. ploidy\tFr.deviating\n");
 foreach my $line (@PLO){
-
-	#THE FIRST BLOCK OF CODE IDENTIFIES REGIONS WITH "SIGNIFICANT" PLOIDY CHANGES 
-	#AND HIGHLIGHTS THEM IN A FILE
-
-	my @linea=split("\t",$line); 
-	if ( $prev_chr ne $linea[0]){
+	my @linea=split("\t",$line);		#split the line on tabs 0:chr 1:start 2:end 3:ploidy 
+	if ( $prev_chr ne $linea[0]){		# if the current chromosome doesnt match the old we need to calculate per chromosome information
+		
 		my $mean_ploidy;
 		$aneup_fract=$count/$chr_len;
 		if ($aneup_fract <0.25 or $aneup_fract > 0.75){
@@ -145,11 +163,21 @@ foreach my $line (@PLO){
 		}
 		$chr_len=0;
 		$count=0;
-		print ($statout "$prev_chr\t$mean_ploidy\t$aneup_fract\n")	;
+		my $centromere_ploidy=ploidy_mode(@centromere_block);
+		print ($statout "$prev_chr\t$centromere_ploidy\t$aneup_fract\n");
 		@chromosome_block=();
+		@centromere_block=();
 	}
 	$chr_len++;
 	$prev_chr=$linea[0];
+	# if the current slice matches one of the centromeres push the information into a list.
+	if ((($linea[1] >$centromere{$linea[0]}[0]) and  #if the start of the slice is after the start of the centromere and
+	     ($linea[1] <$centromere{$linea[0]}[1])) or  # the start of the slice is before the end of the centromere or
+	    (($linea[2] >$centromere{$linea[0]}[0]) and #the end of the slice is after the start of the centromere and 
+	     ($linea[2] >$centromere{$linea[0]}[0]))){   # the end of the slice is before the end of the centromere
+		push @centromere_block, "$linea[3]"
+	}
+#HERE WE CREATE A HIGHLIGHT FILE THAT CIRCOS CAN USE TO HIGHLIGHT REGIONS OF DIFFERENT PLOIDY
 	#if the line is a "hit" push the line into an highlight array
 	push @chromosome_block, "$linea[3]";	
 	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5)){
@@ -169,6 +197,11 @@ foreach my $line (@PLO){
 		#always re-initialise the @highlight_block array
 		@highlight_block=(); 
 	}
+	
+	
+
+
+
 
 	#THE SECOND BLOCK OF CODE TRIES TO DETECT THE COORDINATES OF THE BREAKPOINTS
 	
@@ -323,7 +356,7 @@ sub chrom_cov{
        		@mean_values = splice (@values, 0, $bin_size);
        		my @mean_positions=();
         	 	@mean_positions = splice (@positions, 0, $bin_size); 
-        		#check wether filtering is on
+        	#check wether filtering is on
 	 	my $skip=0;
 	 	if ($fil){
  			foreach my $range(@curr_filt){
