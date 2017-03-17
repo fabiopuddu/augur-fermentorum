@@ -261,7 +261,8 @@ if ($aneup_fract <0.25 or $aneup_fract > 0.75){
 		else{
 			$mean_ploidy="."
 		}
-print ($statout "$prev_chr\t$mean_ploidy\t$aneup_fract\n");
+my $centromere_ploidy=ploidy_mode(@centromere_block);
+print ($statout "$prev_chr\t$centromere_ploidy\t$aneup_fract\n");
 close ($statout);
 close ($fplo);
 close ($out);
