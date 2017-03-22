@@ -21,17 +21,13 @@ else {
 
 my $totcount=0;
 my $telocount=0;
-my @header_list;
-my $row_head;
 while(my $row=<$fh>){ #read file or STDIN line by line
-	if ($row =~ '@'){$row_head=$row;} #if the row is a header get the data, then
+	chomp $row;
 	next unless $row =~ /^[TAGCN]+$/; #skip line if it does not contain DNA
-	next if $row_head ~~ @header_list; # skip line if we have already seen this header;
-	push @header_list, $row_head;# if we haven't seen the header, push it into our memory
+	next if (length $row < 140); #skip reads that are shorter than expected
 	$totcount++;
 	#next unless $row =~ /TG{1,3}|C{1,3}A/; #skip the line if the DNA does not contain any telomeric sequence
 	next unless $row =~ /(TG){1,3}TG{2,3}|C{2,3}A(CA){1,3}/; #skip the line if the DNA does not contain any telomeric sequence
-	chomp $row;
 #	my %base_numbers= (
 #  			  	"A" => "0",	#
 #    				"C" => "0",	#
