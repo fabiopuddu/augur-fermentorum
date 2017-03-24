@@ -126,6 +126,6 @@ system( "mv temp $input");
 
 # we loop array of commands and execute them one by one
 foreach my $c (@commands) {
-	system("sbatch --wrap=\"$c\" ");	
+	system("sbatch --partition=LONG --wrap=\"$c\" ");	
 }
 	

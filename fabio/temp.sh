@@ -7,7 +7,7 @@ for dir in Del*
 		#printf "Gene: $gene_name\tProcessing...$name\t"
 		#detect_deletion_chr_region.pl $gene_name $line | tr "\t" "\n" | grep Deleted: | sed 's/Deleted://g'
 		command="rDNA-cnv_estimate.pl -i $dir/$line -p 2 > repetitive/$name.txt"
-		sbatch  --wrap="$command"
+		sbatch --partition=LONG  --wrap="$command"
 		printf "$command\n"
 	        done
 		sleep 5

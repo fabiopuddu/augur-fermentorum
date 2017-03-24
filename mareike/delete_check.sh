@@ -63,7 +63,7 @@ do  echo $fol
 						#run the command to get the deletion checked and the information printed into the file 
 						#command1="echo 'test' >> ../$name.temp"
 						command1="detect_deletion_chr_region.pl $gene_name $line >> ../$name.temp"
-						sbatch --error slurm-%j.err --wrap="${command1}" 
+						sbatch --partition=LONG --error slurm-%j.err --wrap="${command1}" 
 					done
     cd ..
 done

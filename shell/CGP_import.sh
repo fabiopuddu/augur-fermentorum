@@ -9,7 +9,7 @@
 #Argument 1 = the command you want to run
 #Argument 2 = any additional argument you want to pass to sbatch
 submit_sbatch(){
-sbatch --output /dev/null --error /dev/null ${1} --wrap="${2}" 
+sbatch --partition=LONG --output /dev/null --error /dev/null ${1} --wrap="${2}" 
 }
 
 #This checks the slurm queue and sleeps until the queue is empty

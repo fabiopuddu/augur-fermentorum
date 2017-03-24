@@ -17,10 +17,10 @@ cat bams_for_mpileup | while read line
 		command3="samtools view -b -F 4 TR_BAMS/$name.Ty.bam > TR_BAMS/$name.Ty.bam.map.bam"
 		command4="mv TR_BAMS/$name.Ty.bam.map.bam TR_BAMS/$name.Ty.bam"
 		command5="samtools index TR_BAMS/$name.Ty.bam"
-		PROC=$(sbatch --wrap="${command1}" | sed 's/Submitted batch job //g') 
-        PROC2=$(sbatch --dependency=afterok:${PROC} --wrap="${command2}" | sed 's/Submitted batch job //g')
-        PROC3=$(sbatch --dependency=afterok:${PROC2} --wrap="${command3}" | sed 's/Submitted batch job //g')
-        PROC4=$(sbatch --dependency=afterok:${PROC3} --wrap="${command4}" | sed 's/Submitted batch job //g')
-        sbatch --dependency=afterok:${PROC4} --wrap="${command5}"
+		PROC=$(sbatch --partition=LONG --wrap="${command1}" | sed 's/Submitted batch job //g') 
+        PROC2=$(sbatch --partition=LONG --dependency=afterok:${PROC} --wrap="${command2}" | sed 's/Submitted batch job //g')
+        PROC3=$(sbatch --partition=LONG --dependency=afterok:${PROC2} --wrap="${command3}" | sed 's/Submitted batch job //g')
+        PROC4=$(sbatch --partition=LONG --dependency=afterok:${PROC3} --wrap="${command4}" | sed 's/Submitted batch job //g')
+        sbatch --partition=LONG --dependency=afterok:${PROC4} --wrap="${command5}"
 	done
 

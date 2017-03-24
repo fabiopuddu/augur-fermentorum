@@ -183,8 +183,8 @@ ls mito.ERS*.vcf.gz | { while read line
 		do if [[ ! -a csq.$line ]]
 				then command1="variant_effect_predictor.pl --species saccharomyces_cerevisiae -i $line  --format vcf -o vep.$line.txt --no_progress --force_overwrite --offline"
 					 command2="vcf2consequences_vep -v $line -i vep.$line.txt 2>/dev/null | bgzip > csq.$line"
-					 PROC1=$(sbatch --wrap="${command1}" | sed 's/Submitted batch job //g') 
-					 PROC2=$(sbatch --dependency=afterok:${PROC1} --wrap="${command2}" | sed 's/Submitted batch job //g')
+					 PROC1=$(sbatch --partition=LONG --wrap="${command1}" | sed 's/Submitted batch job //g') 
+					 PROC2=$(sbatch --partition=LONG --dependency=afterok:${PROC1} --wrap="${command2}" | sed 's/Submitted batch job //g')
 		   			 proclist="${proclist}\|${PROC2}"
 		   fi
 		done
@@ -202,8 +202,8 @@ if [[ $rDNA == 1 ]]
             	do  name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
                     command1="rDNA_cov_extract.pl -i ../$line | sort -n -k1 >  $name.rDNA"
                     command2="rDNA_repeat_estimate.pl -i $name.rDNA >> $name.txt"
-                    PROC1=$(sbatch --wrap="${command1}" | sed 's/Submitted batch job //g') 
-                    PROC2=$(sbatch --dependency=afterok:${PROC1} --wrap="${command2}" | sed 's/Submitted batch job //g')
+                    PROC1=$(sbatch --partition=LONG --wrap="${command1}" | sed 's/Submitted batch job //g') 
+                    PROC2=$(sbatch --partition=LONG --dependency=afterok:${PROC1} --wrap="${command2}" | sed 's/Submitted batch job //g')
                     proclist="${proclist}\|${PROC2}"	 
                 done
                 waitforcompletion "${proclist}"
@@ -233,7 +233,7 @@ if [[ $trnspn == 1 ]]
                                 SC=`echo ${name} | sed 's/.bam.Ty.bam//g' | sed 's/.merged//g' `
                                 ERSnum=`cat "../../name conversion.tsv" | grep -w $SC | cut -f6`;
                                 command="Ty1-5Estimator.pl -i ../TR_BAMS/$name > ${ERSnum}.ty"
-                                sbatch -e slurm.%N.%j.err --wrap="${command}"
+                                sbatch --partition=LONG -e slurm.%N.%j.err --wrap="${command}"
                              done    
 			waitforcompletion
 			sleep 15 
