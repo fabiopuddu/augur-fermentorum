@@ -10,8 +10,8 @@
 			cd $folder
 			if [[ -a bams_for_mpileup ]]
 				then	if [[ $control_samples == '' ]] 
-								then analyser-multi.sh -r -n2 -F -x  >> results.txt &#$folder
-								else analyser-multi.sh -r -n2 -F -C $control_samples >> results.txt &#$folder
+								then analyser-multi.sh -a -r -n2 -F -x  >> results.txt &#$folder
+								else analyser-multi.sh -a -r -n2 -F -C $control_samples >> results.txt &#$folder
 						fi
 			fi
 			cd ..
