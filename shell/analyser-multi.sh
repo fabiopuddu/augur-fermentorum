@@ -646,12 +646,10 @@ printf "========================================================================
 #  CALCULATING/DISPLAYING GENOTYPE TABLE        #
 #                                               #
 #################################################
-
 if [[ show_syno == 1 ]]
 	then get_genotype_table.pl -i hom.table.file -s
 	else get_genotype_table.pl -i hom.table.file
 fi
-
 #################################################
 #                                               #
 #  CALCULATING/DISPLAYING OVERLAP TABLE         #
