@@ -16,10 +16,12 @@ use Getopt::Long;
 
 my ($s);
 my ($input);
+my ($pubmed);
 GetOptions
 (
 's|show_synonymous'   => \$s,
 'i|input=s'	  => \$input,
+'p|pubmed'	  => \$pubmed,
 );
 ( $input && -f $input ) or die qq[Usage: $0 \n
 					 	-i <input file>\n
@@ -84,11 +86,15 @@ foreach my $gt (sort keys %mutations){
 		elsif ($mut =~ m/£x/) {
 		$mut=~ s/£//g;
 		$mut=~ s/x//;
-		(my $a, my $b) = split("-", $mut);
-		chop $b;
-		my $PMCID_NUM=`scraper.py $a $b | wc -l`; #${gen::-1} returns the genotipe minus the last character
-		chop $PMCID_NUM;
-		print color("yellow"), "$mut($PMCID_NUM)\t", color("reset"), ;
+		my $PMCID_NUM='';
+		if ($pubmed){
+			(my $a, my $b) = split("-", $mut);
+			chop $b;
+			$PMCID_NUM=`scraper.py $a $b | wc -l`; #${gen::-1} returns the genotipe minus the last character
+			chop $PMCID_NUM;
+			$PMCID_NUM='('.$PMCID_NUM.')';
+		}
+		print color("yellow"), "$mut$PMCID_NUM\t", color("reset"), ;
 		}
 		elsif ($mut =~ m/>/) {
 		$mut=~ s/£//g;
