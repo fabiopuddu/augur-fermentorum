@@ -206,7 +206,7 @@ if [[   $rDNA == 1 ]]
         	proclist=''
             cat ../bams_for_mpileup |{ while read line; do  
             	name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
-                    command="rDNA-cnv_estimate.pl -i ../$line > $name.txt" 
+                    command="rDNA-cnv_estimate.pl -p ${ploidy} -i ../$line > $name.txt" 
                     echo $command
                     PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
                     proclist="${proclist}\|${PROC1}"
