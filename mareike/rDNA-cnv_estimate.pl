@@ -157,15 +157,12 @@ my $ty5 = 0;
 #split the path 
 my @b = split ('/', $input);
 #get rid of the last three elements
-my $bam = pop @b; pop @b;
+my $bam = pop @b; #pop @b;
 my $sample_name = substr($bam, 0, -4);
 #join and add the others
 my $bam_dir = join ('/',@b);
-my $ty_bam = $bam_dir.'./TR_BAMS/'.$sample_name.'.Ty.bam'; 
+my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam'; 
 my $genome_cov_file = $bam.'.genomewide_median';
-
-#print "$ty_bam\n";
-
 
 #Save Genome Wide Median in a File 
 open(my $FH, '>', $genome_cov_file);

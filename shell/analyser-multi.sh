@@ -593,56 +593,13 @@ perl $DIR/../mareike/vcf_to_gene_list.pl -i experiment_merge.vcf > hom.table.fil
 perl $DIR/../mareike/vcf_to_gene_list_het.pl -i experiment_merge.vcf > het.table.file
 
 #############################################
-#                                            #
-#    REPETITIVE SEQUENCES TABLE                #
-#                                            #
+#                                           #
+#    DISPLAY REPETITIVE DNA TABLE           #
+#                                           #
 #############################################
 
-##############
-#HEADER
-##############
-number_of_samples=0
-echo 'Repetitive Sequences'
-width=43
-headerhap="\n %-10s %8s  %6s %5s %6s   %5s %5s %5s %5s %5s %5s %5s %5s %5s %8s    %8s\n"
-formathap="   %-10s %12s %6s %5s %6.1f %5s %5s %5s %5s %5s %5s %5s %5s %5s %10.1f %5 \n"
-printf "===============================================================================\n"
-printf " $experiment_name \n"
-printf "==============================================================================="
-printf "$headerhap" "ERS NO." " SAMPLE NAME" "REF" "║" "rDNA" "║" "Ty1" "Ty2" "Ty3" "Ty4" "Ty5" "║" "CUP1" "║" "TELOMERS (rpm)" "║"
-printf "===============================================================================\n"
-    
-#########
-## TABLE
-#########
-        for x in sort*.isec.vcf
-        do
-            n=$(echo $x | sed 's/.isec.vcf//g' | sed 's/sort.//g')
-            num=$(echo $n | sed 's/ERS//g')
-            name=`cat ../../name\ conversion.tsv | grep $n | cut -f2`
-            if [[ $rDNA == 1 ]] 
-            	then RDNA=`cat ../repDNA/results.txt | grep "$n" | cut -f2`
-            		 TY1=`cat ../repDNA/results.txt | grep "$n" | cut -f4`; 
-                	 TY2=`cat ../repDNA/results.txt | grep "$n" | cut -f5`
-                     TY3=`cat ../repDNA/results.txt | grep "$n" | cut -f6`
-                     TY4=`cat ../repDNA/results.txt | grep "$n" | cut -f7`
-                     TY5=`cat ../repDNA/results.txt | grep "$n" | cut -f8`
-                     CUP1=`cat ../repDNA/results.txt | grep "$n" | cut -f3`
-		     TEL=`cat ../repDNA/results.txt | grep "$n" | cut -f10`
-            	else RDNA='-1'; TY1='-1'; TEL='-1';
-            fi; #if the rDNA option was set, go in the result file and grab the number
-            #Display results
-            if [[ "$control" =~ "$num"  ]]
-                then
-                    contr='+++'
-                else
-                    contr='-'
-                    number_of_samples=$(($number_of_samples+1))
-            fi
-            printf "$formathap"  $n $name $contr "║" $RDNA "║"  $TY1 $TY2 $TY3 $TY4 $TY5 "║" $CUP1 "║" $TEL "║"
-         done   
-printf "===============================================================================\n"
-#
+get_repetitive_table.pl -i ../repDNA/results.txt
+
 #################################################
 #                                               #
 #  CALCULATING/DISPLAYING GENOTYPE TABLE        #
