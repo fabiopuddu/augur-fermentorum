@@ -22,12 +22,12 @@ aneup=0;
 #  FUNCTIONS                                #
 #############################################
 waitforcompletion(){
-printf "Waiting for jobs $1  to complete"
+if [[ ${v} -eq '1' ]]; then printf "Waiting for jobs $1  to complete"; else printf "Waiting for jobs to complete"; fi
 list="ciao${1}"
 finito=`squeue | grep "${list}" |wc -l | tr -d "\t"`
 while [[ $finito != '0' ]]    
     do  finito=`squeue  | grep "${list}" |wc -l | tr -d "\t"`
-        printf ".${finito}"
+        if [[ ${v} -eq '1' ]]; then printf ".${finito}"; else printf "."; fi
         sleep 5
     done  
 printf "\n"    
@@ -39,16 +39,16 @@ while getopts "sn:hfle:c:C:xvrtFa" opt
     do  case "$opt" in
                         h)  printf "############   HELP   ###############\nOPTIONS\n"
                             printf "\t-h\tThis Help\n"    
-                            printf "\t-f\tForce Rewrite\n"
-                            printf "\t-x\tno control sample(an artificial control containing all the mutations shared between all the samples will be used\n"
                             printf "\t-c\tReference File\n"
-                            printf "\t-C\tMultiple reference files: ERS numbers separated with a comma\n"
-                            printf "\t-l\tmask only very very low quality variants\n"
                             printf "\t-n\tSet ploidy of samples (1 or 2)\n"
+                            printf "\t-C\tMultiple reference files: ERS numbers separated with a comma\n"
+                            printf "\t-x\tno control sample(an artificial control containing all the mutations shared between all the samples will be used\n"
                             printf "\t-r\tanalyse repetitive regions in the samples\n"
-                            printf "\t-v\tverbose: print out detailed analysis progression\n"
-                            printf "\t-s\tsynonimous: print out details on synonimous mutations\n"
                             printf "\t-a\taneuploidy: generate ploidy circos charts for every file analysed\n"
+                            printf "\t-f\tForce Rewrite: clear all previous analysis before restarting\n"
+                            printf "\t-v\tverbose: print out detailed analysis progression\n"
+                            printf "\t-l\tmask only very very low quality variants\n"
+                            printf "\t-s\tsynonimous: print out details on synonimous mutations\n"  
                             exit 0
                         ;;
                         F)
@@ -127,6 +127,7 @@ fi
 ###################################
 ##CLEANUP IN CASE OF FORCE REWRITE
 ###################################
+echo "Verbosity ${v}"
 if [[ $hard_force_rewrite == '1' ]]
     then echo 'force rewrite' 
         rm -rf analysis
@@ -206,7 +207,7 @@ if [[   $rDNA == 1 ]]
             do  
                name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
                command="rDNA-cnv_estimate.pl -p ${ploidy} -i ../$line > $name.txt" 
-               echo $command
+               if [[ ${v} -eq '1' ]]; then echo $command; fi
                PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
                proclist="${proclist}\|${PROC1}"
       	     command="zcat ../BAM/${name}.fq1.gz ../BAM/${name}.fq2.gz | telomeres.pl 5  > ${name}.tel"
@@ -219,7 +220,7 @@ fi
 ##        Analyse ploidy      ##
 ################################
 if [[ $aneup == 1 ]]
-    then printf "Analysing ploidy"
+    then printf "Analysing ploidy...\n"
          mkdir ploidy_data 
          cd ploidy_data
          while read -r line
@@ -228,7 +229,7 @@ if [[ $aneup == 1 ]]
          	    code2=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 7`
          	    name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
          	    command="CGH.pl -i ../$line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
-         	    echo ${command}
+         	    if [[ ${v} -eq '1' ]]; then echo ${command}; fi
          	    PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
          	    proclist="${proclist}\|${PROC1}"
            done < <(cat ../bams_for_mpileup)
@@ -250,6 +251,7 @@ if [[   $rDNA == 1 ]]
                         done
              cd ..		
 fi
+########  ANEUPLOIDY DNA POSTPROCESSING  #############
 if [[ $aneup == 1 ]]
 	then cd ploidy_data
 	        montage -geometry 1200x1200 png/*.png aneuploidy_report.png #mount all the images in a single file
@@ -257,26 +259,32 @@ if [[ $aneup == 1 ]]
 fi
 
 #####################################
-#### START MUTATION ANALYSIS     #####
+#### START MUTATION ANALYSIS    #####
 #####################################
+
 ###################################
 ####NORMALISATION AND PRELIMINARY FILTERS
 ####################################
+
 #NORMALIZATION OF INDEL ANNOTATION
 sleep 10
 cd analysis
 printf "Normalising indels.... \n"
 for f in csq.*.vcf.gz 
-        do     if [[ ! -a norm.$f ]]
-                then printf "Normalising $f ..." 
-                     n=`echo $f | sed 's|csq.mito.||g' | sed 's|.vcf.gz||g'`
-                     bcftools norm -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa $f | bgzip > $n.vcf.gz
-                else printf "\n Skipping $f"
-            fi                     
-        done         
+   do  if [[ ! -a norm.$f ]]
+         then if [[ ${v} -eq '1' ]]; then printf "Normalising $f ..."; fi
+              n=`echo $f | sed 's|csq.mito.||g' | sed 's|.vcf.gz||g'`
+	    if [[ ${v} -eq '1' ]]; 
+	        then  bcftools norm -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa $f | bgzip > $n.vcf.gz
+      	        else  bcftools norm -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa $f 2>/dev/null| bgzip > $n.vcf.gz
+              fi       
+         else if [[ ${v} -eq '1' ]]; then printf "\n Skipping $f"; fi 
+       fi                     
+   done  
+#INITIAL SORTING OF MUTATIONS IN VCF FILES, GZIPPING AND TABIX               
 printf 'Sorting mutations...'
 isec_files=(*isec.vcf)
-    if [[ ! -e "${isec_files[0]}" || "$force_rewrite" == "1" ]]
+    if [[ ! -e "${isec_files[0]}" ]]
       then for x in ERS*.vcf.gz
         do  n=$(echo $x | sed 's/.vcf.gz//g')
             zcat $x | vcf-sort > sort.$n.vcf 2>/dev/null
@@ -602,7 +610,7 @@ perl $DIR/../mareike/vcf_to_gene_list_het.pl -i experiment_merge.vcf > het.table
 #                                           #
 #############################################
 
-if [[ rDNA ]]
+if [[ ${rDNA} ]]
 	then get_repetitive_table.pl -i ../repDNA/results.txt
 fi
 #################################################
@@ -610,7 +618,7 @@ fi
 #  CALCULATING/DISPLAYING GENOTYPE TABLE        #
 #                                               #
 #################################################
-if [[ show_syno == 1 ]]
+if [[ ${show_syno} == 1 ]]
 	then get_genotype_table.pl -i hom.table.file -s
 	else get_genotype_table.pl -i hom.table.file
 fi
