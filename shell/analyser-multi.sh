@@ -193,61 +193,67 @@ while read -r line
                 proclist="${proclist}\|${PROC2}"
        fi
     done < <(ls mito.ERS*.vcf.gz)
-waitforcompletion "${proclist}" 
+cd ..    
 #########################################
 ##        ANALYSE repetitive DNA       ##
 #########################################
 #if [[  "$force_rewrite" == "1"  && $rDNA == 1 ]] 
 if [[   $rDNA == 1 ]] 
     then    printf "Analysing repetitive DNA sequences ...\n"
-            mkdir -p ../repDNA
-        	  cd ../repDNA
-        	proclist=''
-          while read -r line ; do  
-            	name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
-                    command="rDNA-cnv_estimate.pl -p ${ploidy} -i ../$line > $name.txt" 
-                    echo $command
-                    PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
-                    proclist="${proclist}\|${PROC1}"
-      		command="zcat ../BAM/${name}.fq1.gz ../BAM/${name}.fq2.gz | telomeres.pl 5  > ${name}.tel"
-                    PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
-                    proclist="${proclist}\|${PROC1}"  	 
+            mkdir -p repDNA
+        	  cd repDNA
+            while read -r line ; 
+            do  
+               name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
+               command="rDNA-cnv_estimate.pl -p ${ploidy} -i ../$line > $name.txt" 
+               echo $command
+               PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
+               proclist="${proclist}\|${PROC1}"
+      	     command="zcat ../BAM/${name}.fq1.gz ../BAM/${name}.fq2.gz | telomeres.pl 5  > ${name}.tel"
+               PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
+               proclist="${proclist}\|${PROC1}"  	 
              done < <(cat ../bams_for_mpileup)
-            waitforcompletion "${proclist}"         
-            ls *.txt | while read line
-                       do 	result=`cat $line`
- 		          name=`echo $line | sed 's|\.txt||g'`
-		          telomere=`cat $name.tel`
-                        	ERSnum=`cat "../../name conversion.tsv" | grep -w $name | cut -f7` ############################################### Might have to be changed back to f6
-                     	  	Delname=`cat "../../name conversion.tsv" | grep -w $name | cut -f2`
-	                       	printf "$result\t${telomere}\t$ERSnum\t$Delname\n" >> results.txt
-                     	done
-            cd ../analysis
+             cd ..
 fi
-sleep 5
-
-#########################################
-##        Analyse and report ploidy      ##
-#########################################
-
+################################
+##        Analyse ploidy      ##
+################################
 if [[ $aneup == 1 ]]
     then printf "Analysing ploidy"
-         cd ..
          mkdir ploidy_data 
          cd ploidy_data
-         proclist=''
-         while read -r line; do
-         		code1=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1` #SCMFY or #SD code
-         		code2=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 7`
-         		name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
-         		command="CGH.pl -i ../$line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
-         		echo ${command}
-         		PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
-         		proclist="${proclist}\|${PROC1}"
-         done < <(cat ../bams_for_mpileup)
-          waitforcompletion "${proclist}"
-        montage -geometry 1200x1200 png/*.png aneuploidy_report.png #mount all the images in a single file
-	cd ../analysis	
+         while read -r line
+            do
+         	    code1=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1` #SCMFY or #SD code
+         	    code2=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 7`
+         	    name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
+         	    command="CGH.pl -i ../$line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
+         	    echo ${command}
+         	    PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
+         	    proclist="${proclist}\|${PROC1}"
+           done < <(cat ../bams_for_mpileup)
+         cd ..	
+fi
+######## Wait for the parallel computing to be finished ########
+waitforcompletion "${proclist}"      
+########  REPETITIVE DNA POSTPROCESSING  #############
+if [[   $rDNA == 1 ]] 
+    then    cd repDNA
+            ls *.txt | while read line
+                       do  
+                          result=`cat $line`
+ 		      name=`echo $line | sed 's|\.txt||g'`
+	                telomere=`cat $name.tel`
+                          ERSnum=`cat "../../name conversion.tsv" | grep -w $name | cut -f7` ############################################### Might have to be changed back to f6
+                          Delname=`cat "../../name conversion.tsv" | grep -w $name | cut -f2`
+	                printf "$result\t${telomere}\t$ERSnum\t$Delname\n" >> results.txt
+                        done
+             cd ..		
+fi
+if [[ $aneup == 1 ]]
+	then cd ploidy_data
+	        montage -geometry 1200x1200 png/*.png aneuploidy_report.png #mount all the images in a single file
+                cd ..
 fi
 
 #####################################
@@ -258,6 +264,7 @@ fi
 ####################################
 #NORMALIZATION OF INDEL ANNOTATION
 sleep 10
+cd analysis
 printf "Normalising indels.... \n"
 for f in csq.*.vcf.gz 
         do     if [[ ! -a norm.$f ]]
