@@ -65,11 +65,11 @@ for my $line (@NC){
 
 print "REPETITIVE DNA QUANTIFICATION";
 print "\n=========================================================================================================================================================================\n";
-print "ERS.NO\tSample name\trDNA\tCUP1\tTy1\tTy2\tTy3\tTy4\tTy5\tTelomeres\tMitochondrial DNA\n";
+print "ERS.NO\tSample name\t\trDNA\tCUP1\tTy1\tTy2\tTy3\tTy4\tTy5\tTelomeres\tMitochondrial DNA\n";
 print "=========================================================================================================================================================================\n";
 #run through the has sorted by keys name
 foreach my $ERSNO (@SAMPLES){
-	print "$ERSNO\t$nc{$ERSNO}\t$rDNA{$ERSNO}\t$CUP1{$ERSNO}\t$ty1{$ERSNO}\t$ty2{$ERSNO}\t$ty3{$ERSNO}\t$ty4{$ERSNO}\t$ty5{$ERSNO}\t$telo{$ERSNO}\t$mito{$ERSNO}\t";#print the key (current sample ERS number)
+	print "$ERSNO\t$nc{$ERSNO}\t\t$rDNA{$ERSNO}\t$CUP1{$ERSNO}\t$ty1{$ERSNO}\t$ty2{$ERSNO}\t$ty3{$ERSNO}\t$ty4{$ERSNO}\t$ty5{$ERSNO}\t$telo{$ERSNO}\t$mito{$ERSNO}\t";#print the key (current sample ERS number)
 	
 	print "\n"
 }
