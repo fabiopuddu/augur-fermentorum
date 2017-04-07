@@ -184,17 +184,16 @@ cd ../analysis
 ###VARIANT EFFECT PREDICTION
 ####################################
 proclist=''
-ls mito.ERS*.vcf.gz | { while read line 
-		do if [[ ! -a csq.$line ]]
-				then command1="variant_effect_predictor.pl --species saccharomyces_cerevisiae -i $line  --format vcf -o vep.$line.txt --no_progress --force_overwrite --offline"
-					 command2="vcf2consequences_vep -v $line -i vep.$line.txt 2>/dev/null | bgzip > csq.$line"
-					 PROC1=$(sbatch --partition=LONG  --wrap="${command1}" | sed 's/Submitted batch job //g') 
-					 PROC2=$(sbatch --partition=LONG  --dependency=afterok:${PROC1} --wrap="${command2}" | sed 's/Submitted batch job //g')
-		   			 proclist="${proclist}\|${PROC2}"
-		   fi
-		done
+while read -r line 
+    do if [[ ! -a csq.$line ]]
+           then command1="variant_effect_predictor.pl --species saccharomyces_cerevisiae -i $line  --format vcf -o vep.$line.txt --no_progress --force_overwrite --offline"
+                command2="vcf2consequences_vep -v $line -i vep.$line.txt 2>/dev/null | bgzip > csq.$line"
+                PROC1=$(sbatch --partition=LONG  --wrap="${command1}" | sed 's/Submitted batch job //g') 
+                PROC2=$(sbatch --partition=LONG  --dependency=afterok:${PROC1} --wrap="${command2}" | sed 's/Submitted batch job //g')
+                proclist="${proclist}\|${PROC2}"
+       fi
+    done < <(ls mito.ERS*.vcf.gz)
 waitforcompletion "${proclist}" 
-}
 #########################################
 ##        ANALYSE repetitive DNA       ##
 #########################################
@@ -202,9 +201,9 @@ waitforcompletion "${proclist}"
 if [[   $rDNA == 1 ]] 
     then    printf "Analysing repetitive DNA sequences ...\n"
             mkdir -p ../repDNA
-        	cd ../repDNA
+        	  cd ../repDNA
         	proclist=''
-            cat ../bams_for_mpileup |{ while read line; do  
+          while read -r line ; do  
             	name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
                     command="rDNA-cnv_estimate.pl -p ${ploidy} -i ../$line > $name.txt" 
                     echo $command
@@ -213,9 +212,8 @@ if [[   $rDNA == 1 ]]
       		command="zcat ../BAM/${name}.fq1.gz ../BAM/${name}.fq2.gz | telomeres.pl 5  > ${name}.tel"
                     PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
                     proclist="${proclist}\|${PROC1}"  	 
-             done
-            waitforcompletion "${proclist}"
-            }                
+             done < <(cat ../bams_for_mpileup)
+            waitforcompletion "${proclist}"         
             ls *.txt | while read line
                        do 	result=`cat $line`
  		          name=`echo $line | sed 's|\.txt||g'`
@@ -238,7 +236,7 @@ if [[ $aneup == 1 ]]
          mkdir ploidy_data 
          cd ploidy_data
          proclist=''
-         cat ../bams_for_mpileup |{ while read line; do
+         while read -r line; do
          		code1=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1` #SCMFY or #SD code
          		code2=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 7`
          		name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
@@ -246,9 +244,8 @@ if [[ $aneup == 1 ]]
          		echo ${command}
          		PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
          		proclist="${proclist}\|${PROC1}"
-         done
+         done < <(cat ../bams_for_mpileup)
           waitforcompletion "${proclist}"
-         }
         montage -geometry 1200x1200 png/*.png aneuploidy_report.png #mount all the images in a single file
 	cd ../analysis	
 fi
@@ -598,8 +595,9 @@ perl $DIR/../mareike/vcf_to_gene_list_het.pl -i experiment_merge.vcf > het.table
 #                                           #
 #############################################
 
-get_repetitive_table.pl -i ../repDNA/results.txt
-
+if [[ rDNA ]]
+	then get_repetitive_table.pl -i ../repDNA/results.txt
+fi
 #################################################
 #                                               #
 #  CALCULATING/DISPLAYING GENOTYPE TABLE        #
