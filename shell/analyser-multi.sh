@@ -237,20 +237,7 @@ if [[ $aneup == 1 ]]
 fi
 ######## Wait for the parallel computing to be finished ########
 waitforcompletion "${proclist}"      
-########  REPETITIVE DNA POSTPROCESSING  #############
-if [[   $rDNA == 1 ]] 
-    then    cd repDNA
-            ls *.txt | while read line
-                       do  
-                          result=`cat $line`
- 		      name=`echo $line | sed 's|\.txt||g'`
-	                telomere=`cat $name.tel`
-                          ERSnum=`cat "../../name conversion.tsv" | grep -w $name | cut -f7` ############################################### Might have to be changed back to f6
-                          Delname=`cat "../../name conversion.tsv" | grep -w $name | cut -f2`
-	                printf "$result\t${telomere}\t$ERSnum\t$Delname\n" >> results.txt
-                        done
-             cd ..		
-fi
+
 ########  ANEUPLOIDY DNA POSTPROCESSING  #############
 if [[ $aneup == 1 ]]
 	then cd ploidy_data
@@ -604,15 +591,6 @@ printf "\n"
 perl $DIR/../mareike/vcf_to_gene_list.pl -i experiment_merge.vcf > hom.table.file
 perl $DIR/../mareike/vcf_to_gene_list_het.pl -i experiment_merge.vcf > het.table.file
 
-#############################################
-#                                           #
-#    DISPLAY REPETITIVE DNA TABLE           #
-#                                           #
-#############################################
-
-if [[ ${rDNA} ]]
-	then get_repetitive_table.pl -i ../repDNA/results.txt
-fi
 #################################################
 #                                               #
 #  CALCULATING/DISPLAYING GENOTYPE TABLE        #
@@ -622,6 +600,18 @@ if [[ ${show_syno} == 1 ]]
 	then get_genotype_table.pl -i hom.table.file -s
 	else get_genotype_table.pl -i hom.table.file
 fi
+printf "\n"
+#############################################
+#                                           #
+#    DISPLAY REPETITIVE DNA TABLE           #
+#                                           #
+#############################################
+if [[ ${rDNA} ]]
+	then cd ../repDNA
+		get_repetitive_table.pl -i ../../name\ conversion.tsv
+	     cd ../analysis	
+fi
+printf "\n"
 #################################################
 #                                               #
 #  CALCULATING/DISPLAYING OVERLAP TABLE         #
