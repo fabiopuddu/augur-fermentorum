@@ -83,15 +83,24 @@ foreach my $ERSNO (keys %bcID) {
 }
 
 print "REPETITIVE DNA QUANTIFICATION";
-my   $header="%-13s%10s%7s%6s%6s%8s%7s%6s%6s%6s%6s%6s%6s%16s%5s%14s%4s\n";
-my $format="\n%-13s%10s%8s%7s%5s%8s%8s%6s%6s%6s%6s%6s%5s%12s%10s%8s%10s";
-print "\n============================================================================================================================\n";
+my   $header="%-13s%10s%7s%6s%11s%12s%7s%6s%6s%6s%6s%6s%6s%20s%7s%14s%8s\n";
+my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%10s";
+print "\n===============================================================================================================================================\n";
 printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "║");
-print "============================================================================================================================";
+print "===============================================================================================================================================";
 foreach my $ERSNO (sort @SAMPLES){
-	printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO}","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO}","║","$mito{$ERSNO}", "║");#print the key (current sample ERS number)
+	my $rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$rDNA{$control};
+	my $mito_var=sprintf "%.2f", $mito{$ERSNO}/$mito{$control};
+	my $tel_var=sprintf "%.2f", $telo{$ERSNO}/$telo{$control};
+	if ($ERSNO eq $control){
+		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)", "║");#print the key (current sample ERS number)
+	}
+	else{
+		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "║");#print the key (current sample ERS number)
+	
+	}
 }
-print "\n============================================================================================================================\n";
+print "\n===============================================================================================================================================\n";
 
 open (my $outfile, '>', 'results.txt');
 #print $outfile, "REPETITIVE DNA QUANTIFICATION";
