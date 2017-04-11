@@ -4,8 +4,8 @@
 	for folder in Del*
 		do 	
 			del_number=`echo $folder | tr '_' "\n" | head -n1` #Identify which deletion strain we are working on
-			control_samples=`cat name\ conversion.tsv | grep "$del_number"'_' | grep C0[0123456789][0123456789] | grep -o ERS.* | tr "\n" ',' | sed 's/,*$//' | sed 's/ERS//g' `  #identify the ERS numbers of the control samples.
-			control_samples=`cat name\ conversion.tsv | grep "$del_number"'_' | grep C0[0123456789][0123456789] | grep -o ERS.* | head -n1 | tr "\n" ',' | sed 's/,*$//' | sed 's/ERS//g' `  #identify the ERS numbers of the control samples.
+			control_samples=`cat name\ conversion.tsv | grep "$del_number"'_' | grep C0[0123456789][0123456789] | grep -o ERS.* | tr "\n" ',' | sed 's/,*$//' `  #identify the ERS numbers of the control samples.
+			control_samples=`cat name\ conversion.tsv | grep "$del_number"'_' | grep C0[0123456789][0123456789] | grep -o ERS.* | head -n1 | tr "\n" ',' | sed 's/,*$//' ` #added head -n1 to only get one control #identify the ERS numbers of the control samples.
 			echo $control_samples
 			cd $folder
 			if [[ -a bams_for_mpileup ]]

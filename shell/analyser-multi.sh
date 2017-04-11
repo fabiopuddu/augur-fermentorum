@@ -58,7 +58,7 @@ while getopts "sn:hfle:c:C:xvrtFa" opt
                         show_syno=1
                         ;;
                         c)
-                        control="ERS$OPTARG"
+                        control="$OPTARG"
                         ;;
                         n)
                         ploidy="$OPTARG"
@@ -608,7 +608,7 @@ printf "\n"
 #############################################
 if [[ ${rDNA} ]]
 	then cd ../repDNA
-		get_repetitive_table.pl -i ../../name\ conversion.tsv
+		get_repetitive_table.pl -i ../../name\ conversion.tsv -c ${control}
 	     cd ../analysis	
 fi
 printf "\n"
