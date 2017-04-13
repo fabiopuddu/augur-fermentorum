@@ -45,7 +45,7 @@ while getopts "sn:hfle:c:C:xvrtFa" opt
                             printf "\t-x\tno control sample(an artificial control containing all the mutations shared between all the samples will be used\n"
                             printf "\t-r\tanalyse repetitive regions in the samples\n"
                             printf "\t-a\taneuploidy: generate ploidy circos charts for every file analysed\n"
-                            printf "\t-f\tForce Rewrite: clear all previous analysis before restarting\n"
+                            printf "\t-F\tForce Rewrite: clear all previous analysis before restarting\n"
                             printf "\t-v\tverbose: print out detailed analysis progression\n"
                             printf "\t-l\tmask only very very low quality variants\n"
                             printf "\t-s\tsynonimous: print out details on synonimous mutations\n"  
@@ -88,8 +88,12 @@ while getopts "sn:hfle:c:C:xvrtFa" opt
 if [[ $control == '0000' && $no_ctrl == '0' ]]
     then    echo "Please specify the ERS number of the reference sample with the flag -c or -C"
             exit 1
-    else echo "Reference: $control"
 fi
+if [[ ! $control =~ "ERS"  ]]
+    then    echo "Please specify the ERS number of the reference sample in the ERSXXXXXX format"
+            exit 1
+    else echo "Reference: $control"
+fi        
 if [[ $ploidy == '0' ]]
     then    echo "Please specify the ploidy of the sample with the flag -n"
             exit 1

@@ -24,7 +24,7 @@ my $telocount=0;
 while(my $row=<$fh>){ #read file or STDIN line by line
 	chomp $row;
 	next unless $row =~ /^[TAGCN]+$/; #skip line if it does not contain DNA
-	next if (length $row < 140); #skip reads that are shorter than expected
+	next if (length $row < 100); #skip reads that are shorter than expected
 	$totcount++;
 	#next unless $row =~ /TG{1,3}|C{1,3}A/; #skip the line if the DNA does not contain any telomeric sequence
 	next unless $row =~ /(TG){1,3}TG{2,3}|C{2,3}A(CA){1,3}/; #skip the line if the DNA does not contain any telomeric sequence
