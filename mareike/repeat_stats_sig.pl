@@ -1175,7 +1175,7 @@ for my $out (sort keys %Tel_results_low){
 close $fh15;
 
 #LOWER Tel - print to file
-open(my $fh16, '>', 'TEl_+.txt');
+open(my $fh16, '>', 'TEL_+.txt');
 for my $out (sort keys %Tel_results_high){
 	print $fh16 "$out\t$Tel_results_high{$out}\n";
 }
