@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 use strict;
 use warnings;
 #This scripts runs through the deletion check log file and the name conversion file to determine
