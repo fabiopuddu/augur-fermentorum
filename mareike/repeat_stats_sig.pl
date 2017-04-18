@@ -1044,14 +1044,14 @@ foreach my $SD (keys %Tel_Sig_high){
 
 ###################### rDNA ##########################
 #LOWER rDNA - print to file
-open(my $fh, '>', 'rDNA_lower_sig_genes.txt');
+open(my $fh, '>', 'rDNA_-.txt');
 for my $out (sort keys %rDNA_results_low){
 	print $fh "$out\t$rDNA_results_low{$out}\n";
 }
 close $fh;
 
 #LOWER rDNA - print to file
-open(my $fh2, '>', 'rDNA_high_sig_genes.txt');
+open(my $fh2, '>', 'rDNA_+.txt');
 for my $out (sort keys %rDNA_results_high){
 	print $fh2 "$out\t$rDNA_results_high{$out}\n";
 }
@@ -1059,14 +1059,14 @@ close $fh2;
 
 ###################### CUP1 ##########################
 #LOWER Cup1 - print to file
-open(my $fh3, '>', 'CUP1_lower_sig_genes.txt');
+open(my $fh3, '>', 'CUP1_-.txt');
 for my $out (sort keys %CUP1_results_low){
 	print $fh3 "$out\t$CUP1_results_low{$out}\n";
 }
 close $fh3;
 
 #LOWER Cup1 - print to file
-open(my $fh4, '>', 'CUP1_high_sig_genes.txt');
+open(my $fh4, '>', 'CUP1_+.txt');
 for my $out (sort keys %CUP1_results_high){
 	print $fh4 "$out\t$CUP1_results_high{$out}\n";
 }
@@ -1074,14 +1074,14 @@ close $fh4;
 
 ###################### Mito ##########################
 #LOWER Mito - print to file
-open(my $fh31, '>', 'Mito_lower_sig_genes.txt');
+open(my $fh31, '>', 'M_-.txt');
 for my $out (sort keys %Mito_results_low){
 	print $fh31 "$out\t$Mito_results_low{$out}\n";
 }
 close $fh31;
 
 #LOWER Mito - print to file
-open(my $fh41, '>', 'Mito_high_sig_genes.txt');
+open(my $fh41, '>', 'M_+.txt');
 for my $out (sort keys %Mito_results_high){
 	print $fh41 "$out\t$Mito_results_high{$out}\n";
 }
@@ -1091,14 +1091,14 @@ close $fh41;
 
 ###################### Ty1 ##########################
 #LOWER Ty1 - print to file
-open(my $fh5, '>', 'Ty1_lower_sig_genes.txt');
+open(my $fh5, '>', 'T1_-.txt');
 for my $out (sort keys %Ty1_results_low){
 	print $fh5 "$out\t$Ty1_results_low{$out}\n";
 }
 close $fh5;
 
 #LOWER Ty1 - print to file
-open(my $fh6, '>', 'Ty1_high_sig_genes.txt');
+open(my $fh6, '>', 'T1_+.txt');
 for my $out (sort keys %Ty1_results_high){
 	print $fh6 "$out\t$Ty1_results_high{$out}\n";
 }
@@ -1106,14 +1106,14 @@ close $fh6;
 
 ###################### Ty2 ##########################
 #LOWER Ty2 - print to file
-open(my $fh7, '>', 'Ty2_lower_sig_genes.txt');
+open(my $fh7, '>', 'T2_-.txt');
 for my $out (sort keys %Ty2_results_low){
 	print $fh7 "$out\t$Ty2_results_low{$out}\n";
 }
 close $fh7;
 
 #LOWER Ty2 - print to file
-open(my $fh8, '>', 'Ty2_high_sig_genes.txt');
+open(my $fh8, '>', 'T2_+.txt');
 for my $out (sort keys %Ty2_results_high){
 	print $fh8 "$out\t$Ty2_results_high{$out}\n";
 }
@@ -1121,14 +1121,14 @@ close $fh8;
 
 ###################### Ty3 ##########################
 #LOWER Ty3 - print to file
-open(my $fh9, '>', 'Ty3_lower_sig_genes.txt');
+open(my $fh9, '>', 'T3_-.txt');
 for my $out (sort keys %Ty3_results_low){
 	print $fh9 "$out\t$Ty3_results_low{$out}\n";
 }
 close $fh9;
 
 #LOWER Ty3 - print to file
-open(my $fh10, '>', 'Ty3_high_sig_genes.txt');
+open(my $fh10, '>', 'T3_+.txt');
 for my $out (sort keys %Ty3_results_high){
 	print $fh10 "$out\t$Ty3_results_high{$out}\n";
 }
@@ -1137,14 +1137,14 @@ close $fh10;
 
 ###################### Ty4 ##########################
 #LOWER Ty4 - print to file
-open(my $fh11, '>', 'Ty4_lower_sig_genes.txt');
+open(my $fh11, '>', 'T4_-.txt');
 for my $out (sort keys %Ty4_results_low){
 	print $fh11 "$out\t$Ty4_results_low{$out}\n";
 }
 close $fh11;
 
 #LOWER Ty4 - print to file
-open(my $fh12, '>', 'Ty4_high_sig_genes.txt');
+open(my $fh12, '>', 'T4_+.txt');
 for my $out (sort keys %Ty4_results_high){
 	print $fh12 "$out\t$Ty4_results_high{$out}\n";
 }
@@ -1153,14 +1153,14 @@ close $fh12;
 
 ###################### Ty5 ##########################
 #LOWER Ty5 - print to file
-open(my $fh13, '>', 'Ty5_lower_sig_genes.txt');
+open(my $fh13, '>', 'T5_-.txt');
 for my $out (sort keys %Ty5_results_low){
 	print $fh13 "$out\t$Ty5_results_low{$out}\n";
 }
 close $fh13;
 
 #LOWER Ty5 - print to file
-open(my $fh14, '>', 'Ty5_high_sig_genes.txt');
+open(my $fh14, '>', 'T5_+.txt');
 for my $out (sort keys %Ty5_results_high){
 	print $fh14 "$out\t$Ty5_results_high{$out}\n";
 }
@@ -1168,14 +1168,14 @@ close $fh14;
 
 ###################### Tel ##########################
 #LOWER Tel - print to file
-open(my $fh15, '>', 'Tel_lower_sig_genes.txt');
+open(my $fh15, '>', 'TEL_-.txt');
 for my $out (sort keys %Tel_results_low){
 	print $fh15 "$out\t$Tel_results_low{$out}\n";
 }
 close $fh15;
 
 #LOWER Tel - print to file
-open(my $fh16, '>', 'Tel_high_sig_genes.txt');
+open(my $fh16, '>', 'TEl_+.txt');
 for my $out (sort keys %Tel_results_high){
 	print $fh16 "$out\t$Tel_results_high{$out}\n";
 }
