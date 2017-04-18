@@ -50,5 +50,7 @@ foreach my $row (@UPDOWN){
 	printf  $out "$match_pos\t-1\t$cn\n" if /$gene/i ~~ @DOWN;
 }
 close ($out);
-system("gnuplot /mnt/home1/jackson/fp305/sw/bin/PF/gnuplot/results_genomeplot.gpl");
+my $command="gnuplot -e \"t1='$filename_prefix"."+'; t2='$filename_prefix"."-';\" /mnt/home1/jackson/fp305/sw/bin/PF/gnuplot/results_genomeplot.gpl";
+printf "$command\n";
+system($command);
 system("rm tempdata.tsv");
