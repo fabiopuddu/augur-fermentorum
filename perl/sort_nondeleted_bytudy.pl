@@ -25,7 +25,7 @@ foreach my $plate (@plate_list){
 		push @SDnumbers, $linea[4];
 	}
 	foreach my $sample(@SDnumbers){
-	my $matching_line= (grep { $_ =~ $sample } @DL)[0];	
+	my $matching_line= (grep { $_ =~ /\b$sample\b/ } @DL)[0];	
 	my $answer=(split "\t", $matching_line)[2];
 	if (defined $answer && length $answer > 0) {$result{$answer}++}
 	else {$result{'FAIL'}++}
