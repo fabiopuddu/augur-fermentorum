@@ -36,4 +36,5 @@ set palette defined (   0 '#E9644B',\
                              6 '#E4D335',\
                               6 '#111111',\
                                7 '#111111')
-plot "<awk '{$1=\"\"}1' ane.txt | sed '1 d'"  matrix axes x2y1 with image notitle 
+#awk: remove the first column, sed removes the first line (header)
+plot "<awk '{$1=\"\"}1' ane.txt | sed '1 d' | awk 'NF{NF-=1};1'"  matrix axes x2y1 with image notitle 
