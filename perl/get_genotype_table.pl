@@ -4,6 +4,7 @@ use warnings;
 use Data::Dumper;
 use Term::ANSIColor;
 use Getopt::Long;
+use List::Util 1.33 'any';
 
 #################################################
 #                                               #
@@ -77,7 +78,12 @@ print "Differential Genotype";
 print "\n=========================================================================================================================================================\n";
 #run through the has sorted by keys name
 foreach my $gt (sort keys %mutations){
+	if (any { /TOP1/ } @{$mutations{$gt}}) {
+	print color("red"), "$gt\t$nc{$gt}\t", color("reset");#print the key (current sample ERS number)
+	}
+	else{
 	print "$gt\t$nc{$gt}\t";#print the key (current sample ERS number)
+	}
 	for my $mut(@{$mutations{$gt}}){
 		if (($mut =~ m/FS@/) or ($mut =~ m/£Δ/)){
 		$mut=~ s/£//g;
