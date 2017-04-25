@@ -6608,3 +6608,96 @@ S000113587	YIL102C-A	""	""	""	228
 S000113589	YPR145C-A	""	""	""	237
 S000113613	YDR014W-A	HED1	High copy suppressor of rED1	""	489
 S000122558	YPR010C-A	""	""	""	362
+S000000067	YAR009C	""	""	truncated gag-pol fusion protein YARCTyB1-1	3591
+S000000068	YAR010C	""	""	gag protein YARCTyA1-1	1323
+S000000524	YCL019W	""	""	gag-pol fusion protein	5314
+S000000525	YCL020W	""	""	gag protein	1317
+S000000940	YER138C	""	""	gag-pol fusion protein	5269
+S000000962	YER160C	""	""	gag-pol fusion protein	5269
+S000002146	YBL005W-A	""	""	gag protein	1323
+S000002147	YBL005W-B	""	""	gag-pol fusion protein	5269
+S000002148	YBL100W-A	""	""	gag protein TY2A_B YBL101W-A	1317
+S000002149	YBL100W-B	""	""	gag-pol fusion protein YBL101W-B TY2B_B	5314
+S000002154	YBR012W-A	""	""	gag protein	1323
+S000002155	YBR012W-B	""	""	gag-pol fusion protein	5272
+S000002962	YFL002W-A	""	""	gag-pol fusion protein	5314
+S000002963	YFL-TyB	""	""	""	""
+S000003534	YHR214C-B	""	""	gag-pol fusion protein	5383
+S000003537	YIL082W-A	""	""	gag-pol fusion protein	4498
+S000003649	YJL113W	""	""	gag-pol fusion protein	4648
+S000003650	YJL114W	""	""	gag protein	681
+S000003787	YJR026W	""	""	gag protein	1323
+S000003788	YJR027W	""	""	gag-pol fusion protein	5269
+S000003789	YJR028W	""	""	gag protein	1323
+S000003790	YJR029W	""	""	gag-pol fusion protein	5269
+S000004503	YML039W	""	""	gag-pol fusion protein	5269
+S000004504	YML040W	""	""	gag protein	1323
+S000004508	YML045W	""	""	gag-pol fusion protein	5269
+S000004648	YMR045C	""	""	gag-pol fusion protein	5269
+S000004649	YMR046C	""	""	gag protein	1323
+S000004653	YMR050C	""	""	gag-pol fusion protein	5269
+S000004654	YMR051C	""	""	gag protein	1323
+S000007225	YLR035C-A	""	""	gag-pol fusion protein	3468
+S000007227	YDR170W-A	""	""	gag protein	1323
+S000007344	YDR034C-C	""	""	gag protein	1317
+S000007345	YDR034C-D	""	""	gag-pol fusion protein	5314
+S000007346	YGR109W-A	""	""	gag protein	873
+S000007347	YGR109W-B	""	""	gag-pol fusion protein	4645
+S000007349	YOL103W-A	""	""	gag protein	1323
+S000007350	YOL103W-B	""	""	gag-pol fusion protein	5269
+S000007351	YOR142W-A	""	""	gag protein	1323
+S000007352	YOR142W-B	""	""	gag-pol fusion protein	5269
+S000007353	YOR192C-A	""	""	gag protein	1317
+S000007354	YOR192C-B	""	""	gag-pol fusion protein	5314
+S000007355	YOR343W-A	""	""	YOR343C-A gag protein	1317
+S000007356	YOR343W-B	""	""	gag-pol fusion protein YOR343C-B	5314
+S000007357	YPL257W-A	""	""	gag protein	1323
+S000007358	YPL257W-B	""	""	gag-pol fusion protein	5269
+S000007359	YPR137C-A	""	""	gag protein	1323
+S000007360	YPR137C-B	""	""	gag-pol fusion protein	5269
+S000007361	YPR158C-C	""	""	gag protein	1323
+S000007362	YPR158C-D	""	""	gag-pol fusion protein	5269
+S000007363	YPR158W-A	""	""	gag protein	1323
+S000007364	YPR158W-B	""	""	gag-pol fusion protein	5272
+S000007367	YGR161C-C	""	""	gag protein	1323
+S000007368	YGR161C-D	""	""	gag-pol fusion protein	5269
+S000007369	YGR161W-A	""	""	gag protein	1317
+S000007370	YGR161W-B	""	""	gag-pol fusion protein	5314
+S000007371	YHL009W-A	""	""	gag protein	1242
+S000007372	YHL009W-B	""	""	gag-pol fusion protein	5410
+S000007373	YLR157C-A	""	""	gag protein	1323
+S000007374	YLR157C-B	""	""	gag-pol fusion protein	5269
+S000007375	YLR227W-A	""	""	gag protein	1323
+S000007376	YLR227W-B	""	""	gag-pol fusion protein	5269
+S000007377	YLR256W-A	""	""	gag protein	1323
+S000007379	YLR410W-A	""	""	gag protein	1317
+S000007380	YLR410W-B	""	""	gag-pol fusion protein	5314
+S000007381	YML045W-A	""	""	gag protein	1323
+S000007384	YNL054W-A	""	""	gag protein	1323
+S000007385	YNL054W-B	""	""	gag-pol fusion protein	5251
+S000007386	YNL284C-A	""	""	gag protein	1323
+S000007387	YNL284C-B	""	""	gag-pol fusion protein	5269
+S000007388	YPL060C-A	""	""	""	5410
+S000007390	YDR098C-A	""	""	gag protein	1323
+S000007391	YDR098C-B	""	""	gag-pol fusion protein	5269
+S000007392	YDR210W-A	""	""	gag protein	1317
+S000007393	YDR210W-B	""	""	gag-pol fusion protein	5314
+S000007394	YDR261C-C	""	""	gag protein	1323
+S000007395	YDR261C-D	""	""	gag-pol fusion protein	4816
+S000007396	YDR261W-A	""	""	gag protein	1317
+S000007397	YDR261W-B	""	""	gag-pol fusion protein	5314
+S000007398	YDR316W-A	""	""	gag protein	1323
+S000007399	YDR316W-B	""	""	gag-pol fusion protein	5269
+S000007400	YDR365W-A	""	""	gag protein	1323
+S000007401	YDR365W-B	""	""	gag-pol fusion protein	5269
+S000007402	YER137C-A	""	""	gag protein	1323
+S000007403	YER159C-A	""	""	gag protein	1323
+S000007404	YFL002W-B	""	""	gag protein	1317
+S000007405	YGR027W-A	""	""	gag protein	1323
+S000007406	YGR027W-B	""	""	gag-pol fusion protein	5269
+S000007407	YGR038C-A	""	""	gag protein	1323
+S000007408	YGR038C-B	""	""	gag-pol fusion protein	5269
+S000007409	YDR210C-C	""	""	YDR210W-C gag protein	1323
+S000007410	YDR210C-D	""	""	gag-pol fusion protein YDR210W-D	5269
+S000007421	YHR214C-C	""	""	gag protein	1437
+
