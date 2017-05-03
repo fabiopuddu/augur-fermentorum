@@ -1,0 +1,25 @@
+set terminal png truecolor nocrop enhanced size 4000,2000 enhanced font "Helvetica,40"
+set output "hits_genomemap.png"
+
+#Draw chromosomes
+set style rect fc rgb "gold" fs transparent solid 0.5 noborder
+
+set object 1 rect from 0,0 to plen,0.8 
+
+
+# Axes
+set style line 11 lc rgb 'black' lt 1 lw 8
+set ytics scale 0
+set ytics format ""
+set yrange [0:20]
+set xrange [1:plen]
+set border 3 back ls 11
+set xlabel 'Aminoacid number'
+set tics nomirror
+
+# Grid
+set style line 2 lc rgb'#808080' lt 0 lw 4
+set grid xtics back
+# set style fill transparent solid 0.75 noborder
+
+plot 'prot_tempdata.tsv' u 1:2 w p ps 10 pt 5 lc rgb 'forest-green'
