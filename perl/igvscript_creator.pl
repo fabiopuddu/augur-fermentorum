@@ -3,21 +3,27 @@
 # Author:       Fabio Puddu
 # Maintainer:   Fabio Puddu
 # Created:      01/06/2017
-
+###
+#This script runs through a file containing absolute paths to all the bam files to be processed
+#and writes a script that can be run in IGV to obtain snapshots of the  area around a gene knockout
+#To do so it reads the coordinates of each gene from another file
+###
 use strict;
 use warnings;
 use Cwd 'abs_path';
+#just get the directory this script is run from as a reference
 my $script_location = abs_path($0);
 my @path = split ('/', $script_location);
 pop @path; pop @path;
 my $dir = join ('/',@path);
 
-my $outdir="snapshots";
-my $window_span=5000;
+my $outdir="snapshots"; #define the name of the output directory for the IGV snapshots
+my $window_span=5000; # define the window size in bp before/after start/stop
 
 my $cwd=`pwd`;
 chomp($cwd);
 $outdir=$cwd."/".$outdir;
+#define where to find the files to be analysed
 my $bamlist="all_bams.txt";
 my $genepositions=$dir."/defaults/all_yeast_genes.txt";
 
