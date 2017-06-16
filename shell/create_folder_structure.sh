@@ -8,7 +8,7 @@ mv sorted_samples.tsv samples.tsv
 source_path='/mnt/scratch/jackson/fp305/from_CGP/CGP_BAM'
 if [[ -z $1 ]]
 	then source_path='/mnt/scratch/jackson/fp305/from_CGP/CGP_BAM'
-	else source_path=$1
+	else source_path="../../$1"
 fi
 cat samples.tsv | while read line
 	do 	t=1
