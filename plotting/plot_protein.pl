@@ -10,14 +10,15 @@ use Data::Dumper;
 # and will create a graphical represenation of their position using a gnuplot script 
 # This script also allows to plot two different sets of mutations (eg. spontaneous and EMS induced)
 # The mutations belonging to the second set should be prepended by an asterisk '*' in the input file
-# Usage: plot_protein.pl [missense|nonsense|frameshift]
+# Usage: plot_protein.pl input.txt [missense|nonsense|frameshift] protein_length
 
 
 my $bin_size=10;
-my $protein_length=769;
+my $filename=shift;
 my $mutation_analysed = shift;
+my $protein_length=shift;
 
-open (my $mutationlist, '<', 'mutations.txt');
+open (my $mutationlist, '<', $filename);
 chomp(my @MUT = <$mutationlist>);
 close ($mutationlist);
 my @nonsense;
