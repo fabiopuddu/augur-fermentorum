@@ -53,24 +53,24 @@ fi
 #	ls BAM/*/*.bam >> bams_for_mpileup
 ls BAM/*.bam >> bams_for_mpileup
 sort bams_for_mpileup > sorted_bams_for_mpileup
-cat sorted_bams_for_mpileup | grep -v 'sorted' > sieved_bams_for_mpileup #remove'sorted' files, which come from re-alignments for ty and rDNA analysis
+#cat sorted_bams_for_mpileup | grep -v 'sorted' > sieved_bams_for_mpileup #remove'sorted' files, which come from re-alignments for ty and rDNA analysis
 #index files if the index does not exist
-cat sieved_bams_for_mpileup | parallel -j20 --no-notice ' x={};
+cat bams_for_mpileup | parallel -j20 --no-notice ' x={};
 				n=`echo {} | tr '/' "\n" | tail -n1 | sed 's/.bam//g'`; 
 	    			printf "\r\033[K  Indexing $n"
 		 		if [[ ! -a $x.bai || $force_rewrite == 1  ]] #if the file does not exist or if force_rewrite is called
                 				then    samtools index $x
         				fi'
 printf "\n"
-cat sieved_bams_for_mpileup | grep 'merged' > merged_bams_for_mpileup #generate a list of already merged BAM files
+#cat sieved_bams_for_mpileup | grep 'merged' > merged_bams_for_mpileup #generate a list of already merged BAM files
 #remove from sieved bams for mpileup any reference to files that have already been merged
-cat sieved_bams_for_mpileup | grep 'merged' | grep -o "SC_MFY.......\|SD....." | sort -u | while read line
-	do cat sieved_bams_for_mpileup | sed "/$line/d" > new_bams_for_mpileup
-	   mv new_bams_for_mpileup sieved_bams_for_mpileup
-	done	
+#cat sieved_bams_for_mpileup | grep 'merged' | grep -o "SC_MFY.......\|SD....." | sort -u | while read line
+#	do cat sieved_bams_for_mpileup | sed "/$line/d" > new_bams_for_mpileup
+#	   mv new_bams_for_mpileup sieved_bams_for_mpileup
+#	done	
 #combine the lists of unmerged samples with the list of already merged samples	
-cat sieved_bams_for_mpileup merged_bams_for_mpileup > bams_for_mpileup	
-rm sieved_bams_for_mpileup merged_bams_for_mpileup sorted_bams_for_mpileup	
+#cat sieved_bams_for_mpileup merged_bams_for_mpileup > bams_for_mpileup	
+#rm sieved_bams_for_mpileup merged_bams_for_mpileup sorted_bams_for_mpileup	
 #I don't understand what the following lines are for: should have commented
 # cat bams_for_mpileup | while read line
 #     do if echo $line | grep -q 'merged.bam'
@@ -118,7 +118,7 @@ fi
 mkdir -p calling
 cd calling
 cat ../bams_for_mpileup |  while read line 
-	do	n=$(echo $line |  tr '/' "\n" | grep "SD.*\|SC.*" | tail -n1 | sed "s/\.bam//g" | sed "s/\.merged//g")
+	do	n=$(echo $line |  tr '/' "\n" | tail -n1 | sed "s/\.bam//g" | sed "s/\.merged//g")
 		ers=`grep -w $n ../../name\ conversion.tsv | tr "\t" "\n" | tail -n 1`
 		printf "\r\033[K  Processing $ers"
 #		if [[ ! -a $m.vcf.gz ]] 
