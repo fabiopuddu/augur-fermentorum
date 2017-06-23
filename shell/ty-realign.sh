@@ -10,8 +10,8 @@ if [[ ! -a bams_for_mpileup ]]
 fi
 mkdir -p TR_BAMS
 cat bams_for_mpileup | while read line
- 	do 	percorso=`echo ${line} | sed "s|[A-Z_]*[0123456789b]*.[a-z]*.bam||g"`
-		name=`echo ${line} | tr '/' "\n" | grep "SC\|SD" | tail -n1 | sed "s/\.bam//g"`		
+ 	do 	percorso=`echo ${line} | sed "s|/.*\.bam|/|g"`
+		name=`echo ${line} | tr '/' "\n" | tail -n1 | sed "s/\.bam//g"`
 		command1="bwa mem -R \"@RG\tID:$name\" $DIR/../mpileup_defaults/Ty_ref/Ty1-5.fa $percorso$name.fq1.gz $percorso$name.fq2.gz | samtools view -bS - | samtools sort -o TR_BAMS/$name.Ty.bam -O bam -T $name"
 		command2="samtools index TR_BAMS/$name.Ty.bam"
 		command3="samtools view -b -F 4 TR_BAMS/$name.Ty.bam > TR_BAMS/$name.Ty.bam.map.bam"
