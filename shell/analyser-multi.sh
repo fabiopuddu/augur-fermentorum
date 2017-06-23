@@ -229,7 +229,7 @@ if [[ $aneup == 1 ]]
          cd ploidy_data
          while read -r line
             do
-         	    code1=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1` #SCMFY or #SD code
+         	    code1=`echo $line | tr '/' "\n" | tail -n1 | sed "s|\.bam||g"` #SCMFY or #SD code
          	    code2=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 7`
          	    name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
          	    command="CGH.pl -i ../$line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
