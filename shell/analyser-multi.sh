@@ -119,7 +119,7 @@ if [[ $multiple_ref == '1' ]]                                   ###in case of mu
 
             for line in $control
                 do  suffix=$(($suffix+1))
-                    declare "control_$suffix"="ERS$line"
+                    declare "control_$suffix"="$line"
                 done
 fi
 #
