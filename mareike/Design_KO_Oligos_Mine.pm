@@ -190,6 +190,21 @@ $R1_oligo .= $R1_tail;
 
 #print "$R1_oligo\n";
 
+
+# The F2 oligo includes 40bp immediately upstream of the stop codon of the gene 
+# followed by 20bp that are complementary to the Kan Cassette containing plasmid
+
+# That means the 40bp can be subsetted from $upstream_seq
+
+my $F2_oligo = substr $whole_sequence, -1043, 40;
+
+
+$F2_oligo .= $F1_tail;
+
+#print "$F2_oligo\n";
+
+
+
 ############################################################
 
 
@@ -212,7 +227,6 @@ $R1_oligo .= $R1_tail;
 my $sequence_stop  = substr $whole_sequence, -1400, 800;
 
 #print "$check_sequence\n";
-
 
 my $four_oligo = '';
 my $three_oligo = '';
@@ -258,6 +272,7 @@ $output{'Standard_Name'}=$stand_name;
 #$output{'Location'}=$chr.':'.$start.'-'.$end;
 #$output{'Strand'}=$strand;
 $output{'F1'}=$F1_oligo;
+$output{'F2'}=$F2_oligo;
 $output{'R1'}=$R1_oligo;
 $output{'.3'}=$three_oligo;
 $output{'.4'}=$four_oligo;

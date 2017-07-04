@@ -1,6 +1,3 @@
-
-
-
 #!/usr/bin/perl
 # Author:       mh23
 # Maintainer:   mh23
@@ -19,6 +16,7 @@ my %results = Design_KO_Oligos_Mine($input);
 
 
 print "$results{'Standard_Name'}-F1\t$results{'F1'}\n";
+print "$results{'Standard_Name'}-F2\t$results{'F2'}\n";
 print "$results{'Standard_Name'}-R1\t$results{'R1'}\n";
 print "$results{'Standard_Name'}.3\t$results{'.3'}\n";  
 print "$results{'Standard_Name'}.4\t$results{'.4'}\n";  
