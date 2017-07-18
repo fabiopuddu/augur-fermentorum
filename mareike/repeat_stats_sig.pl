@@ -250,6 +250,20 @@ $Stderr{'gwm'} =   $gwm_stderr;
 $Stderr{'Tel'} =   $Tel_stderr;
 
 
+
+my @replist=('rDNA','CUP1', 'Mito', 'Ty1', 'Ty2', 'Ty3', 'Ty4', 'Ty5', 'gwm', 'Tel');
+print "Repeat\tWTave\tWTStDev\n";
+foreach my $rep (@replist){
+		printf ("%s\t%.2f\t%.2f\n", $rep,$averages{$rep},$Stderr{$rep});
+}
+
+
+
+
+
+
+
+
 ###################### CI ##########################
 
 my $multiplier = 5;
