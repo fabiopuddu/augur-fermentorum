@@ -150,7 +150,7 @@ $command = "cat $input | grep 'WT-' | wc -l";
 $no_samp = `$command`; chomp $no_samp;
 $root = sqrt($no_samp);
 
-$StDev{'Cup1'}=$stdev;
+$StDev{'CUP1'}=$stdev;
 my $Cup1_stderr = $stdev / $root;
 
 
@@ -228,6 +228,7 @@ my $gwm_stderr = $stdev / $root;
 
 #Telomeres
 $command = "cat $input | grep 'WT-' | awk '". '{sum+=$11; array[NR]=$11} END '."{for(x=1;x<=NR;x++){sumsq+=((array[x]-(sum/NR))**2);}print sqrt(sumsq/NR)}'"; 
+#$command = "cat $input | grep 'WT-' | awk '{sum+=$11; sumsq+=$11*$11} END {print sqrt(sumsq/NR - (sum/NR)**2)}'";
 $stdev = `$command`; chomp $stdev;
 $command = "cat $input | grep 'WT-' | wc -l";
 $no_samp = `$command`; chomp $no_samp;
@@ -238,23 +239,23 @@ my $Tel_stderr = $stdev / $root;
 
 #print "$no_samp, $stdev and $Tel_stderr\n";  
 
-$Stderr{'rDNA'} =  $rDNA_stderr;
-$Stderr{'CUP1'} =  $Cup1_stderr;
-$Stderr{'Mito'} =  $Mito_stderr;
-$Stderr{'Ty1'} =   $Ty1_stderr;
-$Stderr{'Ty2'} =   $Ty2_stderr;
-$Stderr{'Ty3'} =   $Ty3_stderr;
-$Stderr{'Ty4'} =   $Ty4_stderr;
-$Stderr{'Ty5'} =   $Ty5_stderr;
-$Stderr{'gwm'} =   $gwm_stderr;
-$Stderr{'Tel'} =   $Tel_stderr;
+#$Stderr{'rDNA'} =  $rDNA_stderr;
+#$Stderr{'CUP1'} =  $Cup1_stderr;
+#$Stderr{'Mito'} =  $Mito_stderr;
+#$Stderr{'Ty1'} =   $Ty1_stderr;
+#$Stderr{'Ty2'} =   $Ty2_stderr;
+#$Stderr{'Ty3'} =   $Ty3_stderr;
+#$Stderr{'Ty4'} =   $Ty4_stderr;
+#$Stderr{'Ty5'} =   $Ty5_stderr;
+#$Stderr{'gwm'} =   $gwm_stderr;
+#$Stderr{'Tel'} =   $Tel_stderr;
 
 
 
 my @replist=('rDNA','CUP1', 'Mito', 'Ty1', 'Ty2', 'Ty3', 'Ty4', 'Ty5', 'gwm', 'Tel');
-print "Repeat\tWTave\tWTStDev\n";
+print "Repeat\tWTave\tWTStDev\tConfidence intervals\n";
 foreach my $rep (@replist){
-		printf ("%s\t%.2f\t%.2f\n", $rep,$averages{$rep},$Stderr{$rep});
+		printf ("%s\t%.2f\t%.2f\t(%.1f - %.1f)\n", $rep,$averages{$rep},$StDev{$rep},$averages{$rep}-3*$StDev{$rep},$averages{$rep}+3*$StDev{$rep});
 }
 
 
@@ -347,8 +348,8 @@ my $CI_Tel_higher = ceil($tel_av+$CI_Tel);
 #### If you instead want the CI to be 3* the standard deviation
 $CI_rDNA_lower = floor($rDNA_av-($StDev{'rDNA'}*3));
 $CI_rDNA_higher = ceil($rDNA_av+($StDev{'rDNA'}*3));
-$CI_Cup1_lower = floor($Cup1_av-($StDev{'Cup1'}*3));
-$CI_Cup1_higher = ceil($Cup1_av+($StDev{'Cup1'}*3));
+$CI_Cup1_lower = floor($Cup1_av-($StDev{'CUP1'}*3));
+$CI_Cup1_higher = ceil($Cup1_av+($StDev{'CUP1'}*3));
 $CI_Mito_lower = floor($Mito_av-($StDev{'Mito'}*3));
 $CI_Mito_higher = ceil($Mito_av+($StDev{'Mito'}*3));
 $CI_Ty1_lower = floor($Ty1_av-($StDev{'Ty1'}*3));
