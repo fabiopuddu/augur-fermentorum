@@ -124,17 +124,17 @@ print "Sample\trDNA\tCUP1\tMito\tTy1\tTy2\tTy3\tTy4\tTy5\tGenome_wide_median\n";
 print "$samp[0]\t";
 my $rDNA_loc = 'XII:452000-459000';
 my $rDNA_estimate = repeat_estimate($input,$rDNA_loc,$ref_genome)*2;
-$rDNA_estimate = sprintf("%.3f", $rDNA_estimate);
+#$rDNA_estimate = sprintf("%.3f", $rDNA_estimate);
 print "$rDNA_estimate\t";
 
 my $cup1_loc = 'VIII:212986-213525';
 my $cup1_estimate = repeat_estimate($input,$cup1_loc,$ref_genome)*2;
-$cup1_estimate = sprintf("%.3f", $cup1_estimate);
+#$cup1_estimate = sprintf("%.3f", $cup1_estimate);
 print "$cup1_estimate\t";
 
 my $mito_loc = 'Mito:14000-20000';
 my $mito_estimate = repeat_estimate($input,$mito_loc,$ref_genome)*$ploidy;
-$mito_estimate = sprintf("%.3f", $mito_estimate);
+#$mito_estimate = sprintf("%.3f", $mito_estimate);
 print "$mito_estimate\t";
 
 
@@ -204,11 +204,11 @@ else {
 	$ty4 =  repeat_estimate($ty_bam, $ty4_reg, $ty_ref);
 	$ty5 =  repeat_estimate($ty_bam, $ty5_reg, $ty_ref);
 	
-	$ty1 = sprintf("%.3f", $ty1);
-	$ty2 = sprintf("%.3f", $ty2);
-	$ty3 = sprintf("%.3f", $ty3);
-	$ty4 = sprintf("%.3f", $ty4);
-	$ty5 = sprintf("%.3f", $ty5);
+	#$ty1 = sprintf("%.3f", $ty1);
+	#$ty2 = sprintf("%.3f", $ty2);
+	#$ty3 = sprintf("%.3f", $ty3);
+	#$ty4 = sprintf("%.3f", $ty4);
+	#$ty5 = sprintf("%.3f", $ty5);
 
 }	
 	print ("$ty1\t");
