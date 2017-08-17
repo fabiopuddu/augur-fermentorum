@@ -188,6 +188,9 @@ while(my $row=<$fh>){ #read file or STDIN line by line
 	
 	#Get the adjusted measurement
 	my $adj_measure = $old_measure * $factor;
+
+	#Round the adjusted measurements for teh output 
+	$adj_measure = sprintf("%.3f", $adj_measure);
 	
 	#Replace value and print the new line 
 	$tags[$index] = $adj_measure;
