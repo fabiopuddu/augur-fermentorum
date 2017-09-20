@@ -12,3 +12,10 @@ ls *.bam | while read line
                  PROC3=$(submit_sbatch "--dependency=afterok:${PROC2}" "${command3}"  | sed 's/Submitted batch job //g')
                  submit_sbatch "--dependency=afterok:${PROC3}" "${command4}"  
  done
+
+
+# for f in *.bam; 
+#do 	name=`echo "${f}" | sed 's/.bam//g'` ;
+#	mkdir "${name}"; 
+#	mv ${name}.* ${name};
+#done
