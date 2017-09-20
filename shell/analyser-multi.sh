@@ -209,7 +209,7 @@ if [[   $rDNA == 1 ]]
         	  cd repDNA
             while read -r line ; 
             do  
-               name=`echo $line | grep -o "SC_MFY.......\|SD......"| sed "s|\.||g" | head -n1`
+               name=`echo $line | cut -f5| sed "s|\.||g" | head -n1`
                command="rDNA-cnv_estimate.pl -p ${ploidy} -i ../$line > $name.txt" 
                if [[ ${v} -eq '1' ]]; then echo $command; fi
                PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
