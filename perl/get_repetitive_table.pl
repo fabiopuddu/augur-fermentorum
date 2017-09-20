@@ -62,15 +62,15 @@ foreach my $ERSNO (keys %bcID) {
 		chomp(my @LNR = <$res_file>);	
 		close($res_file);
 		my @LINE=split("\t", $LNR[1]);
-		$rDNA{$ERSNO}= (defined $LINE[1] and $LINE[1] ne "-1" and $LINE[1] ne "") ? $LINE[1] : "N/A" ;
-		$CUP1{$ERSNO}=(defined $LINE[2] and $LINE[2] ne "-1" and $LINE[2] ne "") ? $LINE[2] : "N/A" ;
-		$mito{$ERSNO}=(defined $LINE[3] and $LINE[3] ne "-1" and $LINE[3] ne "") ? $LINE[3] : "N/A" ;
-		$ty1{$ERSNO}=(defined $LINE[4] and $LINE[4] ne "-1" and $LINE[4] ne "") ? $LINE[4] : "N/A" ;
-		$ty2{$ERSNO}=(defined $LINE[5] and $LINE[5] ne "-1" and $LINE[5] ne "") ? $LINE[5] : "N/A" ;;
-		$ty3{$ERSNO}=(defined $LINE[6] and $LINE[6] ne "-1" and $LINE[6] ne "") ? $LINE[6] : "N/A" ;;
-		$ty4{$ERSNO}=(defined $LINE[7] and $LINE[7] ne "-1" and $LINE[7] ne "") ? $LINE[7] : "N/A" ;;
-		$ty5{$ERSNO}=(defined $LINE[8] and $LINE[8] ne "-1" and $LINE[8] ne "") ? $LINE[8] : "N/A" ;;
-		$gwm{$ERSNO}=(defined $LINE[9] and $LINE[9] ne "-1" and $LINE[9] ne "") ? $LINE[9]  : "N/A" ;;
+		$rDNA{$ERSNO}= (defined $LINE[1] and $LINE[1] ne "-1" and $LINE[1] ne "") ? sprintf "%.1f",$LINE[1] : "N/A" ;
+		$CUP1{$ERSNO}=(defined $LINE[2] and $LINE[2] ne "-1" and $LINE[2] ne "") ? sprintf "%.1f",$LINE[2] : "N/A" ;
+		$mito{$ERSNO}=(defined $LINE[3] and $LINE[3] ne "-1" and $LINE[3] ne "") ? sprintf "%.1f",$LINE[3] : "N/A" ;
+		$ty1{$ERSNO}=(defined $LINE[4] and $LINE[4] ne "-1" and $LINE[4] ne "") ? sprintf "%.1f",$LINE[4] : "N/A" ;
+		$ty2{$ERSNO}=(defined $LINE[5] and $LINE[5] ne "-1" and $LINE[5] ne "") ? sprintf "%.1f",$LINE[5] : "N/A" ;;
+		$ty3{$ERSNO}=(defined $LINE[6] and $LINE[6] ne "-1" and $LINE[6] ne "") ? sprintf "%.1f",$LINE[6] : "N/A" ;;
+		$ty4{$ERSNO}=(defined $LINE[7] and $LINE[7] ne "-1" and $LINE[7] ne "") ? sprintf "%.1f",$LINE[7] : "N/A" ;;
+		$ty5{$ERSNO}=(defined $LINE[8] and $LINE[8] ne "-1" and $LINE[8] ne "") ? sprintf "%.1f",$LINE[8] : "N/A" ;;
+		$gwm{$ERSNO}=(defined $LINE[9] and $LINE[9] ne "-1" and $LINE[9] ne "") ? sprintf "%.1f",$LINE[9]  : "N/A" ;;
 		push @SAMPLES, $ERSNO, ;
 	}
 	if (-e "$flnm{$ERSNO}".'.tel'){
