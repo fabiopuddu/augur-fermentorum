@@ -3,6 +3,10 @@ use strict;
 use warnings;
 use POSIX qw(ceil floor);
 use Data::Dumper;
+use File::Basename;
+#get the directory the script is in
+my $dirname = dirname(__FILE__);
+
 # This script will go through a list of mutations in the following format
 # TOP1-X123Y => missense
 # TOP1-∆123  => nonsense
@@ -10,8 +14,8 @@ use Data::Dumper;
 # and will create a graphical represenation of their position using a gnuplot script 
 # This script also allows to plot two different sets of mutations (eg. spontaneous and EMS induced)
 # The mutations belonging to the second set should be prepended by an asterisk '*' in the input file
+#
 # Usage: plot_protein.pl input.txt [missense|nonsense|frameshift] protein_length
-
 
 my $bin_size=10;
 my $filename=shift;
@@ -66,13 +70,14 @@ else{
 	exit 1
 }
 
-open(my $out, '>', 'prot_tempdata.tsv');
+open(my $out, '>', 'protein_data.tsv');
 print $out join "\n", @$file;
 close ($out);
-my $command="gnuplot -e \"plen='$protein_length"."'; outfile='$gene"."_"."$mutation_analysed.png"."'\" /mnt/home1/jackson/fp305/sw/bin/PF/gnuplot/plot_protein_map.gpl";
+
+my $command="gnuplot -e \"plen='$protein_length"."'; outfile='$gene"."_"."$mutation_analysed.png"."'\" $dirname/plot_protein_map.gpl";
 printf "$command\n";
 system($command);
-system("rm prot_tempdata.tsv");
+system("rm protein_data.tsv");
 
 sub histogram{
   my ($bin_width, @list, $protein_length) = @_;
