@@ -127,6 +127,7 @@ open (my $statout, '>', $sample_name."_plstats.txt");#
 open (my $firstdev, '>', $sample_name."_deriv.txt");
 
 chomp(my @PLO = <$fplo>);
+close ($fplo);
 my @highlight_block;
 my @chromosome_block;
 my @centromere_block;
@@ -148,6 +149,7 @@ my $flag_down=0;
 my $flag_end=0;
 my $brkpt1='';
 my $brkpt2='';
+my @breakpoints;
 print ($statout "Chromosome\tPred. ploidy\tFr.deviating\n");
 foreach my $line (@PLO){
 	my @linea=split("\t",$line);		#split the line on tabs 0:chr 1:start 2:end 3:ploidy 
@@ -168,8 +170,7 @@ foreach my $line (@PLO){
 		@chromosome_block=();
 		@centromere_block=();
 	}
-	$chr_len++;
-	$prev_chr=$linea[0];
+	$chr_len++;	
 	# if the current slice matches one of the centromeres push the information into a list.
 	if ((($linea[1] >$centromere{$linea[0]}[0]) and  #if the start of the slice is after the start of the centromere and
 	     ($linea[1] <$centromere{$linea[0]}[1])) or  # the start of the slice is before the end of the centromere or
@@ -178,81 +179,68 @@ foreach my $line (@PLO){
 		push @centromere_block, "$linea[3]"
 	}
 #HERE WE CREATE A HIGHLIGHT FILE THAT CIRCOS CAN USE TO HIGHLIGHT REGIONS OF DIFFERENT PLOIDY
-	#if the line is a "hit" push the line into an highlight array
+	
 	push @chromosome_block, "$linea[3]";	
-	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5)){
+
+	#if the line is a "hit" and we have not reached the end of the chromosome
+		#then push the line into an highlight array	
+	if ((($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5)) and ($prev_chr eq $linea[0])){
 		push @highlight_block, "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=red\n";
 		$count++;
 	}
-	#if the line is not a hit we need to print out the previous block of highlights
+	#if the line is not a hit or we reached the end of the chromosome 
 	else { 
 	#but only if the size of the highlight array is greater than 3
 		if (scalar (@highlight_block) >= $threshold ){
 			#print the block of highlights
 			for my $output_line (@highlight_block){
-				printf $out $output_line;
-				#print "$output_line\n";
+				printf $out $output_line;		
+			}
+			#Detect  breakpoint coordinates
+			my @highlight_start=split"\t", $highlight_block[0];
+			my @highlight_end=split"\t", $highlight_block[-1];
+			my $breakpoint_start=$highlight_start[1];
+			my $breakpoint_end=$highlight_end[2];
+			if ($prev_chr eq $linea[0]){ #if we finished because the ploidy has come back to normal > print the current chromosome
+				push @breakpoints, "$linea[0]\t$breakpoint_start\t$breakpoint_end\n";
+			}
+			else {		#if we finished because the chromosome has finished it means linea[0] now contains the next line; therefore print the previous choromosome
+				push @breakpoints, "$prev_chr\t$breakpoint_start\t$breakpoint_end\n"
 			}
 		}
 		#always re-initialise the @highlight_block array
 		@highlight_block=(); 
 	}
-	
-	
-
-
-
-
-	#THE SECOND BLOCK OF CODE TRIES TO DETECT THE COORDINATES OF THE BREAKPOINTS
-	
-	
-	
-	
-# 	my @next_line = split("\t",$PLO[$i+1]);
-# 	my $next_line_chr = $next_line[0];
-# 	print "$PLO[$i+1]\n";
-# 	printf "cur line $linea[1] cur chr $linea[0] next chr $next_line_chr\n";
-# 	if ($linea[0] ne $next_line_chr){
-# 		$chrom_end=1
-# 	}
-# 	#push into average array
-# 	push @average_array, $linea[3];
-# 	#if n=20 average the array and report
-# 	if (($i==40) or $chrom_end){
-# 		$i=0;
-# 		$average=sum(@average_array)/scalar(@average_array);
-# 		#printf "$average\n";
-# 		@average_array=();
-# 		#calculate dx and report
-# 		#my $dx=-$prev_pos;
-# 		my $dy=($average-$prev_plo);
-# 		printf $firstdev "$linea[0]\t$dy\n";
-# 		#Determine if dy is outside a threshold
-# 		if ($dy > 0.4){$flag_up = 1; $brkpt1=$linea[1];print"up $linea[0] $linea[1]\n";}
-# 		elsif ($dy < -0.4) {$flag_down = 1; $brkpt2=$linea[1];print"down $linea[0] $linea[1]\n"}
-# 		elsif ($chrom_end){$flag_end=1}
-# 		if (($flag_up && $flag_down ) || (($flag_down || $flag_up) && $flag_end) ) {
-# 			print "Curr_line $linea[1] Flags: up $flag_up down $flag_down end $flag_end\n";
-# 			$brkpt1=$linea[1] unless $flag_up;
-# 			$brkpt2=$linea[1] unless $flag_down;
-# 			if ($brkpt1>$brkpt2){
-# 				print "Breakpoint: $linea[0]\t$brkpt2\t$brkpt1\n";
-# 			}
-# 			else {
-# 				print "Breakpoint: $linea[0]\t$brkpt1\t$brkpt2\n";
-# 			}
-# 			$flag_up = 0;
-# 			$flag_down = 0;
-# 			$brkpt1 = 0;
-# 			$brkpt2 = 0;
-# 		}
-# 
-# 		$prev_pos=$linea[1];
-# 		$prev_plo=$average;
-# 	}
-# 	$i++;
-
+	$prev_chr=$linea[0];
 } 
+
+#HERE WE USE THE HIGHLIGHT FILE TO DETECT BREAKPOINTS
+
+print Dumper \@breakpoints;
+push @breakpoints, '-\t-\t-'; #put in an extra record for comparison purposes
+my $endcycle=scalar(@breakpoints)-1;
+#print $endcycle;
+for (my $i=0; $i < $endcycle; $i++){	
+	my @line=split "\t", $breakpoints[$i];
+#	printf "Next line =  $breakpoints[$i+1]";
+#	printf "Ciclo $i; Endcycle: $endcycle";
+	my @next_line=split "\t", $breakpoints[$i+1];
+	chomp @line; chomp @next_line;
+	#print ("$line[0] is $next_line[0] & $next_line[1]-$line[2]<2000\n");	
+	#If the chr on the next line equals the current one and the difference between start and end is less than 2kb
+	if (($line[0] eq $next_line[0]) and ($next_line[1]-$line[2]<15000)){
+		my $new_end=$next_line[2]; 				#the new end will be the end of the next block
+		splice @breakpoints, $i+1, 1; 			#remove the next line
+		$breakpoints[$i]="$line[0]\t$line[1]\t$new_end";		#assign to the current line the new end
+		$endcycle=$endcycle-1;				#reduce the number of iterations by 1 since we removed an element
+		$i=$i-1;						#decrease the counter by 1 since we want to work on the same element for the next cycle	
+	}
+#	print "$i\n";
+	#print "$line[0]\t$next_line[0]\t$i\n";
+}
+pop @breakpoints; #remove the extra record put in before
+print Dumper \@breakpoints;
+
 my $mean_ploidy;
 $aneup_fract=$count/$chr_len;
 if ($aneup_fract <0.25 or $aneup_fract > 0.75){
@@ -264,11 +252,11 @@ if ($aneup_fract <0.25 or $aneup_fract > 0.75){
 my $centromere_ploidy=ploidy_mode(@centromere_block);
 print ($statout "$prev_chr\t$centromere_ploidy\t$aneup_fract\n");
 close ($statout);
-close ($fplo);
+
 close ($out);
 close ($firstdev);
 sleep 10;
-system("mkdir png; mkdir svg");
+system("mkdir -p png; mkdir -p svg");
 print "Executing circos";
 #Execute circos silently 
 system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -param highlights/highlight/file=".$sample_name."_highlights.txt -param plots/plot/file=".$sample_name."_ploidy_data.txt -outputfile ".$sample_name);
