@@ -32,9 +32,32 @@ my %centromere=(
    	XVI   => [ "550957", "561073" ],
 );
 
+
+my %chr_ends=(
+	I     => [ "15000", "215218" ],
+    	II    => [ "15000", "798184" ],
+    	III   => [ "15000", "301620" ],
+   	IV    => [ "15000", "1516933" ],
+          V     => [ "15000", "561874" ],
+          VI    => [ "15000", "255161" ],
+   	VII   => [ "15000", "1075940" ],
+          VIII  => [ "15000", "547643" ],
+          IX    => [ "15000", "424888" ],
+   	X     => [ "15000", "730751" ],
+          XI    => [ "15000", "651816" ],
+          XII   => [ "15000", "1063177" ],
+   	XIII  => [ "15000", "909431" ],
+          XIV   => [ "15000", "769333" ],
+          XV    => [ "15000", "1076291" ],
+   	XVI   => [ "15000", "933066" ],
+);
+
+
+
+
 my @chromosomes=('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI');
 
-@chromosomes=('V');
+@chromosomes=('V',, 'VII');
 
 
 
@@ -166,7 +189,7 @@ my $i=0;
 
 my @highlight_block;
 my @breakpoint_block;
-
+my @breakpoints;
 my $prev_chr='chr01';
 
 
@@ -197,47 +220,36 @@ foreach my $line (@PLO){
 	my $chr_name=get_as_rom($linea[0]);
 	
 	if (($linea[3] < $ploidy_by_chr{$chr_name}-0.5) or ($linea[3] > $ploidy_by_chr{$chr_name}+0.5)){
-		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=red\n";
+		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\n";
 	}
-
+	else { 
+		#but only if the size of the highlight array is greater than 3
+		if (scalar (@breakpoint_block) >= $threshold ){
+			#print the block of highlights
+			my $block=collapse_region(@breakpoint_block);
+			push @breakpoints, @$block;
+			
+		}
+		#always re-initialise the @highlight_block array
+		@breakpoint_block=(); 
+	}
 	
 	
 	$prev_chr=$linea[0];
 } 
 
-close($out);
 
-# print Dumper \@breakpoints;
-# push @breakpoints, '-\t-\t-'; #put in an extra record for comparison purposes
-# my $endcycle=scalar(@breakpoints)-1;
-# #print $endcycle;
-# for (my $i=0; $i < $endcycle; $i++){	
-# 	my @line=split "\t", $breakpoints[$i];
-# #	printf "Next line =  $breakpoints[$i+1]";
-# #	printf "Ciclo $i; Endcycle: $endcycle";
-# 	my @next_line=split "\t", $breakpoints[$i+1];
-# 	chomp @line; chomp @next_line;
-# 	#print ("$line[0] is $next_line[0] & $next_line[1]-$line[2]<2000\n");	
-# 	#If the chr on the next line equals the current one and the difference between start and end is less than 2kb
-# 	if (($line[0] eq $next_line[0]) and ($next_line[1]-$line[2]<15000)){
-# 		my $new_end=$next_line[2]; 				#the new end will be the end of the next block
-# 		splice @breakpoints, $i+1, 1; 			#remove the next line
-# 		$breakpoints[$i]="$line[0]\t$line[1]\t$new_end";		#assign to the current line the new end
-# 		$endcycle=$endcycle-1;				#reduce the number of iterations by 1 since we removed an element
-# 		$i=$i-1;						#decrease the counter by 1 since we want to work on the same element for the next cycle	
-# 	}
-# #	print "$i\n";
-# 	#print "$line[0]\t$next_line[0]\t$i\n";
-# }
-# pop @breakpoints; #remove the extra record put in before
-# print Dumper \@breakpoints;
+my $final_breakpoints=collapse_region(@breakpoints);
+print Dumper $final_breakpoints;
+
+
 
 
 close ($out);
 
 sleep 10;
 system("mkdir -p png; mkdir -p svg");
-print "Executing circos";
+print "Executing circos\n";
 #Execute circos silently 
 system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -param highlights/highlight/file=".$sample_name."_highlights.txt -param plots/plot/file=".$sample_name."_ploidy_data.txt -outputfile ".$sample_name);
 #If labels have been defined write annotation on the png file
@@ -253,6 +265,40 @@ system("mv ".$sample_name.".png png/; mv ".$sample_name.".svg svg/");
 #############################################################
 #SUBROUTINES
 #############################################################
+sub collapse_region{
+	my @input=@_;
+	#print Dumper \@input;
+	push @input, '-\t-\t-'; #put in an extra record for comparison purposes
+	my $endcycle=scalar(@input)-1;
+	my @br_ploidy;
+	#print $endcycle;
+	for (my $i=0; $i < $endcycle; $i++){	
+		my @line=split "\t", $input[$i];
+		my @next_line=split "\t", $input[$i+1];
+		chomp @line; chomp @next_line;
+		#If the chr on the next line equals the current one and the difference between start and end is less than 2kb
+		if (($line[0] eq $next_line[0]) and ($next_line[1]-$line[2]<20000)){
+			push @br_ploidy, $next_line[3];
+			my $new_end=$next_line[2]; 				#the new end will be the end of the next block
+			splice @input, $i+1, 1; 			#remove the next line
+			my $mean_ploidy=mean(@br_ploidy);
+			$input[$i]="$line[0]\t$line[1]\t$new_end\t$mean_ploidy";		#assign to the current line the new end
+			$endcycle=$endcycle-1;				#reduce the number of iterations by 1 since we removed an element
+			$i=$i-1;						#decrease the counter by 1 since we want to work on the same element for the next cycle	
+		}
+		else{
+		@br_ploidy=();
+		}
+	#	print "$i\n";
+		#print "$line[0]\t$next_line[0]\t$i\n";
+	}
+	pop @input; #remove the extra record put in before
+	#print Dumper \@input;
+	return \@input;
+}
+
+
+
 sub median {
  my @vals = sort {$a <=> $b} @_;
     my $len = @vals;
