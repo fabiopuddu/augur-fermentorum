@@ -8,7 +8,7 @@ use Data::Dumper;
 use Cwd 'abs_path';
 use Math::Round;
 #####
-my $bin_size=200; #define the size of the bin to make averages in base pairs
+my $bin_size=400; #define the size of the bin to make averages in base pairs
 my $min_span_highlight=2000; #define the minimum lenght of a jump in ploidy to be reported in highlights
 my $threshold=int($min_span_highlight / $bin_size);
 #####
@@ -57,7 +57,7 @@ my %chr_ends=(
 
 my @chromosomes=('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI');
 
-@chromosomes=('V',, 'VII');
+#@chromosomes=('V',, 'VII');
 
 
 
@@ -219,7 +219,7 @@ foreach my $line (@PLO){
 	#check wether the ploidy of the current line falls outside of what is expected for that chromosome
 	my $chr_name=get_as_rom($linea[0]);
 	
-	if (($linea[3] < $ploidy_by_chr{$chr_name}-0.5) or ($linea[3] > $ploidy_by_chr{$chr_name}+0.5)){
+	if (abs ($linea[3]-$ploidy_by_chr{$chr_name}) > 0.5){
 		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\n";
 	}
 	else { 
@@ -237,8 +237,8 @@ foreach my $line (@PLO){
 	
 	$prev_chr=$linea[0];
 } 
-
-
+#
+#print Dumper \@breakpoints;
 my $final_breakpoints=collapse_region(@breakpoints);
 print Dumper $final_breakpoints;
 
@@ -276,12 +276,12 @@ sub collapse_region{
 		my @line=split "\t", $input[$i];
 		my @next_line=split "\t", $input[$i+1];
 		chomp @line; chomp @next_line;
-		#If the chr on the next line equals the current one and the difference between start and end is less than 2kb
-		if (($line[0] eq $next_line[0]) and ($next_line[1]-$line[2]<20000)){
+		#If the chr on the next line equals the current one and the difference between start and end is less than 20kb
+		if (($line[0] eq $next_line[0]) and ($next_line[1]-$line[2]<20000) and abs($line[3]-$next_line[3])<0.8){
 			push @br_ploidy, $next_line[3];
 			my $new_end=$next_line[2]; 				#the new end will be the end of the next block
 			splice @input, $i+1, 1; 			#remove the next line
-			my $mean_ploidy=mean(@br_ploidy);
+			my $mean_ploidy=sprintf('%.1f', mean(@br_ploidy));
 			$input[$i]="$line[0]\t$line[1]\t$new_end\t$mean_ploidy";		#assign to the current line the new end
 			$endcycle=$endcycle-1;				#reduce the number of iterations by 1 since we removed an element
 			$i=$i-1;						#decrease the counter by 1 since we want to work on the same element for the next cycle	
@@ -383,6 +383,7 @@ sub ploidy_mode{
 	my @sorted_array = sort { $counts{$a} <=> $counts{$b} } keys %counts;
         return $sorted_array[-1];
 }
+
 
 #############################################################
 
