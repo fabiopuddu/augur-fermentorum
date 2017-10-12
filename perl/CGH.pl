@@ -165,11 +165,14 @@ foreach my $chrom (@chromosomes){
 open (my $statout, '>', $sample_name."_plstats.txt");
 
 print ($statout "Chromosome\tPred.ploidy\n");
+my $tot_aneup=0;
 foreach my $chrom (@chromosomes){
 	my $cn=get_as_chr($chrom);		
-	print ($statout "chr$cn\t$ploidy_by_chr{$chrom}\n");
+	my $chr_ploidy=$ploidy_by_chr{$chrom};
+	$tot_aneup += abs($chr_ploidy-$ploidy);
+	print ($statout "chr$cn\t$chr_ploidy\n");
 }
-
+print ($statout "Total.aneuploidies\t$tot_aneup\n");
 close ($statout);
 
 #NOW WE OPEN THE FILE JUST CREATED AND START WORKING ON IT
