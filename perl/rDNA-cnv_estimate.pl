@@ -47,6 +47,7 @@ pop @path; pop @path; #this is the equivalent of .. from where the script is
 my $dir = join ('/',@path);
 my $ref_genome = $dir.'/mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa'; #default reference genome
 my $ty_ref = $dir.'/mpileup_defaults/Ty_ref/Ty1-5.fa'; # default Ty reference genome
+my $mat_ref = $dir.'/mpileup_defaults/a-alpha_ref/a-alpha.fa';
 
 ## Parse options and print usage if there is a syntax error,
 ## or if usage was explicitly requested.
@@ -111,10 +112,40 @@ pod2usage("$0: BedTools does not seem to work.") if ($bed_command !~ /.+/);
 #######################################
 #######################################
 
-#For regions of the genome with two copies in the genome multiply by two (eg rDNA, CUP1)
-
+ #For regions of the genome with two copies in the genome multiply by two (eg rDNA, CUP1)
+ 
 my $gen_cov_ref = genome_cov($input);
 my $genome_wide_median_coverage = median(@$gen_cov_ref);
+
+########################################
+###	MATING TYPE AND PLOIDY ESTIMATION
+#########################################
+
+# check that the TY bam is there 
+
+#split the path 
+my @b = split ('/', $input);
+#get rid of the last three elements
+my $bam = pop @b; #pop @b;
+my $sample_name = substr($bam, 0, -4);
+#join and add the others
+my $bam_dir = join ('/',@b);
+my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
+
+my $mat_bam = $bam_dir.'/../MAT_BAMS/'.$sample_name.'.mat.bam';
+
+my $MATa = 'MATa_HMR:1400-2000';
+my $MATalpha=  'MATalpha_HML:1700-2700';
+#print "$mat_bam,$MATa,$mat_ref\n";
+my $MATa_estimate = repeat_estimate($mat_bam,$MATa,$mat_ref);
+#exit;
+my $MATalpha_estimate = repeat_estimate($mat_bam,$MATalpha,$mat_ref);
+my $sex_estimate=log2($MATa_estimate/$MATalpha_estimate);
+my $sex;
+if    ($sex_estimate <= -0.6){$sex="alpha"}
+elsif ($sex_estimate >=  0.6){$sex="a"}
+elsif ($sex_estimate > -0.6 and $sex_estimate < 0.6){$sex="a/alpha"}
+else { die "Cannot safely determine mating type and ploidy" }
 
 my @s = split ('/', $input);
 my $sa = $s[-1];
@@ -137,7 +168,6 @@ my $mito_estimate = repeat_estimate($input,$mito_loc,$ref_genome)*$ploidy;
 #$mito_estimate = sprintf("%.3f", $mito_estimate);
 print "$mito_estimate\t";
 
-
 #######################################
 #######################################
 ##    								 ##
@@ -152,16 +182,6 @@ my $ty3 = 0;
 my $ty4 = 0;
 my $ty5 = 0;
 
-# check that the TY bam is there 
-
-#split the path 
-my @b = split ('/', $input);
-#get rid of the last three elements
-my $bam = pop @b; #pop @b;
-my $sample_name = substr($bam, 0, -4);
-#join and add the others
-my $bam_dir = join ('/',@b);
-my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam'; 
 my $genome_cov_file = $bam.'.genomewide_median';
 
 #Save Genome Wide Median in a File 
@@ -216,13 +236,18 @@ else {
 	print ("$ty3\t");
 	print ("$ty4\t");
 	print ("$ty5\t");
-	print ("$genome_wide_median_coverage\n");
-
+	print ("$genome_wide_median_coverage\t");
+	printf ("%s (%.1f)\n",$sex,$sex_estimate);
 
 
 #################
 ## Subroutines ##
 #################
+
+sub log2 {
+        my $n = shift;
+        return log($n)/log(2);
+    }
 
 sub median {
   return sum( ( sort { $a <=> $b } @_ )[ int( $#_/2 ), ceil( $#_/2 ) ] )/2;
@@ -280,6 +305,7 @@ sub repeat_estimate {
 	my @s = split("\t",$l);
 	#if the output is as expected then $s[0] is the chr, [1] is the position, [3] is the coverage
 	$Cov_hash{$s[1]}=$s[3];
+	#print "$s[1]\t$s[3]\n";
 	}
 	waitpid($pid, 0);
 	seek CATCHERR, 0, 0;
@@ -288,6 +314,7 @@ sub repeat_estimate {
 	
 	#Get the median of all rDNA coverage values extracted
 	my $med_cov = median(values(%Cov_hash));
+	#print "$med_cov\n";	
 
 	#Divide query coverage by genome wide median coverage and round
 	my $estimate = $med_cov/$genome_wide_median_coverage;
