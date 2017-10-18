@@ -9,8 +9,8 @@ use Cwd 'abs_path';
 use Math::Round;
 #####
 my $bin_size=400; #define the size of the bin to make averages in base pairs
-my $min_span_highlight=2000; #define the minimum lenght of a jump in ploidy to be reported in highlights
-my $threshold=int($min_span_highlight / $bin_size);
+my $min_span_highlight=2500; #define the minimum lenght of a jump in ploidy to be reported in highlights
+my $threshold=$min_span_highlight / $bin_size;
 #####
 #define a hash of centromere coordinates(+5000 bp on both sides)
 my %centromere=(
@@ -57,7 +57,7 @@ my %chr_ends=(
 
 my @chromosomes=('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI');
 
-#@chromosomes=('V',, 'VII');
+#@chromosomes=('V','VII');
 
 
 
@@ -194,7 +194,7 @@ my @highlight_block;
 my @breakpoint_block;
 my @breakpoints;
 my $prev_chr='chr01';
-
+my $prev_plo=$ploidy;
 
 open (my $out, '>', $sample_name."_highlights.txt");
 foreach my $line (@PLO){
@@ -221,9 +221,10 @@ foreach my $line (@PLO){
 	#>>>>AND HERE WE CREATE A BREAKPOINT FILE
 	#check wether the ploidy of the current line falls outside of what is expected for that chromosome
 	my $chr_name=get_as_rom($linea[0]);
-	
-	if (abs ($linea[3]-$ploidy_by_chr{$chr_name}) > 0.5){
+	#print "$linea[0]\t$linea[1]\tabs($linea[3]-$prev_plo)\n";
+	if (abs ($linea[3]-$ploidy_by_chr{$chr_name}) > 0.5 and abs($linea[3]-$prev_plo)<0.8){
 		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\n";
+		#print "positive\n";
 	}
 	else { 
 		#but only if the size of the highlight array is greater than 3
@@ -239,6 +240,7 @@ foreach my $line (@PLO){
 	
 	
 	$prev_chr=$linea[0];
+	$prev_plo=$linea[3];
 } 
 #
 #print Dumper \@breakpoints;
