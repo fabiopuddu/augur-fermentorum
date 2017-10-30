@@ -7,21 +7,27 @@
 			# Based on rep_median_adjust_telomere_only.pl.
 			# Recent changes include: it determines the plate containing the wild-type samples, calculate that plate's median and sets that as a target median for every plate.
 			
-			# Input files needed: rep.txt
-			#SD1862b 128     12      10      39      0       0       0       0       81      878.978969256493        ERS001999       Del1000_YNL120C
-			#SD1863b2        135     12      7       39      12      2       3       1       94      767.640538213103        ERS002002       Del1001_TOM70
-			#SD1863b 127     12      8       39      11      2       3       1       85      834.366835889768        ERS002001       Del1001_TOM70
+			# Input files needed: rep.txt/all_combined.tsv
+			#SDname rDNA    CUP1    mitochondria    Ty1     Ty2     Ty3     Ty4     Ty5     GWM     Telomeres       ERSno   Deletion        chr01   chr02   chr03   chr04   chr05   chr06   chr07   chr08   chr09   chr10   chr11   chr12   chr13   chr14   chr15   chr16   AneupNumber
+			#SD0863b 118.085106382979        11.468085106383 12.8936170212766        39.9787234042553        12.0531914893617        1.90425531914894        3.1063829787234 1.11702127659574        94      614.23391551713 ERS000001       Del1_TDA8       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       0
+			#SD0863b2        122.652631578947        12.1052631578947        12.3368421052632        39.7842105263158        12.4210526315789        1.93684210526316        3.23157894736842        0.989473684210526       95      598.304236757884        ERS000002       Del1_TDA8       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       0			
 			
 			# Input files needed: name\ conversion.tsv
 			#3792STDY6185637 Del1_TDA8       (C001)DN414641I TDA8    SD0863b         ERS000001
 			#3792STDY6185638 Del1_TDA8       (C001)DN414641I TDA8    SD0863b2                ERS000002
 			#3792STDY6185639 Del2_SCS22      (C001)DN414641I SCS22   SD0864b         ERS000003
+			#3792STDY6185640 Del2_SCS22      (C001)DN414641I SCS22   SD0864b2                ERS000004
+			#3792STDY6185641 Del3_SDH8       (C001)DN414641I SDH8    SD0865b         ERS000005
 
 			#You will also need to pass a column number to the script to indicate which repeat number you want to adjust
 			#Column 1: SD_number (don't pass that one); Column 2: rDNA repeats; Column 3: CUP1 repeats;
 			#Column 4: mtDNA copies; Column 5: Ty1 repeats; Column 6: Ty2 repeats;
 			#Column 7: Ty3 copies; Column 8: Ty4 repeats; Column 9: Ty5 repeats;
-			#Column 10: genome wide median; Column 11: Telomere repeats; Column 12: ERS numbers; Column 13: sample name;
+			#Column 10: genome wide median; Column 11: Telomere repeats; Column 12: ERS numbers; Column 13: sample name/Deletion;
+			#Column 14: chr01   Column 15: chr02   Column 16:chr03   Column 17: chr04   Column 18: chr05   
+			#Column 19: chr06   Column 20: chr07   Column 21: chr08  Column 22: chr09   Column 23: chr10   
+			#Column 24: chr11   Column 25: chr12   Column 26: chr13  Column 27: chr14   Column 28: chr15   
+			#Column 29: chr16   Column 30: AneupNumber
 			
 			#THE SCRIPT WILL NOT WORK IF THE COLUMNS ARE NOT IN THE CORRECT ORDER
 
@@ -36,6 +42,8 @@ use warnings;
 #Load functions needed for median calculations
 use POSIX qw(ceil);
 use List::Util qw(sum);
+use Data::Dumper qw(Dumper);
+
 
 ######################
 ######################
@@ -43,9 +51,10 @@ use List::Util qw(sum);
 ######################
 ######################
 
-#Step A: Find the wild-type plate  
 
-#Step B: Get all the measurements & Compute the target median
+#Step A: Read in data into a hash of hashes 
+
+#Step B: Find the wild-type plate , Get all the measurements & Compute the target median
 
 #Step C: Get all the measurements plate by plate
 
@@ -66,7 +75,12 @@ use List::Util qw(sum);
 
 my $rep_file = shift; #results file
 my $plate_file = shift; #name conversion
-my $column = shift; # which measure you want to fix
+#my $column = shift; # which measure you want to fix
+my @columns = (2,3,4,5,6,7,8,9,11);
+
+#print "@columns\n";
+
+#exit;
 
 #####################
 # Declare variables #
@@ -77,7 +91,54 @@ my $column = shift; # which measure you want to fix
 my $target_median = ''; #The target median all plates should have after adjustments. It will be the median of the plate containing the WT strains
 my @plates; #an array containing the name of all plates
 my %factors; #a hash to store plate => factor
+my %data;
+my $column_number;
 
+################
+# Read in data #
+################
+
+my @header;
+
+my $fh;
+open $fh, "<", $rep_file or die $!;  #open provided fastq file
+
+
+while(my $row=<$fh>){ #read file or STDIN line by line
+	chomp $row;
+	#Split the line on the tab 
+	my @file_tags = split "\t", $row;
+	
+	#Set up the hash structure
+	if ($. == 1) {
+		foreach my $t (@file_tags) {
+			push @header, $t;
+		}
+		next;
+	}	
+	my $col_no = scalar @file_tags;
+	$col_no = $col_no -1; 
+	$column_number = $col_no -1;
+	
+	for (my $i=0; $i <= $col_no; $i++) {
+		#$data{$file_tags[0]}{$header[$i]}=$file_tags[$i]; #this writes the name of teh column into the key
+		my $c_n = $i + 1;
+		$data{$file_tags[0]}{$c_n}=$file_tags[$i];
+	}
+}
+close $fh;
+
+#print Dumper \%data;
+
+#exit; 
+
+###############################
+# Start the iterative process #
+###############################
+
+foreach my $column (@columns){
+
+#print "Working on column $column\n";
 
 ##########
 # Step A #
@@ -165,42 +226,45 @@ foreach my $plate (@plates){
 ######
 # Replace the data line by line
 
-#Step C: Replace the data line by line
-my $fh;
-open $fh, "<", $rep_file or die $!;  #open provided fastq file
 
-while(my $row=<$fh>){ #read file or STDIN line by line
-	chomp $row;
-	
-	#Split the line on the tab 
-	my @tags = split "\t", $row;
-	
-	#Get the sample name and the value to be normalised
-	my $index = $column - 1;
-	my $sample = $tags[0];
-	my $old_measure = $tags[$index];
+#Step C: Replace the data in the hash of hashes
 
-	#Get the plate number
-	my $plate = get_plate_number($sample);
+	foreach my $sample (keys %data){
+		
+		#print "$sample\t";
+		
+		my $old_measure = $data{$sample}{$column};
+		#print "Old_measure: $old_measure\t";
+		
+		my $plate = get_plate_number($sample);
+		#print "Plate: $plate\t";
+		
+		#Get the plate factor
+		my $factor = $factors{$plate};
+			
 	
-	#Get the plate factor
-	my $factor = $factors{$plate};
-	
-	#Get the adjusted measurement
-	my $adj_measure = $old_measure * $factor;
+		#Get the adjusted measurement
+		my $adj_measure = $old_measure * $factor;
+		#print "New measure: $adj_measure\n";
+		
+		$data{$sample}{$column}=$adj_measure;	
+	} 
 
-	#Round the adjusted measurements for teh output 
-	$adj_measure = sprintf("%.3f", $adj_measure);
-	
-	#Replace value and print the new line 
-	$tags[$index] = $adj_measure;
-	#print "$row\n"; #if one wants to compare the row as it was
-	print join("\t",@tags),"\n";
-	
-	
+
+
+}
+
+#################
+# Print results #
+#################
+
+print "@header"."\n";
+foreach my $repeat (sort keys %data) {
+	for (my $i=1; $i <= $column_number; $i++) {
+	 print "$data{$repeat}{$i}\t";
 	}
-close $fh;
-
+	print "\n";
+}
 
 
 ######################
