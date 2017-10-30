@@ -89,9 +89,10 @@ print "\n=======================================================================
 printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "║");
 print "===============================================================================================================================================";
 foreach my $ERSNO (sort @SAMPLES){
-	my $rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$rDNA{$control};
-	my $mito_var=sprintf "%.2f", $mito{$ERSNO}/$mito{$control};
-	my $tel_var=sprintf "%.2f", $telo{$ERSNO}/$telo{$control};
+	 my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A';
+        if ($rDNA{$control} ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$rDNA{$control};}
+        if ($mito{$control} ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$mito{$control};}
+        if ($telo{$control} ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$telo{$control};}
 	if ($ERSNO eq $control){
 		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)", "║");#print the key (current sample ERS number)
 	}
