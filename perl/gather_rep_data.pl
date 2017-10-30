@@ -23,7 +23,7 @@ for my $line (@SAMPLES){
 	my $ploidy_ref=&get_ploidy($fname,$delname);
 	if (defined $ploidy_ref and defined $rep_group and defined $telo){
 	my $ploidy=join("\t", @$ploidy_ref);
-	print "$fname\t$rep_group\t$telo\t$ERS\t$delname\t$ploidy\n";
+	print "$rep_group\t$telo\t$ERS\t$delname\t$ploidy\n";
 	}
 }
 
