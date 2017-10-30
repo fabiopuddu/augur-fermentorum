@@ -56,6 +56,7 @@ my %gwm;
 my %telo;
 my @SAMPLES;
 my @LINE;
+my %sex;
 foreach my $ERSNO (keys %bcID) {
 	if (-e "$flnm{$ERSNO}".'.txt'){
 		open (my $res_file, '<', $flnm{$ERSNO}.'.txt');
@@ -71,6 +72,7 @@ foreach my $ERSNO (keys %bcID) {
 		$ty4{$ERSNO}=(defined $LINE[7] and $LINE[7] ne "-1" and $LINE[7] ne "") ? sprintf "%.1f",$LINE[7] : "N/A" ;;
 		$ty5{$ERSNO}=(defined $LINE[8] and $LINE[8] ne "-1" and $LINE[8] ne "") ? sprintf "%.1f",$LINE[8] : "N/A" ;;
 		$gwm{$ERSNO}=(defined $LINE[9] and $LINE[9] ne "-1" and $LINE[9] ne "") ? sprintf "%.1f",$LINE[9]  : "N/A" ;;
+		$sex{$ERSNO}=(defined $LINE[10] and $LINE[10] ne "-1" and $LINE[10] ne "") ? $LINE[10]  : "N/A" ;;
 		push @SAMPLES, $ERSNO, ;
 	}
 	if (-e "$flnm{$ERSNO}".'.tel'){
@@ -83,25 +85,25 @@ foreach my $ERSNO (keys %bcID) {
 }
 
 print "REPETITIVE DNA QUANTIFICATION";
-my   $header="%-13s%10s%7s%6s%11s%12s%7s%6s%6s%6s%6s%6s%6s%20s%7s%14s%8s\n";
-my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%10s";
-print "\n===============================================================================================================================================\n";
-printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "║");
-print "===============================================================================================================================================";
+my   $header="%-13s%10s%7s%6s%11s%12s%7s%6s%6s%6s%6s%6s%6s%20s%7s%14s%8s%15s%8s\n";
+my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%10s%+15s%8s";
+print "\n====================================================================================================================================================================\n";
+printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "║", "Mating Type", "║");
+print "====================================================================================================================================================================";
 foreach my $ERSNO (sort @SAMPLES){
 	 my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A';
         if ($rDNA{$control} ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$rDNA{$control};}
         if ($mito{$control} ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$mito{$control};}
         if ($telo{$control} ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$telo{$control};}
 	if ($ERSNO eq $control){
-		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)", "║");#print the key (current sample ERS number)
+		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
 	}
 	else{
-		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "║");#print the key (current sample ERS number)
+		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
 	
 	}
 }
-print "\n===============================================================================================================================================\n";
+print "\n====================================================================================================================================================================\n";
 
 open (my $outfile, '>', 'results.txt');
 #print $outfile, "REPETITIVE DNA QUANTIFICATION";
