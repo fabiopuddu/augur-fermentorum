@@ -20,7 +20,7 @@ GetOptions
 );
 ( $input && -f $input && $control) or die qq[Usage: $0 \n
 					 	-i name conversion file\n
-						-c control ERS number
+						-c control ERS number(s), comma separated if > 1
 						];
 						
 						
@@ -32,18 +32,29 @@ my %bcID;
 my %flnm;
 my %delnm;
 my %is_control;
+
+my $multiref;
+if ($control =~ m/,/) {
+    $multiref=1;
+}
+else{
+    $multiref=0;
+}
+
 for my $line (@NC){
-		(my $barcodeID, my $delname, my $plate, my $aka, my $filename, undef, my $ERSNO)=split("\t", $line);
+		(my $barcodeID, my $delname, my $plate, my $aka, my $filename, my $ERSNO)=split("\t", $line);
+    # Removed 'undef' between my $filename and my $ERSNO, because the empty column was not being recognised
 		$nc{$ERSNO}=substr($aka,0,10);
 		$bcID{$ERSNO}=$barcodeID;
 		$flnm{$ERSNO}=$filename;
 		$delnm{$ERSNO}=$delname;
-		if ($ERSNO eq $control){$is_control{$ERSNO}='+'}
+		if ($control =~ $ERSNO){$is_control{$ERSNO}='+'}
 		else{$is_control{$ERSNO}='-'}
 		# if ($plate =~ /C/){$is_control{$ERSNO}='+'}
 # 		elsif ($plate =~ /S/){$is_control{$ERSNO}='-'}
 # 		else{$is_control{$ERSNO}='?'}
 }
+
 my %rDNA;
 my %CUP1;
 my %mito;
@@ -90,12 +101,37 @@ my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%10s%+15s%8
 print "\n====================================================================================================================================================================\n";
 printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "║", "Mating Type", "║");
 print "====================================================================================================================================================================";
+
+my $refrDNA=0;
+my $refmito=0;
+my $reftelo=0;
+
+if ($multiref){
+    my @allrefs;
+    my $i=0;
+    @allrefs=split(',', $control);
+    foreach my $ncontrol (sort @allrefs){
+        $refrDNA+=$rDNA{$ncontrol};
+        $refmito+=$mito{$ncontrol};
+        $reftelo+=$telo{$ncontrol};
+        $i++;
+    }
+    $refrDNA/=$i;
+    $refmito/=$i;
+    $reftelo/=$i;
+}
+else{
+    $refrDNA=$rDNA{$control};
+    $refmito=$mito{$control};
+    $reftelo=$telo{$control};
+}
+
 foreach my $ERSNO (sort @SAMPLES){
 	 my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A';
-        if ($rDNA{$control} ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$rDNA{$control};}
-        if ($mito{$control} ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$mito{$control};}
-        if ($telo{$control} ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$telo{$control};}
-	if ($ERSNO eq $control){
+        if ($rDNA{$control} ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$refrDNA;}
+        if ($mito{$control} ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$refmito;}
+        if ($telo{$control} ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$reftelo;}
+    if ($control =~ $ERSNO){
 		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
 	}
 	else{
