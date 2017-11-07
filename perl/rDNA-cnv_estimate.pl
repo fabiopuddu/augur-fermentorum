@@ -46,8 +46,8 @@ my @path = split ('/', $script_location);
 pop @path; pop @path; #this is the equivalent of .. from where the script is
 my $dir = join ('/',@path);
 my $ref_genome = $dir.'/mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa'; #default reference genome
-my $ty_ref = $dir.'/mpileup_defaults/Ty_ref/Ty1-5.fa'; # default Ty reference genome
-my $mat_ref = $dir.'/mpileup_defaults/a-alpha_ref/a-alpha.fa';
+my $ty_ref = $dir.'/mpileup_defaults/repDNA_ref/repDNA.fa'; # default Ty reference genome
+my $mat_ref = $dir.'/mpileup_defaults/repDNA_ref/repDNA.fa';
 
 ## Parse options and print usage if there is a syntax error,
 ## or if usage was explicitly requested.
@@ -131,8 +131,7 @@ my $sample_name = substr($bam, 0, -4);
 #join and add the others
 my $bam_dir = join ('/',@b);
 my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
-
-my $mat_bam = $bam_dir.'/../MAT_BAMS/'.$sample_name.'.mat.bam';
+my $mat_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
 
 my $MATa = 'MATa_HMR:1400-2000';
 my $MATalpha=  'MATalpha_HML:1700-2700';
