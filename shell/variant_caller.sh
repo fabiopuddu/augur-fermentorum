@@ -31,9 +31,9 @@ while getopts "fvkh" opt
 #############################
 waitforcompletion(){
 printf "Waiting for process to complete"
-finito=`squeue -u fp305 | wc -l | tr -d "\t"`
+finito=`squeue -u ia327 | wc -l | tr -d "\t"`
 while [[ $finito != '1' ]]    
-    do  finito=`squeue -u fp305 | wc -l | tr -d "\t"`
+    do  finito=`squeue -u ia327 | wc -l | tr -d "\t"`
         printf '.'
         sleep 5
     done  
@@ -101,7 +101,7 @@ if [[ $check_deletions == 1 ]]
 			gene_name=`echo $PWD | tr '/' "\n" | grep Del | sed 's/Del[01234567.89]*_//g' | tr '[:lower:]' '[:upper:]'` 
 				cat bams_for_mpileup | while read line
 					do
-						name=`echo $line | grep -o "SC_MFY.......\|SD......" | tr -d '.'`
+						name=`echo $line | grep -oE '\bSD[^ ]*\.|\bSC_MFY[^ ]*\.' | tr -d '.'`
 						printf "Gene: $gene_name\tProcessing...$name\t" >>../deletion_check_log
 						check=`detect_deletion_chr_region.pl $gene_name $line | tr "\t" "\n" | grep Deleted: | sed 's/Deleted://g'`
 						#check=`detect_deletion_chr_region.pl $gene_name $line`
@@ -117,12 +117,40 @@ fi
 #################################
 mkdir -p calling
 cd calling
-cat ../bams_for_mpileup |  while read line 
+cat ../bams_for_mpileup | while read line
 	do	n=$(echo $line |  tr '/' "\n" | tail -n1 | sed "s/\.bam//g" | sed "s/\.merged//g")
-		ers=`grep -w $n ../../name\ conversion.tsv | tr "\t" "\n" | tail -n 1`
-		printf "\r\033[K  Processing $ers"
-#		if [[ ! -a $m.vcf.gz ]] 
-		 	 sbatch --partition=LONG -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --wrap="samtools mpileup -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -g -t DP,DV -C0 -pm3 -F0.2 -d10000 ../$line | bcftools call -vm -f GQ | bgzip -f > $ers.vcf.gz "
+		ers=`grep -w $n ../../name\ conversion.tsv | tr "\t" "\n" | tail -n 1 | sed -e 's/[[:space:]]*$//'`
+        check_pool=`echo $n | grep 'pool'`
+        if [ -z $check_pool ]
+            then ploidy=2
+            else ploidy=4
+        fi
+		printf "\r\033[K  Processing $ers\t"
+#		if [[ ! -a $m.vcf.gz ]]
+
+        # Set some parameters according to ploidy
+        minfrac=`bc -l <<< "scale=1; 2/$ploidy/5"` # Bash doesn't do floating point arithmetic
+        minfrac=`echo "0$minfrac"`
+
+        ### Check if bam contains 2-micron reads
+        hits2m=`samtools view ../$line | awk '$3 == "2-micron"' | wc -l` # Optimise? (stop checking if one 2-micron is found)
+            if [ "$hits2m" -gt 0 ]
+                then
+                    samtools view -h ../$line | awk '!($3 == "2-micron")' > $n.no2m.sam
+                    command2="samtools view -Sb $n.no2m.sam | samtools sort -o $n.no2m.bam"
+                    command3="freebayes -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -p $ploidy -m0 -C3 -F $minfrac --max-coverage 10000 -J -= $n.no2m.bam | bgzip -f > $ers.vcf.gz"
+                    command4="rm $n.no2m.*"
+                    PROC2=$(sbatch --partition=LONG --wrap="${command2}" | sed 's/Submitted batch job //g')
+                    PROC3=$(sbatch --partition=LONG -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --dependency=afterok:${PROC2} --wrap="${command3}" | sed 's/Submitted batch job //g')
+                    sbatch --partition=LONG --dependency=afterok:${PROC3} --wrap="${command4}"
+
+                else
+                    sbatch --partition=LONG -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --wrap="freebayes -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -p $ploidy -m0 -C3 -F $minfrac --max-coverage 10000 -J -= ../$line | bgzip -f > $ers.vcf.gz"
+            fi
+
+# freebayes outputs to vcf instead of bcf (no equivalent to -g mpileup tag)
+# freebayes can't choose just two tags for output (-t DP,AD/DV)
+
 			sleep 1
 		 	#I set the -C flag from 50 to 0 because when many artificially introduced mutantions fall within the same read, it downgraded mapping quality too much resulting in those 			mutations not being called.					
  #		fi

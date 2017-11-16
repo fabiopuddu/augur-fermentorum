@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 #  analyser-multi.sh
 #  Created by Fabio on 23/11/2014.
 #############################################
@@ -208,9 +208,14 @@ if [[   $rDNA == 1 ]]
             mkdir -p repDNA
         	  cd repDNA
             while read -r line ; 
-            do  
+            do
+                check_pool=`echo $line | grep 'pool'`
+                    if [ -z $check_pool ]
+                        then sampleploidy=$ploidy
+                        else sampleploidy=$(( $ploidy * 2 ))
+                    fi
                name=`echo $line | tr "/" "\n" | tail -n1 | sed "s|\.bam||g" | head -n1`
-	      command="rDNA-cnv_estimate.pl -p ${ploidy} -i ../$line > $name.txt" 
+	      command="rDNA-cnv_estimate.pl -p ${sampleploidy} -i ../$line > $name.txt"
                if [[ ${v} -eq '1' ]]; then echo $command; fi
                PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
                proclist="${proclist}\|${PROC1}"
@@ -229,10 +234,15 @@ if [[ $aneup == 1 ]]
          cd ploidy_data
          while read -r line
             do
+                check_pool=`echo $line | grep 'pool'`
+                    if [ -z $check_pool ]
+                        then sampleploidy=$ploidy
+                        else sampleploidy=$(( $ploidy * 2 ))
+                    fi
          	    code1=`echo $line | tr '/' "\n" | tail -n1 | sed "s|\.bam||g"` #SCMFY or #SD code
-         	    code2=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 7`
+                code2=`grep -w ${code1} ../../name\ conversion.tsv | grep -oE '\bERS[^\s]*\b'` # Fetch ERS code (cut -f 7 gave issues depending on the tabulation of name\ conversion.tsv)
          	    name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
-         	    command="CGH.pl -i ../$line -p $ploidy -f -l \"${name}:${code1}:${code2}\""
+         	    command="CGH.pl -i ../$line -p $sampleploidy -f -l \"${name}:${code1}:${code2}\""
          	    if [[ ${v} -eq '1' ]]; then echo ${command}; fi
          	    PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
          	    proclist="${proclist}\|${PROC1}"
@@ -491,101 +501,10 @@ printf "done\n"
 #                                                #
 ##################################################
 
-#####
-##HEADER
-#####
-number_of_samples=0
-if [[ $v == '1' ]] ; then echo '...Finished';fi
-if [[ $v == '1' ]] ; then     printf "\n\n\n" ;fi
-    echo 'MUTATION SUMMARY'
-    width=43
-    headerdip2="\n %-10s %9s %12s %60s %7s %23s %4s %40s %12s %7s %3s %12s %10s "
-    headerdip1="\n %-10s %10s %5s %4s \e[32m%5s \e[33m%9s \e[34m%7s \e[0m%12s %3s %7s %10s %7s %10s %10s %6s \e[32m%10s \e[0m%8s %10s %3s %5s %3s %8s %10s %6s %5s %6s %4s %5s\n"
-    formatdip=" %-10s %8s %4s %4s \e[32m%5s \e[33m%8s \e[34m%9s \e[0m%9s %8s %4s %12s %8s %8s %10s %8s \e[32m%6s \e[0m%10s %8s %7s %9s %8s %5s %9s %10s %4s\n"
-    headerhap="\n %-10s %4s %8s %6s \e[32m%5s \e[33m%9s \e[34m%7s \e[0m%12s %3s %4s %1s %6s %5s \e[32m%12s \e[0m%10s %12s %2s %6s %1s %2s %2s %5s %4s %4s %4s \n"
-    formathap=" %-12s %8s %8s %7s \e[32m%5s \e[33m%8s \e[34m%9s \e[0m%9s %8s %4s %4s %5s %7s \e[32m%7s \e[0m%12s %11s %6s %4s %4s %5s %7s\n"
-        if [[ $ploidy == '2' ]]
-            then    printf "=========================================================================================================================================================================================================\n"
-                    printf " $experiment_name \n"
-                    printf "========================================================================================================================================================================================================="
-                    printf "$headerdip2" "." "." "║" "SINGLE NUCLEOTIDE VARIANTS GAINED (OF WHICH HOMOZIGOUS)" "║" "LOSS OF HETEROZIGOSITY" "║" " INSERTIONS/DELETIONS GAINED" "║" "LOSS OF HETEROZIGOSITY" "║"
-                    printf "$headerdip1" "ERS NO." "SAMPLE NAME" "REF" "║" "NONSENSE" "MISSENSE" "SENSE" "INTERGENIC" "│" "TO REF." "TOTAL SNV" "║" "TO ALT." "TO REF." "║" "FRAMESHIFT" "INFRAME" "INTERGENIC" "|" "TOT.INDEL(HOM)" "║" "TO ALT." "TO REF." "║"
-                    printf "=========================================================================================================================================================================================================\n"
-            else    printf "===================================================================================================================================================================\n"
-                    printf " $experiment_name \n"
-                    printf "==================================================================================================================================================================="
-                    printf "$headerhap" "ERS NO." "SAMPLE NAME" "REF" "║" "NONSENSE" "MISSENSE" "SENSE" "INTERGENIC" "│" "TO REF." "|" "TOT.SNV" "║" "FRAMESHIFT" "INFRAME" "INTERGENIC" "|" "TO REF." "|" "TOT.INDEL" "║"
-                    printf "===================================================================================================================================================================\n"
+printf "\n"
+formatcontrol=$(echo $control | tr " " ",") # Fixing for control format
+get_mut_summary_table.pl -i ../../name\ conversion.tsv -c ${formatcontrol}
 
-        fi
-#########
-##MUTATION SUMMARY TABLE
-#########
-        for x in sort.ERS*.isec.vcf
-        do
-            n=$(echo $x | sed 's/.isec.vcf//g' | sed 's/sort.//g')
-            num=$(echo $n | sed 's/ERS//g')
-            name=`cat ../../name\ conversion.tsv | grep $n | cut -f4`
-            #count SNPs
-            SNPtot=`grep '##' $x -v | grep '#CHROM' -v | grep 'INDEL' -v | grep '\./\.' -v | wc -l` #homo+hetero mutations from het-unmasked control
-            SNPHOMREV=`grep '##' inverse_intersection/$x -v | grep '#CHROM' -v | grep 'INDEL' -v | grep "1/1\|2/2" | grep PASS | wc -l | tr -d ' '` #homozigous reversion to ref (i.e. control 1/1, sample 0/0)
-            if [[ $ploidy == "2" ]]
-                then     SNPhom=`grep '##' $x -v | grep '#CHROM' -v | grep 'INDEL' -v | grep "1/1\|2/2" | wc -l | tr -d ' '` #homo mutations from het-unmasked control
-                        SNP="$SNPtot($SNPhom)"
-                        SNPhomomask=`grep '##' intersect_masked/$x -v | grep '#CHROM' -v | grep 'INDEL' -v | grep "1/1\|2/2" | wc -l | tr -d ' '` #hetero mutations from het-masked control
-                        SNPLOH1=$(( $SNPhomomask-$SNPhom )) #loss of heterozygosity towards 1/1
-                        SNPLOH2=`grep '##' inverse_intersection/$x -v | grep '#CHROM' -v | grep 'INDEL' -v | grep "0/1" | wc -l | tr -d ' '` #loss of heterozygosity towards 0/0
-                else    SNP="$(($SNPtot+$SNPHOMREV))"
-            fi
-        #count INDELs
-            INDtot=`grep '##' $x -v | grep '#CHROM' -v | grep 'INDEL' | grep '\./\.' -v | wc -l` #homo+hetero indels from het-unmasked control
-            INDHOMREV=`grep '##' inverse_intersection/$x -v | grep '#CHROM' -v | grep 'INDEL' | grep "1/1\|2/2" | grep PASS | wc -l | tr -d ' '` #homozigous reversion to ref (i.e. control 1/1, sample 0/0)
-            if [[ $ploidy == "2" ]]
-                then    INDhom=`grep '##' $x -v | grep '#CHROM' -v | grep 'INDEL' | grep "1/1\|2/2" | wc -l | tr -d ' '` #homo mutations from het-unmasked control
-                        IND="$INDtot($INDhom)"
-                        INDhomomask=`grep '##' intersect_masked/$x -v | grep '#CHROM' -v | grep 'INDEL' | grep "1/1\|2/2" | wc -l | tr -d ' '` #hetero indels from het-unmasked control
-                        INDLOH1=$(( $INDhomomask-$INDhom )) #loss of heterozygosity towards 1/1
-                        INDLOH2=`grep '##' inverse_intersection/$x -v | grep '#CHROM' -v | grep 'INDEL' | grep "0/1" | wc -l | tr -d ' '` #loss of heterozygosity towards 0/0
-                else    IND="$INDtot"
-            fi
-    #count consequences
-            perl $DIR/../mareike/counting_consequences.pl -i $x > csq.file
-            STOP=`grep "stop_gained" csq.file | grep SNP | head -c 2 | tr -d '\t'`
-            MISS=`grep "missense_variant" csq.file | grep SNP | head -c 2 | tr -d "\t"`
-            FS=$((`grep "frameshift_variant" csq.file | grep INDEL | head -c 2 | tr -d '\t'` + `grep "stop_gained" csq.file | grep INDEL | head -c 2 | tr -d '\t'`))
-            INFRAME=$((`grep "inframe_insertion" csq.file | grep INDEL | head -c 2 | tr -d '\t'` + `grep "inframe_deletion" csq.file | grep INDEL | head -c 2 | tr -d '\t'`))
-            SENSE=`grep "synonymous_variant" csq.file | grep SNP | head -c 2 | tr -d '\t'`
-            UP_DOWN_SNV=`grep '##' $x -v | grep '#CHROM' -v |grep 'INDEL' -v | grep stop_gained -v | grep missense -v | grep synonymous -v | grep "\./\." -v | wc -l`
-            UP_DOWN_SNV_HOM=`grep '##' $x -v | grep '#CHROM' -v |grep 'INDEL' -v | grep stop_gained -v | grep missense -v | grep synonymous -v | grep "1/1\|2/2" | wc -l|tr -d ' '`
-            UP_DOWN_SNV="$UP_DOWN_SNV($UP_DOWN_SNV_HOM)"    
-            UP_DOWN_INDEL=`grep '##' $x -v | grep '#CHROM' -v  | grep 'INDEL' | grep inframe_deletion -v | grep inframe_insertion -v | grep frameshift -v | grep "\./\." -v | wc -l`
-    #Display results
-            if [[ "$control" =~ "$num"  ]]
-                then
-                    contr='+++'
-                        if [[ $multiple_ref == '1' ]]
-                            then    apex1='x'
-                                    apex2='y'
-                        fi
-                else
-                    contr='-'
-                    number_of_samples=$(($number_of_samples+1))
-                    apex1=''
-                    apex2=''
-            fi
-            if [[ $ploidy == '1' ]]
-                then printf "$formathap" \ $n $name $contr "║" $STOP $MISS $SENSE $UP_DOWN_SNV "│" $SNPHOMREV "|" $SNP "║" $FS $INFRAME $UP_DOWN_INDEL "|"  $INDHOMREV "|" $IND "║"
-                else printf "$formatdip" \ $n $name $contr "║" $STOP $MISS $SENSE $UP_DOWN_SNV "│" $SNPHOMREV $SNP "║" $SNPLOH1$apex1 $SNPLOH2$apex2 "║" $FS $INFRAME $UP_DOWN_INDEL "|" $IND "║" $INDLOH1 $INDLOH2 "║" 
-            fi
-    done
-if [[ $ploidy == '1' ]]
-    then printf "===================================================================================================================================================================\n"
-    else printf "=========================================================================================================================================================================================================\n"
-fi
-if [[ $multiple_ref == '1' && $ploidy == '2' ]]
-    then    printf "x = number of 0/1 mutations in the combined control that are 1/1 in this control sample\n"
-            printf "y = number of 0/1 mutations in the combined control that are 0/0 in this control sample\n"
-fi
 
 ##convert results in gene list:
     ##You will need to amend this script. I will include a file called
@@ -600,6 +519,7 @@ perl $DIR/../mareike/vcf_to_gene_list_het.pl -i experiment_merge.vcf > het.table
 #  CALCULATING/DISPLAYING GENOTYPE TABLE        #
 #                                               #
 #################################################
+printf "\n"
 if [[ ${show_syno} == 1 ]]
 	then get_genotype_table.pl -i hom.table.file -s
 	else get_genotype_table.pl -i hom.table.file
@@ -611,9 +531,10 @@ printf "\n"
 #                                           #
 #############################################
 if [[ ${rDNA} ]]
-	then cd ../repDNA
-		get_repetitive_table.pl -i ../../name\ conversion.tsv -c ${control}
-	     cd ../analysis	
+	then
+        cd ../repDNA
+            get_repetitive_table.pl -i ../../name\ conversion.tsv -c ${formatcontrol}
+        cd ../analysis
 fi
 printf "\n"
 #################################################
@@ -641,40 +562,40 @@ printf "\n"
 printf "\e[0m\n=======================================================================================================================================================================\n"
 # printf "Shared SNV" 
 # cat shared_mutations.vcf | grep 'INDEL' -v | wc -l
-printf "Total Unique SNV" 
-cat experiment_merge.vcf | grep -v '##' | grep "0/1\|1/1\|2/2" | grep -v 'CHROM' | grep -v 'INDEL' | wc -l
-# printf "Shared INDELS" 
+#printf "Total Unique SNV"
+#cat experiment_merge.vcf | grep -v '##' | grep "0/1\|1/1\|2/2" | grep -v 'CHROM' | grep -v 'INDEL' | wc -l
+# printf "Shared INDELS"
 # cat shared_mutations.vcf | grep 'INDEL' | grep "0/1\|1/1" | wc -l
-printf "Total Unique INDELS" 
-cat experiment_merge.vcf | grep -v '##' | grep "0/1\|1/1\|2/2" | grep -v 'CHROM' | grep  'INDEL' | wc -l
+#printf "Total Unique INDELS"
+#cat experiment_merge.vcf | grep -v '##' | grep "0/1\|1/1\|2/2" | grep -v 'CHROM' | grep  'INDEL' | wc -l
 printf "\n"
-printf "\nSTATISTICS\n"
-printf "=======================================================================================================================================================================\n"
-perl $DIR/../mareike/vcf_stats_table_all.pl experiment_merge.vcf > stat_table.txt
-echo $number_of_samples >>stat_table.txt
-cat stat_table.txt 
+#printf "\nSTATISTICS\n"
+#printf "=======================================================================================================================================================================\n"
+#perl $DIR/../mareike/vcf_stats_table_all.pl experiment_merge.vcf > stat_table.txt
+#echo $number_of_samples >>stat_table.txt
+#cat stat_table.txt 
 printf "\nHETEROZYGOUS SNV MUTATION OVERLAP\n"
 printf "=======================================================================================================================================================================\n"
 line_counter=0
-# cat experiment_merge.vcf | grep -v '##' | grep -v 'INDEL' | while read line
-#                                     do  tab_counter=1
-#                                         line_counter=$(($line_counter+1))
-#                                         for tab in $line
-#                                             do  if [[ $tab_counter == '1' || $tab_counter == '2' ]]
-#                                                     then printf "$tab\t\t" >> overlap_table.txt
-#                                                 elif [[ $tab_counter -gt 9 && $line_counter == '1' ]]
-#                                                     then     printf "$tab\t" >> overlap_table.txt
-#                                                 elif [[ $tab_counter -gt 9 && $line_counter -gt 1 ]]
-#                                                     then    g=$(echo $tab | grep -o "./.")
-#                                                             if [[ $g == '' ]]
-#                                                                 then   printf ".\t\t" >> overlap_table.txt
-#                                                                 else   printf "$g\t\t" >> overlap_table.txt
-#                                                             fi
-#                                                 fi
-#                                                 tab_counter=$(($tab_counter+1))
-#                                             done
-#                                         printf "\n" >> overlap_table.txt
-#                                     done
+ cat experiment_merge.vcf | grep -v '##' | grep -v 'INDEL' | while read line
+                                     do  tab_counter=1
+                                         line_counter=$(($line_counter+1))
+                                         for tab in $line
+                                             do  if [[ $tab_counter == '1' || $tab_counter == '2' ]]
+                                                     then printf "$tab\t\t" >> overlap_table.txt
+                                                 elif [[ $tab_counter -gt 9 && $line_counter == '1' ]]
+                                                     then     printf "$tab\t" >> overlap_table.txt
+                                                 elif [[ $tab_counter -gt 9 && $line_counter -gt 1 ]]
+                                                     then    g=$(echo $tab | grep -o "./.")
+                                                             if [[ $g == '' ]]
+                                                                 then   printf ".\t\t" >> overlap_table.txt
+                                                                 else   printf "$g\t\t" >> overlap_table.txt
+                                                             fi
+                                                 fi
+                                                 tab_counter=$(($tab_counter+1))
+                                             done
+                                         printf "\n" >> overlap_table.txt
+                                     done
 # cat overlap_table.txt | grep "0/1\|1/1\|2/2\|0/2\|CHROM"
 #rm sort*.vcf.gz*
 #rm csq.file
