@@ -203,7 +203,7 @@ sub Design_KO_Oligos {
 	# print ("Name: $stable_id Location: $chr $start - $end Strand: $strand\n");
 	# print ("F1: $F1_oligo\nR1: $R1_oligo\n");
 	# print (".3: $three_oligo Location: -$three_from_stop from Stop Codon\n.4: $four_oligo Location: +$four_from_stop from Stop Codon\n");
-	# print ("Estimated PCR length: $product_length\n"); 
+	 print ("Estimated PCR length: $product_length\n"); 
 
 	return %output;
 }
