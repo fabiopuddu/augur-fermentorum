@@ -90,13 +90,23 @@ while( my $l = <$ifh> )
                             my $samplesHom='';
                             my $c = 0;for(my $i=9;$i<@s;$i++){if($s[$i]=~/\//){ #first match for / to ignore all genotypes that are .
                             #then split the genotype on the :   ( 1/1:20:37:20:129,60,0  )
-                            my @gty = split( /\:/, $s[$i]);
+                                my @gty = split( /\:/, $s[$i]);
                             #split the first one on the /
-                            my @g = split( /\//, $gty[0]);
-                            #a sample is homozygous if the two are the same and not zero
-           					if ($g[0] eq $g[1] && $g[0] ne '0' && $g[0] ne '.'){
-            					$homs++;$samplesHom.=qq[$samples[$i];];}} 
-            				}
+                                my @g = split( /\//, $gty[0]);
+                            # determine ploidy of sample by length of @g
+                                my $ploidy = scalar @g;
+                                if ($ploidy eq '2'){
+                                    #a sample is homozygous if the two are the same and not zero
+                                    if ($g[0] eq $g[1] && $g[0] ne '0' && $g[0] ne '.'){
+                                        $homs++;$samplesHom.=qq[$samples[$i];];}
+                                }
+                                if ($ploidy eq '4'){
+                                    #a sample is homozygous if the four are the same and not zero
+                                    if ($g[0] eq $g[1] && $g[0]eq $g[2] && $g[0] eq $g[3] && $g[0] ne '0' && $g[0] ne '.'){
+                                        $homs++;$samplesHom.=qq[$samples[$i];];}
+                                }
+                               }
+                            }
                             #optional: do both hets and homs
                             #my $c = 0;for(my $i=9;$i<@s;$i++){if($s[$i]=~/1\/1:/){$homs++;$samplesHom.=qq[$samples[$i];];}elsif($s[$i]=~/1\/0:/||$s[$i]=~/0\/1:/){$hets++;}}
                             #the consequence line will be split on the :
