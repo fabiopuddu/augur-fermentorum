@@ -33,12 +33,9 @@ my %flnm;
 my %delnm;
 my %is_control;
 
-my $multiref;
+my $multiref=0;
 if ($control =~ m/,/) {
     $multiref=1;
-}
-else{
-    $multiref=0;
 }
 
 for my $line (@NC){
@@ -46,7 +43,11 @@ for my $line (@NC){
     # Removed 'undef' between my $filename and my $ERSNO, because the empty column was not being recognised
 		$nc{$ERSNO}=substr($aka,0,10);
 		$bcID{$ERSNO}=$barcodeID;
-		$flnm{$ERSNO}=$filename;
+        if ($filename){ # If variable is empty, use the barcodeID (for SC_MFY samples)
+            $flnm{$ERSNO}=$filename;
+        } else{
+            $flnm{$ERSNO}=$barcodeID;
+        }
 		$delnm{$ERSNO}=$delname;
 		if ($control =~ $ERSNO){$is_control{$ERSNO}='+'}
 		else{$is_control{$ERSNO}='-'}
@@ -58,6 +59,7 @@ for my $line (@NC){
 my %rDNA;
 my %CUP1;
 my %mito;
+my %twom;
 my %ty1;
 my %ty2;
 my %ty3;
@@ -76,12 +78,13 @@ foreach my $ERSNO (keys %bcID) {
 		$rDNA{$ERSNO}= (defined $LINE[1] and $LINE[1] ne "-1" and $LINE[1] ne "") ? sprintf "%.1f",$LINE[1] : "N/A" ;
 		$CUP1{$ERSNO}=(defined $LINE[2] and $LINE[2] ne "-1" and $LINE[2] ne "") ? sprintf "%.1f",$LINE[2] : "N/A" ;
 		$mito{$ERSNO}=(defined $LINE[3] and $LINE[3] ne "-1" and $LINE[3] ne "") ? sprintf "%.1f",$LINE[3] : "N/A" ;
-		$ty1{$ERSNO}=(defined $LINE[4] and $LINE[4] ne "-1" and $LINE[4] ne "") ? sprintf "%.1f",$LINE[4] : "N/A" ;
-		$ty2{$ERSNO}=(defined $LINE[5] and $LINE[5] ne "-1" and $LINE[5] ne "") ? sprintf "%.1f",$LINE[5] : "N/A" ;;
-		$ty3{$ERSNO}=(defined $LINE[6] and $LINE[6] ne "-1" and $LINE[6] ne "") ? sprintf "%.1f",$LINE[6] : "N/A" ;;
-		$ty4{$ERSNO}=(defined $LINE[7] and $LINE[7] ne "-1" and $LINE[7] ne "") ? sprintf "%.1f",$LINE[7] : "N/A" ;;
-		$ty5{$ERSNO}=(defined $LINE[8] and $LINE[8] ne "-1" and $LINE[8] ne "") ? sprintf "%.1f",$LINE[8] : "N/A" ;;
-		$gwm{$ERSNO}=(defined $LINE[9] and $LINE[9] ne "-1" and $LINE[9] ne "") ? sprintf "%.1f",$LINE[9]  : "N/A" ;;
+        $twom{$ERSNO}=(defined $LINE[4] and $LINE[4] ne "-1" and $LINE[4] ne "") ? sprintf "%.1f",$LINE[4] : "N/A" ;
+		$ty1{$ERSNO}=(defined $LINE[5] and $LINE[5] ne "-1" and $LINE[4] ne "") ? sprintf "%.1f",$LINE[5] : "N/A" ;
+		$ty2{$ERSNO}=(defined $LINE[6] and $LINE[6] ne "-1" and $LINE[5] ne "") ? sprintf "%.1f",$LINE[6] : "N/A" ;;
+		$ty3{$ERSNO}=(defined $LINE[7] and $LINE[7] ne "-1" and $LINE[6] ne "") ? sprintf "%.1f",$LINE[7] : "N/A" ;;
+		$ty4{$ERSNO}=(defined $LINE[8] and $LINE[8] ne "-1" and $LINE[7] ne "") ? sprintf "%.1f",$LINE[8] : "N/A" ;;
+		$ty5{$ERSNO}=(defined $LINE[9] and $LINE[9] ne "-1" and $LINE[8] ne "") ? sprintf "%.1f",$LINE[9] : "N/A" ;;
+		$gwm{$ERSNO}=(defined $LINE[10] and $LINE[10] ne "-1" and $LINE[9] ne "") ? sprintf "%.1f",$LINE[10]  : "N/A" ;;
 		push @SAMPLES, $ERSNO, ;
 	}
 	if (-e "$flnm{$ERSNO}".'.tel'){
@@ -94,50 +97,56 @@ foreach my $ERSNO (keys %bcID) {
 }
 
 print "REPETITIVE DNA QUANTIFICATION";
-my   $header="%-13s%10s%7s%6s%11s%12s%7s%6s%6s%6s%6s%6s%6s%20s%7s%14s%8s\n";
-my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%10s";
-print "\n===============================================================================================================================================\n";
-printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "║");
-print "===============================================================================================================================================";
+my   $header="%-13s%10s%7s%6s%11s%12s%7s%6s%6s%6s%6s%6s%6s%20s%7s%14s%14s%10s\n";
+my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%16s%10s";
+print "\n===============================================================================================================================================================\n";
+printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "2-micron", "║");
+print "===============================================================================================================================================================";
 
 my $refrDNA=0;
 my $refmito=0;
 my $reftelo=0;
+my $reftwom=0;
+
 
 if ($multiref){
     my @allrefs;
-    my $ncontrols;
     my $i=0;
     @allrefs=split(',', $control);
     foreach my $ncontrol (sort @allrefs){
         $refrDNA+=$rDNA{$ncontrol};
         $refmito+=$mito{$ncontrol};
         $reftelo+=$telo{$ncontrol};
+        $reftwom+=$twom{$ncontrol};
         $i++;
     }
     $refrDNA/=$i;
     $refmito/=$i;
     $reftelo/=$i;
+    $reftwom/=$i;
 }
 else{
     $refrDNA=$rDNA{$control};
     $refmito=$mito{$control};
     $reftelo=$telo{$control};
+    $reftwom=$twom{$control};
+
 }
 
 foreach my $ERSNO (sort @SAMPLES){
     my $rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$refrDNA;
     my $mito_var=sprintf "%.2f", $mito{$ERSNO}/$refmito;
     my $tel_var=sprintf "%.2f", $telo{$ERSNO}/$reftelo;
+    my $twom_var=sprintf "%.2f", $twom{$ERSNO}/$reftwom;
     if ($control =~ $ERSNO){
-        printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)", "║");#print the key (current sample ERS number)
+        printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)", "$twom{$ERSNO} (-)", "║");#print the key (current sample ERS number)
     }
     else{
-        printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "║");#print the key (current sample ERS number)
+        printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "$twom{$ERSNO} ($twom_var)", "║");#print the key (current sample ERS number)
 
     }
 }
-print "\n===============================================================================================================================================\n";
+print "\n===============================================================================================================================================================\n";
 
 open (my $outfile, '>', 'results.txt');
 #print $outfile, "REPETITIVE DNA QUANTIFICATION";
@@ -146,6 +155,6 @@ open (my $outfile, '>', 'results.txt');
 #print $outfile, "=========================================================================================================================================================================\n";
 #run through the has sorted by keys name
 foreach my $ERSNO (sort @SAMPLES){
-	print $outfile "$flnm{$ERSNO}\t$rDNA{$ERSNO}\t$CUP1{$ERSNO}\t$mito{$ERSNO}\t$ty1{$ERSNO}\t$ty2{$ERSNO}\t$ty3{$ERSNO}\t$ty4{$ERSNO}\t$ty5{$ERSNO}\t$gwm{$ERSNO}\t$telo{$ERSNO}\t$ERSNO\t$delnm{$ERSNO}\n";
+    print $outfile "$flnm{$ERSNO}\t$rDNA{$ERSNO}\t$CUP1{$ERSNO}\t$mito{$ERSNO}\t$twom{$ERSNO}\t$ty1{$ERSNO}\t$ty2{$ERSNO}\t$ty3{$ERSNO}\t$ty4{$ERSNO}\t$ty5{$ERSNO}\t$gwm{$ERSNO}\t$telo{$ERSNO}\t$ERSNO\t$delnm{$ERSNO}\n";
 }
 close ($outfile);
