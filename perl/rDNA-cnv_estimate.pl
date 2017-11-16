@@ -48,6 +48,7 @@ my $dir = join ('/',@path);
 my $ref_genome = $dir.'/mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa'; #default reference genome
 my $ty_ref = $dir.'/mpileup_defaults/Ty_ref/Ty1-5.fa'; # default Ty reference genome
 my $mat_ref = $dir.'/mpileup_defaults/a-alpha_ref/a-alpha.fa';
+my $twom_ref = $dir.'/mpileup_defaults/2-micron_ref/2-micron.fa';
 
 ## Parse options and print usage if there is a syntax error,
 ## or if usage was explicitly requested.
@@ -69,7 +70,8 @@ pod2usage("$0: File $ref_genome does not exist.")  unless ( -e $ref_genome);
 pod2usage("$0: File $ref_genome is empty.")  if ( -z $ref_genome);
 pod2usage("$0: File $ty_ref does not exist.")  unless ( -e $ty_ref);
 pod2usage("$0: File $ty_ref is empty.")  if ( -z $ty_ref);
-
+pod2usage("$0: File $twom_ref does not exist.")  unless ( -e $twom_ref);
+pod2usage("$0: File $twom_ref is empty.")  if ( -z $twom_ref);
 
 #Check that input exists and has a size bigger than 0		
 pod2usage("$0: File $input does not exist.")  unless ( -e $input);
@@ -134,6 +136,9 @@ my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
 
 my $mat_bam = $bam_dir.'/../MAT_BAMS/'.$sample_name.'.mat.bam';
 
+my $twom_bam = $bam_dir.'/../TWOMICRON_BAMS/'.$sample_name.'.2m.bam';
+
+
 my $MATa = 'MATa_HMR:1400-2000';
 my $MATalpha=  'MATalpha_HML:1700-2700';
 #print "$mat_bam,$MATa,$mat_ref\n";
@@ -147,11 +152,12 @@ elsif ($sex_estimate >=  0.6){$sex="a"}
 elsif ($sex_estimate > -0.6 and $sex_estimate < 0.6){$sex="a/alpha"}
 else { die "Cannot safely determine mating type and ploidy" }
 
+
 my @s = split ('/', $input);
 my $sa = $s[-1];
 my @samp = split (/\./, $sa);
 
-print "Sample\trDNA\tCUP1\tMito\tTy1\tTy2\tTy3\tTy4\tTy5\tGenome_wide_median\n";
+print "Sample\trDNA\tCUP1\tMito\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGenome_wide_median\n";
 print "$samp[0]\t";
 my $rDNA_loc = 'XII:452000-459000';
 my $rDNA_estimate = repeat_estimate($input,$rDNA_loc,$ref_genome)*2;
@@ -167,6 +173,12 @@ my $mito_loc = 'Mito:14000-20000';
 my $mito_estimate = repeat_estimate($input,$mito_loc,$ref_genome)*$ploidy;
 #$mito_estimate = sprintf("%.3f", $mito_estimate);
 print "$mito_estimate\t";
+
+my $twom_loc = '2-micron:2000-4500';
+my $twom_estimate = repeat_estimate($twom_bam,$twom_loc,$twom_ref)*$ploidy;
+#$mito_estimate = sprintf("%.3f", $mito_estimate);
+print "$twom_estimate\t";
+
 
 #######################################
 #######################################
@@ -230,7 +242,8 @@ else {
 	#$ty4 = sprintf("%.3f", $ty4);
 	#$ty5 = sprintf("%.3f", $ty5);
 
-}	
+}
+
 	print ("$ty1\t");
 	print ("$ty2\t");
 	print ("$ty3\t");

@@ -89,7 +89,31 @@ while( my $l = <$ifh> )
                             my $homs = 0;my $hets = 0;
                             my $samplesHet='';
                             my $samplesHom='';
-                            my $c = 0;for(my $i=9;$i<@s;$i++){if($s[$i]=~/1\/1:/){$homs++;$samplesHom.=qq[$samples[$i];];}elsif($s[$i]=~/1\/0:/||$s[$i]=~/0\/1:/){$hets++;$samplesHet.=qq[$samples[$i];];}}
+                            my $c = 0;for(my $i=9;$i<@s;$i++){if($s[$i]=~/\//){
+                                my @gty = split( /\:/, $s[$i]);
+                                my @g = split( /\//, $gty[0]);
+                                my $ploidy = scalar @g;
+                                if ($ploidy eq '2'){
+                                    if($s[$i]=~/1\/1:/){
+                                        $homs++;$samplesHom.=qq[$samples[$i];];
+                                        
+                                    }elsif($s[$i]=~/1\/0:/||$s[$i]=~/0\/1:/){
+                                        $hets++;$samplesHet.=qq[$samples[$i];];
+                                    }
+                                }
+                                if ($ploidy eq '4'){
+                                    if($s[$i]=~/1\/1\/1\/1:/){
+                                        $homs++;$samplesHom.=qq[$samples[$i];];
+                                        
+                                    }elsif($s[$i]=~/1\/1\/0\/0:/||$s[$i]=~/0\/0\/1\/1:/){
+                                        $hets++;$samplesHet.=qq[$samples[$i];];
+                                    }
+                                }
+                            }
+                            }
+                            
+                            
+                            
                             #the consequence line will be split on the :
                             #YLR442C:YLR442C:missense_variant:2732:911:C>Y
                             #that makes [2] the consequence
