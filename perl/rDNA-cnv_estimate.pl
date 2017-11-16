@@ -48,6 +48,7 @@ my $dir = join ('/',@path);
 my $ref_genome = $dir.'/mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa'; #default reference genome
 my $ty_ref = $dir.'/mpileup_defaults/repDNA_ref/repDNA.fa'; # default Ty reference genome
 my $mat_ref = $dir.'/mpileup_defaults/repDNA_ref/repDNA.fa';
+my $twom_ref = $dir.'/mpileup_defaults/repDNA_ref/repDNA.fa';
 
 ## Parse options and print usage if there is a syntax error,
 ## or if usage was explicitly requested.
