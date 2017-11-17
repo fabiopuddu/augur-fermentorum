@@ -1,18 +1,20 @@
 #!/bin/bash
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
-force_rewrite=0; v=0; check_deletions=0;DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ); f=0
+force_rewrite=0; v=0; check_deletions=0;DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ); f=0;
+caller_chosen=0
 #################################
 #                               #
 #   GET COMMAND LINE OPTIONS    #
 #                               #
 #################################
-while getopts "fvkh" opt
+while getopts "fvkhSF" opt
     do  case "$opt" in
                         h)  printf "############   HELP   ###############\nOPTIONS\n"
                             printf "\t-h\tThis Help\n"	
                             printf "\t-f\tForce Rewrite ***NOT IMPLEMENTED YET***\n"
                             printf "\t-v\tverbose: print out detailed analysis progression ***NOT IMPLEMENTED YET\n"
                             printf "\t-k\tcheck deletions in BAM files before calling mutations\n"
+                            printf "\t-c\tVariant caller used:\n\t\t\tS: samtools mpileup (default)\n\t\t\tF: freebayes\n"
                             exit 0
                         ;;
                         f)
@@ -24,8 +26,36 @@ while getopts "fvkh" opt
                         k)
                         check_deletions=1
                         ;;
+                        S)
+                        used_caller="S"
+                        caller_chosen=1
+                        ;;
+                        F)
+                        used_caller="F"
+                        caller_chosen=1
+                        ;;
         esac
     done
+
+## Default variant caller and check
+if [ "$caller_chosen" == 0 ]
+    then used_caller="S"
+    printf "samtools mpileup chosen as variant caller by default\n"
+fi
+
+#if [ "$used_caller" != "S" ] && [ "$used_caller" != "F" ]
+#    then echo "The variant caller (-c) should be S (samtools mpileup) or F (freebayes)"
+#    exit 1
+#fi
+
+if [ "$used_caller" == "S" ] && [ "$caller_chosen" == 1 ]
+    then echo "samtools mpileup chosen as variant caller"
+fi
+
+if [ "$used_caller" == "F" ] && [ "$caller_chosen" == 1 ]
+    then echo "freebayes chosen as variant caller"
+fi
+
 #######################
 #######PROGRAM STARTS##
 #############################
@@ -138,14 +168,22 @@ cat ../bams_for_mpileup | while read line
                 then
                     samtools view -h ../$line | awk '!($3 == "2-micron")' > $n.no2m.sam
                     command2="samtools view -Sb $n.no2m.sam | samtools sort -o $n.no2m.bam"
-                    command3="freebayes -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -p $ploidy -m0 -C3 -F $minfrac --max-coverage 10000 -J -= $n.no2m.bam | bgzip -f > $ers.vcf.gz"
+                    if [ "$used_caller" == "S" ]
+                        then command3="samtools mpileup -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -g -t DP,DV -C0 -pm3 -F0.2 -d10000 ../$line | bcftools call -vm -f GQ | bgzip -f > $ers.vcf.gz"
+                        elif [ "$used_caller" == "F" ]
+                        then command3="freebayes -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -p $ploidy -m0 -C3 -F $minfrac --max-coverage 10000 -E-1 -J -= $n.no2m.bam | bgzip -f > $ers.vcf.gz"
+                    fi
                     command4="rm $n.no2m.*"
                     PROC2=$(sbatch --partition=LONG --wrap="${command2}" | sed 's/Submitted batch job //g')
                     PROC3=$(sbatch --partition=LONG -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --dependency=afterok:${PROC2} --wrap="${command3}" | sed 's/Submitted batch job //g')
                     sbatch --partition=LONG --dependency=afterok:${PROC3} --wrap="${command4}"
 
                 else
-                    sbatch --partition=LONG -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --wrap="freebayes -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -p $ploidy -m0 -C3 -F $minfrac --max-coverage 10000 -J -= ../$line | bgzip -f > $ers.vcf.gz"
+                    if [ "$used_caller" == "S" ]
+                        then sbatch --partition=LONG -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --wrap="samtools mpileup -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -g -t DP,DV -C0 -pm3 -F0.2 -d10000 ../$line | bcftools call -vm -f GQ | bgzip -f > $ers.vcf.gz"
+                        elif [ "$used_caller" == "F" ]
+                        then sbatch --partition=LONG -o slurm.%N.%j.out.txt -e slurm.%N.%j.err.txt --wrap="freebayes -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -p $ploidy -m0 -C3 -F $minfrac --max-coverage 10000 -J -= ../$line | bgzip -f > $ers.vcf.gz"
+                    fi
             fi
 
 # freebayes outputs to vcf instead of bcf (no equivalent to -g mpileup tag)
