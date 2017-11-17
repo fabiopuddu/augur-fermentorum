@@ -100,19 +100,11 @@ foreach my $ERSNO (keys %bcID) {
 }
 
 print "REPETITIVE DNA QUANTIFICATION";
-<<<<<<< a2375cdcb53569140e6eebee378081ca5ba41281
-my   $header="%-13s%10s%7s%6s%11s%12s%7s%6s%6s%6s%6s%6s%6s%20s%7s%14s%8s%15s%8s\n";
-my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%10s%+15s%8s";
+my   $header="%-13s%10s%7s%6s%11s%12s%7s%6s%6s%6s%6s%6s%6s%20s%7s%14s%14s%8s%15s%8s\n";
+my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%12s%10s%+15s%8s";
 print "\n====================================================================================================================================================================\n";
-printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "║", "Mating Type", "║");
+printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "2-micron", "║", "Mating Type", "║");
 print "====================================================================================================================================================================";
-=======
-my   $header="%-13s%10s%7s%6s%11s%12s%7s%6s%6s%6s%6s%6s%6s%20s%7s%14s%14s%10s\n";
-my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%16s%10s";
-print "\n===============================================================================================================================================================\n";
-printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "2-micron", "║");
-print "===============================================================================================================================================================";
->>>>>>> minor changes
 
 my $refrDNA=0;
 my $refmito=0;
@@ -145,35 +137,19 @@ else{
 }
 
 foreach my $ERSNO (sort @SAMPLES){
-<<<<<<< a2375cdcb53569140e6eebee378081ca5ba41281
 	 my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A';
         if ($rDNA{$control} ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$refrDNA;}
         if ($mito{$control} ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$refmito;}
         if ($telo{$control} ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$reftelo;}
     if ($control =~ $ERSNO){
-		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
+		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)",  "$twom{$ERSNO} (-)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
 	}
 	else{
-		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
+		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "$twom{$ERSNO} ($twom_var)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
 	
 	}
 }
 print "\n====================================================================================================================================================================\n";
-=======
-    my $rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$refrDNA;
-    my $mito_var=sprintf "%.2f", $mito{$ERSNO}/$refmito;
-    my $tel_var=sprintf "%.2f", $telo{$ERSNO}/$reftelo;
-    my $twom_var=sprintf "%.2f", $twom{$ERSNO}/$reftwom;
-    if ($control =~ $ERSNO){
-        printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)", "$twom{$ERSNO} (-)", "║");#print the key (current sample ERS number)
-    }
-    else{
-        printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "$twom{$ERSNO} ($twom_var)", "║");#print the key (current sample ERS number)
-
-    }
-}
-print "\n===============================================================================================================================================================\n";
->>>>>>> minor changes
 
 open (my $outfile, '>', 'results.txt');
 #print $outfile, "REPETITIVE DNA QUANTIFICATION";
