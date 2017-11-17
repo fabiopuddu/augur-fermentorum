@@ -137,10 +137,12 @@ else{
 }
 
 foreach my $ERSNO (sort @SAMPLES){
-	 my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A';
-        if ($rDNA{$control} ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$refrDNA;}
-        if ($mito{$control} ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$refmito;}
-        if ($telo{$control} ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$reftelo;}
+    my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A'; my $twom_var='N/A';
+        if ($refrDNA ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$refrDNA;}
+        if ($refmito ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$refmito;}
+        if ($reftelo ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$reftelo;}
+        if ($reftwom ne 'N/A' and $twom{$ERSNO} ne 'N/A'){$twom_var=sprintf "%.2f", $twom{$ERSNO}/$reftwom;}
+
     if ($control =~ $ERSNO){
 		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)",  "$twom{$ERSNO} (-)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
 	}
