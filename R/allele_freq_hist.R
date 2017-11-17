@@ -47,6 +47,7 @@ for (d in all.dirs) {
       return(res)
     })
     alleles <- do.call("rbind", alleles)
+    alleles <- matrix(as.numeric(alleles), ncol = 4)
     colnames(alleles) <- c(paste0('A', 0:3))
     
     values <- cbind(values, alleles)
@@ -66,9 +67,11 @@ for (d in all.dirs) {
     
     
     #### Fractions
-    total.count <- datain$A0 + datain$A1
+    total.count <- rowSums(datain[,12:15], na.rm = TRUE)
     datain$A0 <- datain$A0 / total.count
     datain$A1 <- datain$A1 / total.count
+    datain$A2 <- datain$A2 / total.count
+    datain$A3 <- datain$A3 / total.count
     
     toplot <- list(A0 = datain$A0, A1 = datain$A1, A2 = datain$A2, A3 = datain$A3)
     
