@@ -503,7 +503,7 @@ printf "done\n"
 
 printf "\n"
 formatcontrol=$(echo $control | tr " " ",") # Fixing for control format
-get_mut_summary_table.pl -i ../../name\ conversion.tsv -c ${formatcontrol}
+get_mut_summary_table.pl -i ../../name\ conversion.tsv -c ${formatcontrol} -p $ploidy
 
 
 ##convert results in gene list:
@@ -569,11 +569,11 @@ printf "\e[0m\n=================================================================
 #printf "Total Unique INDELS"
 #cat experiment_merge.vcf | grep -v '##' | grep "0/1\|1/1\|2/2" | grep -v 'CHROM' | grep  'INDEL' | wc -l
 printf "\n"
-#printf "\nSTATISTICS\n"
-#printf "=======================================================================================================================================================================\n"
-#perl $DIR/../mareike/vcf_stats_table_all.pl experiment_merge.vcf > stat_table.txt
+printf "\nSTATISTICS\n"
+printf "=======================================================================================================================================================================\n"
+perl $DIR/../mareike/vcf_stats_table_all.pl experiment_merge.vcf > stat_table.txt
 #echo $number_of_samples >>stat_table.txt
-#cat stat_table.txt 
+cat stat_table.txt
 printf "\nHETEROZYGOUS SNV MUTATION OVERLAP\n"
 printf "=======================================================================================================================================================================\n"
 line_counter=0
