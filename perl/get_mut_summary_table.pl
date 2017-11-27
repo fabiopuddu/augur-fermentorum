@@ -166,6 +166,9 @@ foreach my $cfile (@files) {
     }
     close($fhandle2);
     
+    my $SNP;
+    my $SNPLOH1;
+    if ($ploidy eq 2) {
     my $SNPhomomask = 0; #hetero mutations from het-masked control
     open(my $fhandle3, '<', "intersect_masked/$cfile") or die "Unable to open file, $!";
     while ($line = <$fhandle3>) {
@@ -181,9 +184,11 @@ foreach my $cfile (@files) {
     }
     close($fhandle3);
     
-    my $SNP="$SNPtot($SNPhom)";
-    my $SNPLOH1 = $SNPhomomask-$SNPhom; #loss of heterozygosity towards 1/1
-    
+    $SNP="$SNPtot($SNPhom)";
+    $SNPLOH1 = $SNPhomomask-$SNPhom; #loss of heterozygosity towards 1/1
+    } else {
+        $SNP="$SNPtot";
+    }
     
     ## Count INDELs
     
