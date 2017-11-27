@@ -18,15 +18,18 @@ use File::Basename;
 
 my ($input);
 my ($control);
+my ($ploidy);
 
 GetOptions
 (
 'i|input=s'      => \$input,
 'c|control=s'      => \$control,
+'p|ploidy=s'        => \$ploidy,
 );
 ( $input && -f $input && $control) or die qq[Usage: $0 \n
 -i name conversion file\n
 -c control ERS number(s), comma separated if > 1
+-p ploidy of the organism
 ];
 
 
@@ -68,8 +71,8 @@ my $number_of_samples = 0;
 my $headerdip2="\n %-10s %9s %12s %60s %7s %23s %4s %40s %12s %7s %3s %12s %5s ";
 my $headerdip1="\n %-10s %10s %5s %4s \e[32m%5s \e[33m%9s \e[34m%7s \e[0m%12s %4s %8s %11s %7s %10s %10s %6s \e[32m%10s \e[0m%8s %10s %3s %5s %3s %12s %12s %6s \n";
 my $formatdip=" %-10s %8s %4s %4s \e[32m%5s \e[33m%8s \e[34m%9s \e[0m%9s %8s %4s %12s %8s %8s %10s %8s \e[32m%6s \e[0m%10s %8s %7s %9s %8s %5s %9s %10s \n";
-my $headerhap="\n %-10s %4s %8s %6s \e[32m%5s \e[33m%9s \e[34m%7s \e[0m%12s %3s %4s %1s %6s %5s \e[32m%12s \e[0m%10s %12s %2s %6s %1s %4s %4s \n";
-my $formathap=" %-12s %8s %12s %12s \e[32m%5s \e[33m%8s \e[34m%9s \e[0m%9s %8s %4s %4s %5s %7s \e[32m%7s \e[0m%12s %11s %6s %4s %4s %5s %7s %5s \n";
+my $headerhap="\n %-10s %4s %7s %6s \e[32m%5s \e[33m%9s \e[34m%7s \e[0m%12s %3s %4s %1s %9s %5s \e[32m%12s \e[0m%10s %12s %2s %6s %1s %7s %5s \n";
+my $formathap=" %-12s %8s %8s %6s \e[32m%5s \e[33m%8s \e[34m%9s \e[0m%9s %8s %4s %4s %7s %7s \e[32m%7s \e[0m%12s %11s %6s %4s %4s %7s %7s \n";
 
 
 ########################################################################################################
@@ -80,8 +83,6 @@ my $formathap=" %-12s %8s %12s %12s \e[32m%5s \e[33m%8s \e[34m%9s \e[0m%9s %8s %
 ##                                                #
 ###################################################
 #
-
-my $ploidy = 2; # provisional
 
 my $dir = cwd(); # Directory where the script is executed
 my $dirscript = dirname(__FILE__); # Directory where the script is stored
@@ -98,11 +99,11 @@ if ($ploidy eq 2){
     print "=========================================================================================================================================================================================================\n";
 }
 else{
-    print "===================================================================================================================================================================\n";
+    print "======================================================================================================================================================================\n";
     print "$experiment_name\n";
-    print "===================================================================================================================================================================";
+    print "======================================================================================================================================================================";
     printf "$headerhap", 'ERS NO.', 'SAMPLE NAME', 'REF', '║', 'NONSENSE', 'MISSENSE', 'SENSE', 'INTERGENIC', '│', 'TO REF.', '|', 'TOT.SNV', '║', 'FRAMESHIFT', 'INFRAME', 'INTERGENIC', '|', 'TO REF.', '|', 'TOT.INDEL', '║';
-    print "===================================================================================================================================================================\n";
+    print "======================================================================================================================================================================\n";
 }
     
 
@@ -136,7 +137,7 @@ foreach my $cfile (@files) {
     my $SNPhom = 0; #homo mutations from het-unmasked control
     open(my $fhandle, '<', $cfile) or die "Unable to open file, $!";
     while ($line = <$fhandle>) {
-        next if $line =~ /##|#CHROM|INDEL|\.\/\./;
+        next if $line =~ /##|#CHROM|INDEL|ins|del|\.\/\./;
             $SNPtot++;
         if ($sampleploidy eq 2){
             next unless ($line =~ /1\/1|2\/2/);
@@ -153,7 +154,7 @@ foreach my $cfile (@files) {
     my $SNPLOH2 = 0; #loss of heterozygosity towards 0/0
     open(my $fhandle2, '<', "inverse_intersection/$cfile") or die "Unable to open file, $!";
     while ($line = <$fhandle2>) {
-        next if $line =~ /##|#CHROM|INDEL/;
+        next if $line =~ /##|#CHROM|INDEL|ins|del/;
             if ($line =~ /1\/1|2\/2/){
                 if ($line =~ /PASS/){
                     $SNPHOMREV++;
@@ -168,7 +169,7 @@ foreach my $cfile (@files) {
     my $SNPhomomask = 0; #hetero mutations from het-masked control
     open(my $fhandle3, '<', "intersect_masked/$cfile") or die "Unable to open file, $!";
     while ($line = <$fhandle3>) {
-        next if $line =~ /##|#CHROM|INDEL/;
+        next if $line =~ /##|#CHROM|INDEL|ins|del/;
             if ($sampleploidy eq 2){
                 next unless $line =~ /1\/1|2\/2/;
                 $SNPhomomask++;
@@ -191,7 +192,7 @@ foreach my $cfile (@files) {
     open(my $fhandle4, '<', $cfile) or die "Unable to open file, $!";
     while ($line = <$fhandle4>) {
         next if $line =~ /##|#CHROM|\.\/\./;
-            next unless $line =~ /INDEL/;
+            next unless $line =~ /INDEL|ins|del/;
         $INDtot++;
         if ($sampleploidy eq 2){
             next unless ($line =~ /1\/1|2\/2/);
@@ -209,7 +210,7 @@ foreach my $cfile (@files) {
     open(my $fhandle5, '<', "inverse_intersection/$cfile") or die "Unable to open file, $!";
     while ($line = <$fhandle5>) {
         next if $line =~ /##|#CHROM/;
-            next unless $line =~ /INDEL/;
+            next unless $line =~ /INDEL|ins|del/;
         if ($line =~ /1\/1|2\/2/){
             if ($line =~ /PASS/){
                 $INDHOMREV++;
@@ -225,7 +226,7 @@ foreach my $cfile (@files) {
     open(my $fhandle6, '<', "intersect_masked/$cfile") or die "Unable to open file, $!";
     while ($line = <$fhandle6>) {
         next if $line =~ /##|#CHROM/;
-            next unless $line =~ /INDEL/;
+            next unless $line =~ /INDEL|ins|del/;
         if ($sampleploidy eq 2){
             next unless $line =~ /1\/1|2\/2/;
             $INDhomomask++;
@@ -294,11 +295,11 @@ foreach my $cfile (@files) {
     open(my $fhandle7, '<', $cfile) or die "Unable to open file, $!";
     while ($line = <$fhandle7>) {
         next if $line =~ /##|#CHROM|\.\/\./;
-        if ($line =~ /INDEL/){
+        if ($line =~ /INDEL|ins|del/){
             next if $line =~ /inframe_deletion|inframe_insertion|frameshift/;
             $UP_DOWN_INDEL++;
         }
-        next if $line =~ /INDEL|stop_gained|missense|synonymous/;
+        next if $line =~ /INDEL|ins|del|stop_gained|missense|synonymous/;
         $UP_DOWN_SNV++;
         if ($sampleploidy eq 2){
             next unless $line =~ /1\/1|2\/2/;
@@ -339,7 +340,7 @@ foreach my $cfile (@files) {
 }
 
 if ($ploidy eq '1'){
-    print "===================================================================================================================================================================\n";
+    print "======================================================================================================================================================================\n";
 } else {
    print "=========================================================================================================================================================================================================\n"
 }
