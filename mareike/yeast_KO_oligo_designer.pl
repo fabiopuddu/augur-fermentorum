@@ -1,5 +1,3 @@
-
-
 #!/usr/bin/perl
 # Author:       mh23
 # Maintainer:   mh23
@@ -8,9 +6,10 @@
 
 use strict;
 use warnings;
+use FindBin;                 # locate this script
+use lib "$FindBin::Bin/";
+use Design_KO_Oligos;
 
-use lib '/Users/mh23/Documents/Data/2017_01_10-Package_writing';
-use Design_KO_Oligos('Design_KO_Oligos');
 
 my $input = shift;
 
