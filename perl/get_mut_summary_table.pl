@@ -169,23 +169,23 @@ foreach my $cfile (@files) {
     my $SNP;
     my $SNPLOH1;
     if ($ploidy eq 2) {
-    my $SNPhomomask = 0; #hetero mutations from het-masked control
-    open(my $fhandle3, '<', "intersect_masked/$cfile") or die "Unable to open file, $!";
-    while ($line = <$fhandle3>) {
-        next if $line =~ /##|#CHROM|INDEL|ins|del/;
-            if ($sampleploidy eq 2){
-                next unless $line =~ /1\/1|2\/2/;
+        my $SNPhomomask = 0; #hetero mutations from het-masked control
+        open(my $fhandle3, '<', "intersect_masked/$cfile") or die "Unable to open file, $!";
+        while ($line = <$fhandle3>) {
+            next if $line =~ /##|#CHROM|INDEL|ins|del/;
+                if ($sampleploidy eq 2){
+                    next unless $line =~ /1\/1|2\/2/;
+                    $SNPhomomask++;
+                }
+            if ($sampleploidy eq 4){
+                next unless ($line =~ /1\/1\/1\/1|2\/2\/2\/2/);
                 $SNPhomomask++;
             }
-        if ($sampleploidy eq 4){
-            next unless ($line =~ /1\/1\/1\/1|2\/2\/2\/2/);
-            $SNPhomomask++;
         }
-    }
-    close($fhandle3);
+        close($fhandle3);
     
-    $SNP="$SNPtot($SNPhom)";
-    $SNPLOH1 = $SNPhomomask-$SNPhom; #loss of heterozygosity towards 1/1
+        $SNP="$SNPtot($SNPhom)";
+        $SNPLOH1 = $SNPhomomask-$SNPhom; #loss of heterozygosity towards 1/1
     } else {
         $SNP="$SNPtot";
     }
@@ -227,24 +227,30 @@ foreach my $cfile (@files) {
     }
     close($fhandle5);
     
-    my $INDhomomask = 0; #hetero indels from het-unmasked control
-    open(my $fhandle6, '<', "intersect_masked/$cfile") or die "Unable to open file, $!";
-    while ($line = <$fhandle6>) {
-        next if $line =~ /##|#CHROM/;
-            next unless $line =~ /INDEL|ins|del/;
-        if ($sampleploidy eq 2){
-            next unless $line =~ /1\/1|2\/2/;
-            $INDhomomask++;
+    my $IND;
+    my $INDLOH1;
+    if ($ploidy eq 2) {
+        my $INDhomomask = 0; #hetero indels from het-unmasked control
+        open(my $fhandle6, '<', "intersect_masked/$cfile") or die "Unable to open file, $!";
+        while ($line = <$fhandle6>) {
+            next if $line =~ /##|#CHROM/;
+                next unless $line =~ /INDEL|ins|del/;
+            if ($sampleploidy eq 2){
+                next unless $line =~ /1\/1|2\/2/;
+                $INDhomomask++;
+            }
+            if ($sampleploidy eq 4){
+                next unless ($line =~ /1\/1\/1\/1|2\/2\/2\/2/);
+                $INDhomomask++;
+            }
         }
-        if ($sampleploidy eq 4){
-            next unless ($line =~ /1\/1\/1\/1|2\/2\/2\/2/);
-            $INDhomomask++;
-        }
-    }
-    close($fhandle6);
+        close($fhandle6);
     
-    my $IND="$INDtot($INDhom)";
-    my $INDLOH1 = $INDhomomask-$INDhom; #loss of heterozygosity towards 1/1
+        $IND="$INDtot($INDhom)";
+        $INDLOH1 = $INDhomomask-$INDhom; #loss of heterozygosity towards 1/1
+    } else {
+        $IND="$INDtot";
+    }
     
     ## Count consequences
 
@@ -317,7 +323,12 @@ foreach my $cfile (@files) {
         
     }
     close($fhandle7);
-    $UP_DOWN_SNV="$UP_DOWN_SNV($UP_DOWN_SNV_HOM)";
+    
+    if ($ploidy eq 2){
+        $UP_DOWN_SNV="$UP_DOWN_SNV($UP_DOWN_SNV_HOM)";
+    } else {
+        $UP_DOWN_SNV="$UP_DOWN_SNV";
+    }
     
     
     ## Display results
