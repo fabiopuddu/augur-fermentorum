@@ -1,4 +1,6 @@
-set terminal png truecolor nocrop enhanced size 4000,2000 enhanced font "Helvetica,40"
+
+xln=plen*8
+set terminal png truecolor nocrop enhanced size xln,2000 enhanced font "Helvetica,40"
 set output outfile
 
 #Draw protein
@@ -16,7 +18,7 @@ set xrange [1:plen]
 set border 3 back ls 11
 set xlabel 'Aminoacid number'
 set tics nomirror
-
+unset key
 # Grid
 set style line 2 lc rgb'#808080' lt 0 lw 4
 set grid xtics back
