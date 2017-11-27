@@ -12,7 +12,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 
-my @csqs = ('stop_gained', 'missense_variant','STOP_LOST','frameshift_variant','initiator_codon_variant','synonymous_variant');
+my @csqs = ('stop_gained', 'missense_variant','stop_lost','frameshift_variant','initiator_codon_variant','synonymous_variant');
 
 my ($input);
 my $aminoacid;
@@ -60,17 +60,17 @@ my @samples;
 print qq[TYPE\tCHROM\tPOS\tGENE\tGENE\tDESCRIPTION\tCSQ\tHETS\tHET Samples\n];
 while( my $l = <$ifh> )
 {
-    my $m = $l;
+    my $m = $l;;
     chomp( $l );
     $aminoacid = 'NA';
     next if( $l =~ /^#/ && $l !~ /^#CHROM/);
     my @s = split( /\t/, $l );
     
-    if( $l =~ /#CHROM/ ){for(my $i=0;$i<@s;$i++){$samples[$i]=$s[$i];}next;}
-    
-    foreach my $csq(@csqs)
+    if( $l =~ /#CHROM/ ){for(my $i=0;$i<@s;$i++){$samples[$i]=$s[$i];}next;}    
+
+    foreach my $csq_del(@csqs)
     {
-        if( $l =~ /$csq/i ) 
+        if ($l =~ /$csq_del/i ) 
         {
             my @s1 = split( /;/, $s[ 7 ] );
             
@@ -81,8 +81,9 @@ while( my $l = <$ifh> )
                 my @s2 = split( /\+/, $2 );
                 foreach my $csq(@s2)
                 {
-                    foreach my $csq_del(@csqs)
-                    {
+                    #foreach my $csq_del(@csqs)
+                    #{
+			#print "$csq_del\n";
                         if( $csq =~ /$csq_del/i )
                         {
                             #get number of samples affected
@@ -118,27 +119,32 @@ while( my $l = <$ifh> )
                             #YLR442C:YLR442C:missense_variant:2732:911:C>Y
                             #that makes [2] the consequence
                             my @s3 = split( /\:/, $csq );
-                            if ( $csq =~ /missense/i )
+                            if ( $csq_del =~ /missense/i )
                         	{
                         		#wanted: C911Y;
                         		#YLR442C[0]:YLR442C[1]:missense_variant[2]:2732[3]:911[4]:C>Y[5]
                                 my @s5 = split( /\>/, $s3[5]);
                                 $aminoacid = '£x'.$s5[0].$s3[4].$s5[1].'£';
                             }
-                            if ( $csq =~ /initiator_codon_variant/i )
+                            if ( $csq_del  =~ /initiator_codon_variant/i )
                         	{
-                        		#wanted: M1I;
-                        		#YIL129C[0]:YIL129C[1]:initiator_codon_variant[2]:3[3]:1[4]:M>I[5]
-                        		my @s5 = split( /\>/, $s3[5]);
-                        		$aminoacid = '£'.$s5[0].$s3[4].$s5[1].'£';	
-                            }
-                            if ( $csq =~ /frameshift_variant/i )
+                        		if ($m =~ /INDEL/) {
+						$aminoacid = '£FS@'.$s3[4].'£';
+					}
+					else {
+						#wanted: M1I;
+                        			#YIL129C[0]:YIL129C[1]:initiator_codon_variant[2]:3[3]:1[4]:M>I[5]
+                        			my @s5 = split( /\>/, $s3[5]);
+                        			$aminoacid = '£'.$s5[0].$s3[4].$s5[1].'£';	
+                            		}
+				}
+                            if ( $csq_del =~ /frameshift_variant/i )
                         	{
                         		#wanted: range
                         		#YLL066W-B[0]:YLL066W-B[1]:frameshift_variant,feature_truncation[2]:59[3]:20[4]
                                 $aminoacid = '£FS@'.$s3[4].'£';
                             }
-                            if ( $csq =~ /stop_gained/i )
+                            if ( $csq_del =~ /stop_gained/i )
                             {
                                 if ($m =~ /INDEL/) {
                                     #delta(number-1)
@@ -153,7 +159,7 @@ while( my $l = <$ifh> )
                                     my $number=$s3[4]-1;
                                     $aminoacid = '£'.'Δ'.$number.'£';}
                             }
-                            if ( $csq =~ /synonymous/i )
+                            if ( $csq_del =~ /synonymous/i )
                         	{
                         		#wanted £P91:C>T:2£
                         		#YDR420W[0]:YDR420W[1]:synonymous_variant[2]:1533[3]:511[4]:P>P[5]
@@ -165,19 +171,24 @@ while( my $l = <$ifh> )
                         		if ($remainder == 2){$codon=2;}
                         		$aminoacid = '£'.$s5[0].$s3[4].':'.$s[3].'>'.$s[4].':'.$codon.'£';
                             }
-                            if ( $csq =~ /missense/i )
+                            if ( $csq_del =~ /missense/i )
                             {
                                 #wanted: C911Y;
                                 #YLR442C[0]:YLR442C[1]:missense_variant[2]:2732[3]:911[4]:C>Y[5]
                                 my @s5 = split( /\>/, $s3[5]);
                                 $aminoacid = '£x'.$s5[0].$s3[4].$s5[1].'£';
                             }
+				
+			    if ( $csq_del =~ /stop_lost/i )
+                               {   
+                                    $aminoacid = '£st_lost£';
+                                }
 
                             if( $homs > 0 || $hets > 0)
                             {
                             if( $l=~/INDEL/){print qq[INDEL\t];}else{print qq[SNP\t];}
                             if(defined($name_conversion{$s3[1]})){
-        					print qq[$s[0]\t$s[1]\t$aminoacid\t$s3[1]\t$name_conversion{$s3[1]}\t$description{$s3[1]}\t$s3[2]\t$homs\t$samplesHom\t%\t$hets\t$samplesHet\n];
+        					print qq[$s[0]\t$s[1]\t$aminoacid\t$s3[1]\t$name_conversion{$s3[1]}\t$description{$s3[1]}\t$csq_del\t$homs\t$samplesHom\t%\t$hets\t$samplesHet\n];
                             }
                             else{
                             print qq[$s[0]\t$s[1]\t$samplesHet\t$s3[1]\t$s3[2]\t$s3[2]\t$s3[2]\t$hets\n];
@@ -186,7 +197,7 @@ while( my $l = <$ifh> )
                         }
                     }
                 }
-            }
+            #}
         }
     }
 }
