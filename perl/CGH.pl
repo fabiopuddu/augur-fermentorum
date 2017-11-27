@@ -245,12 +245,11 @@ foreach my $line (@PLO){
 #
 #print Dumper \@breakpoints;
 my $final_breakpoints=collapse_region(@breakpoints);
-print Dumper $final_breakpoints;
 
+open (my $out_brkp, '>', $sample_name."_breakpoints.txt");
+print $out_brkp join("\n", @$final_breakpoints);
+close ($out_brkp);
 
-
-
-close ($out);
 
 sleep 10;
 system("mkdir -p png; mkdir -p svg");
