@@ -85,7 +85,7 @@ foreach my $gt (sort keys %mutations){
 	print "$gt\t$nc{$gt}\t";#print the key (current sample ERS number)
 	}
 	for my $mut(@{$mutations{$gt}}){
-		if (($mut =~ m/FS@/) or ($mut =~ m/£Δ/)){
+		if (($mut =~ m/FS@/) or ($mut =~ m/£Δ/) or ($mut =~ m/£st_lo/)){
 		$mut=~ s/£//g;
 		print color("red"), "$mut\t", color("reset");
 		}
