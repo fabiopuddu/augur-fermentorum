@@ -134,8 +134,7 @@ my $sample_name = substr($bam, 0, -4);
 my $bam_dir = join ('/',@b);
 my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
 my $mat_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
-
-my $twom_bam = $bam_dir.'/../TWOMICRON_BAMS/'.$sample_name.'.2m.bam';
+my $twom_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
 
 
 my $MATa = 'MATa_HMR:1400-2000';
@@ -156,7 +155,7 @@ my @s = split ('/', $input);
 my $sa = $s[-1];
 my @samp = split (/\./, $sa);
 
-print "Sample\trDNA\tCUP1\tMito\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGenome_wide_median\n";
+print "Sample\trDNA\tCUP1\tMito\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGenome_wide_median\tMating_type\n";
 print "$samp[0]\t";
 my $rDNA_loc = 'XII:452000-459000';
 my $rDNA_estimate = repeat_estimate($input,$rDNA_loc,$ref_genome)*2;
@@ -175,7 +174,7 @@ print "$mito_estimate\t";
 
 my $twom_loc = '2-micron:2000-4500';
 my $twom_estimate = repeat_estimate($twom_bam,$twom_loc,$twom_ref)*$ploidy;
-#$mito_estimate = sprintf("%.3f", $mito_estimate);
+#$twom_estimate = sprintf("%.3f", $twom_estimate);
 print "$twom_estimate\t";
 
 
