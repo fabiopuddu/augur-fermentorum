@@ -8,36 +8,65 @@ use Data::Dumper;
 use Cwd 'abs_path';
 use Math::Round;
 #####
-my $bin_size=200; #define the size of the bin to make averages in base pairs
-my $min_span_highlight=2000; #define the minimum lenght of a jump in ploidy to be reported in highlights
-my $threshold=int($min_span_highlight / $bin_size);
+my $bin_size=400; #define the size of the bin to make averages in base pairs
+my $min_span_highlight=2500; #define the minimum lenght of a jump in ploidy to be reported in highlights
+my $threshold=$min_span_highlight / $bin_size;
 #####
 #define a hash of centromere coordinates(+5000 bp on both sides)
 my %centromere=(
-	chr01    => [ "146465", "156582" ],
-    	chr02    => [ "233207", "243323" ],
-    	chr03    => [ "109385", "119501" ],
-   	chr04    => [ "444711", "454821" ],
-        chr05    => [ "146987", "157104" ],
-        chr06    => [ "143510", "153627" ],
-   	chr07    => [ "491920", "502038" ],
-        chr08    => [ "100586", "110703" ],
-        chr09    => [ "350629", "360745" ],
-   	chr10    => [ "431307", "441425" ],
-        chr11    => [ "435129", "445246" ],
-        chr12    => [ "145828", "155947" ],
-   	chr13    => [ "263031", "273149" ],
-        chr14    => [ "623758", "633875" ],
-        chr15    => [ "321584", "331702" ],
-   	chr16    => [ "550957", "561073" ],
+	I     => [ "146465", "156582" ],
+    	II    => [ "233207", "243323" ],
+    	III   => [ "109385", "119501" ],
+   	IV    => [ "444711", "454821" ],
+          V     => [ "146987", "157104" ],
+          VI    => [ "143510", "153627" ],
+   	VII   => [ "491920", "502038" ],
+          VIII  => [ "100586", "110703" ],
+          IX    => [ "350629", "360745" ],
+   	X     => [ "431307", "441425" ],
+          XI    => [ "435129", "445246" ],
+          XII   => [ "145828", "155947" ],
+   	XIII  => [ "263031", "273149" ],
+          XIV   => [ "623758", "633875" ],
+          XV    => [ "321584", "331702" ],
+   	XVI   => [ "550957", "561073" ],
 );
 
-#####
+
+my %chr_ends=(
+	I     => [ "15000", "215218" ],
+    	II    => [ "15000", "798184" ],
+    	III   => [ "15000", "301620" ],
+   	IV    => [ "15000", "1516933" ],
+          V     => [ "15000", "561874" ],
+          VI    => [ "15000", "255161" ],
+   	VII   => [ "15000", "1075940" ],
+          VIII  => [ "15000", "547643" ],
+          IX    => [ "15000", "424888" ],
+   	X     => [ "15000", "730751" ],
+          XI    => [ "15000", "651816" ],
+          XII   => [ "15000", "1063177" ],
+   	XIII  => [ "15000", "909431" ],
+          XIV   => [ "15000", "769333" ],
+          XV    => [ "15000", "1076291" ],
+   	XVI   => [ "15000", "933066" ],
+);
+
+
+
+
+my @chromosomes=('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI');
+
+#@chromosomes=('V','VII');
+
+
+
+###################################################
+##### INPUT DATA
+###################################################
 my @path = split( '/' , abs_path($0));
 pop(@path);
 my $local_folder = join('/',@path);
-#system("if [ -e ploidy_data.txt ]; then rm ploidy_data.txt; fi");
-#Get the bam file as input
 my ($input);
 my ($ploidy);
 my $fil;
@@ -62,23 +91,37 @@ if (defined $label and length $label>0) {
 	 @labels=split(":",$label);
 	 (scalar @labels == 3) or die qq"Not enough arguments in label";
 }
-my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
+
+
+
+###################################################
+###READ THE FILTER IF FILTERING HAS BEEN CHOSEN
+###################################################
 my %filter;
 #Load the regions to be filtered from file into a hash
 if ($fil){
-	open (my $ff, '<', "$local_folder/../defaults/region-filter.txt") or die;
-	while (my $line=<$ff>){
-		chomp $line;
-		my @linea=split("\t",$line);
-		my $chr=$linea[0];
-		my @insert_val=($linea[1],$linea[2]);
-		push(@{$filter{$chr}}, \@insert_val);
-	} 
-	close ($ff);
-#	print Dumper(\%filter);
+        open (my $ff, '<', "$local_folder/../defaults/region-filter.txt") or die;
+        while (my $line=<$ff>){
+                chomp $line;
+                my @linea=split("\t",$line);
+                my $chr=$linea[0];
+                my @insert_val=($linea[1],$linea[2]);
+                push(@{$filter{$chr}}, \@insert_val);
+        }
+        close ($ff);
+#       print Dumper(\%filter);
 }
+
+
+
+
+###################################################
+#RUN THROUGH ALL THE CHROMOSOMES AND EXTRACT COVERAGE INFORMATION FROM BAM FILES
+###################################################
+
+my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
 my @val;
-foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI'){
+foreach my $chrom (@chromosomes){
 	print "processing chromosome $chrom\n";
 	my %c_c = chrom_cov($chrom);
 	$genome{$chrom}=\%c_c;
@@ -89,12 +132,205 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 my $gw_median = median(@val);
 print "Genome wide median: $gw_median\n";
 
-foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI'){
+
+
+
+###################################################
+#RUN THROUGH ALL THE CHROMOSOMES AGAIN, NORMALISE DATA,
+#EXTRACT CHROMOSOME PLOIDY INFO FROM CENTROMERES AND OUTPUT COVERAGE IN FORMAT READABLE BY CIRCOS
+###################################################
+my %ploidy_by_chr; #<- this will contain the ploidy by chromosome for future reference
+foreach my $chrom (@chromosomes){
+	my @centromere_block=();;
 	my %c_c = %{$genome{$chrom}};
+	#normalise all the coverage data using the genome wide median and the expected ploidy
 	foreach my $k (keys %c_c){
 			$c_c{$k}=$c_c{$k}/$gw_median*$ploidy; 		
-	}
+			if (($k>$centromere{$chrom}[0]) and ($k<$centromere{$chrom}[1])){
+   		             push @centromere_block, $c_c{$k}
+        			}
+          }
+	$ploidy_by_chr{$chrom}=ploidy_mode(@centromere_block);
 	open( my $fh, '>>', $sample_name."_ploidy_data.txt");
+	my $cn=get_as_chr($chrom);
+	foreach my $pos (sort {$a <=> $b} keys %c_c) {
+		my $end = $pos+($bin_size-1);
+    	#print "chr$cn\t$pos\t$end\t$c_c{$pos}\n";
+    	printf $fh "chr$cn\t$pos\t$end\t$c_c{$pos}\n";	
+	}
+	close ($fh);
+}
+
+###write the chromosome ploidy info in a file
+open (my $statout, '>', $sample_name."_plstats.txt");
+
+print ($statout "Chromosome\tPred.ploidy\n");
+my $tot_aneup=0;
+foreach my $chrom (@chromosomes){
+	my $cn=get_as_chr($chrom);		
+	my $chr_ploidy=$ploidy_by_chr{$chrom};
+	$tot_aneup += abs($chr_ploidy-$ploidy);
+	print ($statout "chr$cn\t$chr_ploidy\n");
+}
+print ($statout "Total.aneuploidies\t$tot_aneup\n");
+close ($statout);
+
+#NOW WE OPEN THE FILE JUST CREATED AND START WORKING ON IT
+
+open (my $fplo, '<', $sample_name."_ploidy_data.txt");
+chomp(my @PLO = <$fplo>);
+close ($fplo);
+
+
+my $chr_len=10;
+
+#get starting ploidy data from the first line of the file
+my $count=0;
+#initialise the value of the previous chromosome
+my $i=0;
+
+
+my @highlight_block;
+my @breakpoint_block;
+my @breakpoints;
+my $prev_chr='chr01';
+my $prev_plo=$ploidy;
+
+open (my $out, '>', $sample_name."_highlights.txt");
+foreach my $line (@PLO){
+	my @linea=split("\t",$line);		#split the line on tabs 0:chr 1:start 2:end 3:ploidy 
+	
+	#>>>>HERE WE CREATE A HIGHLIGHT FILE THAT CIRCOS CAN USE TO HIGHLIGHT REGIONS OF DIFFERENT PLOIDY
+	#if the line is a "hit" then push the line into an highlight array	
+	if ((($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5))){
+		push @highlight_block, "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=red\n";
+		$count++;
+	}
+	#if the line is not a hit we need to process the highlight block
+	else { 
+		#but only if the size of the highlight array is greater than 3
+		if (scalar (@highlight_block) >= $threshold ){
+			#print the block of highlights
+			for my $output_line (@highlight_block){
+				printf $out $output_line;		
+			}
+		}
+		#always re-initialise the @highlight_block array
+		@highlight_block=(); 
+	}
+	#>>>>AND HERE WE CREATE A BREAKPOINT FILE
+	#check wether the ploidy of the current line falls outside of what is expected for that chromosome
+	my $chr_name=get_as_rom($linea[0]);
+	#print "$linea[0]\t$linea[1]\tabs($linea[3]-$prev_plo)\n";
+	if (abs ($linea[3]-$ploidy_by_chr{$chr_name}) > 0.5 and abs($linea[3]-$prev_plo)<0.8){
+		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\n";
+		#print "positive\n";
+	}
+	else { 
+		#but only if the size of the highlight array is greater than 3
+		if (scalar (@breakpoint_block) >= $threshold ){
+			#print the block of highlights
+			my $block=collapse_region(@breakpoint_block);
+			push @breakpoints, @$block;
+			
+		}
+		#always re-initialise the @highlight_block array
+		@breakpoint_block=(); 
+	}
+	
+	
+	$prev_chr=$linea[0];
+	$prev_plo=$linea[3];
+} 
+#
+#print Dumper \@breakpoints;
+my $final_breakpoints=collapse_region(@breakpoints);
+
+open (my $out_brkp, '>', $sample_name."_breakpoints.txt");
+print $out_brkp join("\n", @$final_breakpoints);
+close ($out_brkp);
+
+
+sleep 10;
+system("mkdir -p png; mkdir -p svg");
+print "Executing circos\n";
+#Execute circos silently 
+system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -param highlights/highlight/file=".$sample_name."_highlights.txt -param plots/plot/file=".$sample_name."_ploidy_data.txt -outputfile ".$sample_name);
+#If labels have been defined write annotation on the png file
+if (scalar @labels>0){
+	my $command="convert ".$sample_name.".png -font Helvetica -weight 70  -gravity center -pointsize 60 -annotate 0 \"$labels[0]\n\n \"  -pointsize 30 -annotate 0 \"$labels[1]   $labels[2]\" out.".$sample_name.".png";
+	system($command);
+	system ("mv out.".$sample_name.".png  ".$sample_name.".png");
+}
+
+system("mv ".$sample_name.".png png/; mv ".$sample_name.".svg svg/");
+system("convert png/".$sample_name.".png -quality 96 -resize 500x500  png/".$sample_name."_web.jpg");
+
+#############################################################
+#SUBROUTINES
+#############################################################
+sub collapse_region{
+	my @input=@_;
+	#print Dumper \@input;
+	push @input, '-\t-\t-'; #put in an extra record for comparison purposes
+	my $endcycle=scalar(@input)-1;
+	my @br_ploidy;
+	#print $endcycle;
+	for (my $i=0; $i < $endcycle; $i++){	
+		my @line=split "\t", $input[$i];
+		my @next_line=split "\t", $input[$i+1];
+		chomp @line; chomp @next_line;
+		#If the chr on the next line equals the current one and the difference between start and end is less than 20kb
+		if (($line[0] eq $next_line[0]) and ($next_line[1]-$line[2]<20000) and abs($line[3]-$next_line[3])<0.8){
+			push @br_ploidy, $next_line[3];
+			my $new_end=$next_line[2]; 				#the new end will be the end of the next block
+			splice @input, $i+1, 1; 			#remove the next line
+			my $mean_ploidy=sprintf('%.1f', mean(@br_ploidy));
+			$input[$i]="$line[0]\t$line[1]\t$new_end\t$mean_ploidy";		#assign to the current line the new end
+			$endcycle=$endcycle-1;				#reduce the number of iterations by 1 since we removed an element
+			$i=$i-1;						#decrease the counter by 1 since we want to work on the same element for the next cycle	
+		}
+		else{
+		@br_ploidy=();
+		}
+	#	print "$i\n";
+		#print "$line[0]\t$next_line[0]\t$i\n";
+	}
+	pop @input; #remove the extra record put in before
+	#print Dumper \@input;
+	return \@input;
+}
+
+
+
+sub median {
+ my @vals = sort {$a <=> $b} @_;
+    my $len = @vals;
+    if($len%2) #odd?
+    {
+        return $vals[int($len/2)];
+    }
+    else #even
+    {
+        return ($vals[int($len/2)-1] + $vals[int($len/2)])/2;
+    }
+}
+#############################################################
+sub mean {
+    return sum(@_)/@_;
+}
+#############################################################
+sub geomean{
+my $product=1;
+foreach my $number (@_){
+	$product=$number*$product;
+}
+my $log_e = log($product);
+return exp($log_e/@_);
+}
+#############################################################
+sub get_as_chr{
+	my $chrom=$_[0];
 	my $cn;
 	if ($chrom eq 'I'){$cn='01'}
 	elsif ($chrom eq 'II'){ $cn='02'}
@@ -112,201 +348,36 @@ foreach my $chrom ('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII
 	elsif ($chrom eq 'XIV'){ $cn='14'}
 	elsif ($chrom eq 'XV'){ $cn='15'}
 	elsif ($chrom eq 'XVI'){ $cn='16'}
-	foreach my $pos (sort {$a <=> $b} keys %c_c) {
-		my $end = $pos+($bin_size-1);
-    	#print "chr$cn\t$pos\t$end\t$c_c{$pos}\n";
-    	printf $fh "chr$cn\t$pos\t$end\t$c_c{$pos}\n";	
-	}
-	close ($fh);
+	return $cn;
+	
+}
+################################################################
+sub get_as_rom{
+	my $chrom=$_[0];
+	my $cn;
+	if ($chrom eq 'chr01'){$cn='I'}
+	elsif ($chrom eq 'chr02'){ $cn='II'}
+	elsif ($chrom eq 'chr03'){ $cn='III'}
+	elsif ($chrom eq 'chr04'){ $cn='IV'}
+	elsif ($chrom eq 'chr05'){ $cn='V'}
+	elsif ($chrom eq 'chr06'){ $cn='VI'}
+	elsif ($chrom eq 'chr07'){ $cn='VII'}
+	elsif ($chrom eq 'chr08'){ $cn='VIII'}
+	elsif ($chrom eq 'chr09'){ $cn='IX'}
+	elsif ($chrom eq 'chr10'){ $cn='X'}
+	elsif ($chrom eq 'chr11'){ $cn='XI'}
+	elsif ($chrom eq 'chr12'){ $cn='XII'}
+	elsif ($chrom eq 'chr13'){ $cn='XIII'}
+	elsif ($chrom eq 'chr14'){ $cn='XIV'}
+	elsif ($chrom eq 'chr15'){ $cn='XV'}
+	elsif ($chrom eq 'chr16'){ $cn='XVI'}
+	return $cn;
+	
 }
 
 
-open (my $fplo, '<', $sample_name."_ploidy_data.txt");
-open (my $out, '>', $sample_name."_highlights.txt");
-open (my $statout, '>', $sample_name."_plstats.txt");#
-open (my $firstdev, '>', $sample_name."_deriv.txt");
 
-chomp(my @PLO = <$fplo>);
-my @highlight_block;
-my @chromosome_block;
-my @centromere_block;
-my $chr_len=10;
-my $prev_chr='chr01';
-#get starting ploidy data from the first line of the file
-my @firstline=split("\t",$PLO[0]);
-my $prev_plo=$firstline[3];
-my $count=0;
-#initialise the value of the previous chromosome
-my $chrom_end=0;
-my $aneup_fract;
-my $prev_pos=0;
-my @average_array;
-my $i=0;
-my $average;
-my $flag_up=0;
-my $flag_down=0;
-my $flag_end=0;
-my $brkpt1='';
-my $brkpt2='';
-print ($statout "Chromosome\tPred. ploidy\tFr.deviating\n");
-foreach my $line (@PLO){
-	my @linea=split("\t",$line);		#split the line on tabs 0:chr 1:start 2:end 3:ploidy 
-	if ( $prev_chr ne $linea[0]){		# if the current chromosome doesnt match the old we need to calculate per chromosome information
-		
-		my $mean_ploidy;
-		$aneup_fract=$count/$chr_len;
-		if ($aneup_fract <0.25 or $aneup_fract > 0.75){
-			$mean_ploidy=ploidy_mode(@chromosome_block);
-		}
-		else{
-			$mean_ploidy="-1"
-		}
-		$chr_len=0;
-		$count=0;
-		my $centromere_ploidy=ploidy_mode(@centromere_block);
-		print ($statout "$prev_chr\t$centromere_ploidy\t$aneup_fract\n");
-		@chromosome_block=();
-		@centromere_block=();
-	}
-	$chr_len++;
-	$prev_chr=$linea[0];
-	# if the current slice matches one of the centromeres push the information into a list.
-	if ((($linea[1] >$centromere{$linea[0]}[0]) and  #if the start of the slice is after the start of the centromere and
-	     ($linea[1] <$centromere{$linea[0]}[1])) or  # the start of the slice is before the end of the centromere or
-	    (($linea[2] >$centromere{$linea[0]}[0]) and #the end of the slice is after the start of the centromere and 
-	     ($linea[2] >$centromere{$linea[0]}[0]))){   # the end of the slice is before the end of the centromere
-		push @centromere_block, "$linea[3]"
-	}
-#HERE WE CREATE A HIGHLIGHT FILE THAT CIRCOS CAN USE TO HIGHLIGHT REGIONS OF DIFFERENT PLOIDY
-	#if the line is a "hit" push the line into an highlight array
-	push @chromosome_block, "$linea[3]";	
-	if (($linea[3] < $ploidy-0.5) or ($linea[3] > $ploidy+0.5)){
-		push @highlight_block, "$linea[0]\t$linea[1]\t$linea[2]\tfill_color=red\n";
-		$count++;
-	}
-	#if the line is not a hit we need to print out the previous block of highlights
-	else { 
-	#but only if the size of the highlight array is greater than 3
-		if (scalar (@highlight_block) >= $threshold ){
-			#print the block of highlights
-			for my $output_line (@highlight_block){
-				printf $out $output_line;
-				#print "$output_line\n";
-			}
-		}
-		#always re-initialise the @highlight_block array
-		@highlight_block=(); 
-	}
-	
-	
-
-
-
-
-	#THE SECOND BLOCK OF CODE TRIES TO DETECT THE COORDINATES OF THE BREAKPOINTS
-	
-	
-	
-	
-# 	my @next_line = split("\t",$PLO[$i+1]);
-# 	my $next_line_chr = $next_line[0];
-# 	print "$PLO[$i+1]\n";
-# 	printf "cur line $linea[1] cur chr $linea[0] next chr $next_line_chr\n";
-# 	if ($linea[0] ne $next_line_chr){
-# 		$chrom_end=1
-# 	}
-# 	#push into average array
-# 	push @average_array, $linea[3];
-# 	#if n=20 average the array and report
-# 	if (($i==40) or $chrom_end){
-# 		$i=0;
-# 		$average=sum(@average_array)/scalar(@average_array);
-# 		#printf "$average\n";
-# 		@average_array=();
-# 		#calculate dx and report
-# 		#my $dx=-$prev_pos;
-# 		my $dy=($average-$prev_plo);
-# 		printf $firstdev "$linea[0]\t$dy\n";
-# 		#Determine if dy is outside a threshold
-# 		if ($dy > 0.4){$flag_up = 1; $brkpt1=$linea[1];print"up $linea[0] $linea[1]\n";}
-# 		elsif ($dy < -0.4) {$flag_down = 1; $brkpt2=$linea[1];print"down $linea[0] $linea[1]\n"}
-# 		elsif ($chrom_end){$flag_end=1}
-# 		if (($flag_up && $flag_down ) || (($flag_down || $flag_up) && $flag_end) ) {
-# 			print "Curr_line $linea[1] Flags: up $flag_up down $flag_down end $flag_end\n";
-# 			$brkpt1=$linea[1] unless $flag_up;
-# 			$brkpt2=$linea[1] unless $flag_down;
-# 			if ($brkpt1>$brkpt2){
-# 				print "Breakpoint: $linea[0]\t$brkpt2\t$brkpt1\n";
-# 			}
-# 			else {
-# 				print "Breakpoint: $linea[0]\t$brkpt1\t$brkpt2\n";
-# 			}
-# 			$flag_up = 0;
-# 			$flag_down = 0;
-# 			$brkpt1 = 0;
-# 			$brkpt2 = 0;
-# 		}
-# 
-# 		$prev_pos=$linea[1];
-# 		$prev_plo=$average;
-# 	}
-# 	$i++;
-
-} 
-my $mean_ploidy;
-$aneup_fract=$count/$chr_len;
-if ($aneup_fract <0.25 or $aneup_fract > 0.75){
-			$mean_ploidy=ploidy_mode(@chromosome_block);
-		}
-		else{
-			$mean_ploidy="."
-		}
-my $centromere_ploidy=ploidy_mode(@centromere_block);
-print ($statout "$prev_chr\t$centromere_ploidy\t$aneup_fract\n");
-close ($statout);
-close ($fplo);
-close ($out);
-close ($firstdev);
-sleep 10;
-system("mkdir png; mkdir svg");
-print "Executing circos";
-#Execute circos silently 
-system ("circos -silent -conf $local_folder/../defaults/circos_aneuploidy.conf -param highlights/highlight/file=".$sample_name."_highlights.txt -param plots/plot/file=".$sample_name."_ploidy_data.txt -outputfile ".$sample_name);
-#If labels have been defined write annotation on the png file
-if (scalar @labels>0){
-	my $command="convert ".$sample_name.".png -font Helvetica -weight 70  -gravity center -pointsize 60 -annotate 0 \"$labels[0]\n\n \"  -pointsize 30 -annotate 0 \"$labels[1]   $labels[2]\" out.".$sample_name.".png";
-	system($command);
-	system ("mv out.".$sample_name.".png  ".$sample_name.".png");
-}
-system("mv ".$sample_name.".png png/; mv ".$sample_name.".svg svg/");
-system("convert png/".$sample_name.".png -quality 96 -resize 500x500  png/".$sample_name."_web.jpg");
-
-sub median {
- my @vals = sort {$a <=> $b} @_;
-    my $len = @vals;
-    if($len%2) #odd?
-    {
-        return $vals[int($len/2)];
-    }
-    else #even
-    {
-        return ($vals[int($len/2)-1] + $vals[int($len/2)])/2;
-    }
-}
-
-sub mean {
-    return sum(@_)/@_;
-}
-
-sub geomean{
-my $product=1;
-foreach my $number (@_){
-	$product=$number*$product;
-}
-my $log_e = log($product);
-return exp($log_e/@_);
-}
-
+#############################################################
 sub ploidy_mode{
         my %counts;
         foreach my $element (@_){
@@ -317,6 +388,10 @@ sub ploidy_mode{
         return $sorted_array[-1];
 }
 
+
+#############################################################
+
+#THIS SUBROUTINE TAKES IN INPUT A CHROMOSOME NAME EG 'IV' AND RETURNS A HASH WITH POSITIONS AS KEYS AND COVERAGES AS VALUES
 sub chrom_cov{
 	#Get current chromosome
 	my $c = $_[0];
