@@ -135,7 +135,7 @@ my $bam_dir = join ('/',@b);
 my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
 my $mat_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
 
-my $twom_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
+my $twom_bam = $bam_dir.'/../TWOMICRON_BAMS/'.$sample_name.'.2m.bam';
 
 
 my $MATa = 'MATa_HMR:1400-2000';
