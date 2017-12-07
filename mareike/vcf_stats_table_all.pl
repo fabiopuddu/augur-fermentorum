@@ -70,31 +70,21 @@ my $ploidy = 0;
 
 # Check the ploidy of the sample by looking at the GT field of the vcf file
 open (my $ifh, '<', "$input") or die "Unable to open file, $!";
-while ($line = <$ifh>) {
-    next if ($line =~ /#/);
-    next unless ($line =~ /\//);
-    my @fields = split("\t", $line);
-    # Check in the columns corresponding to the first 5 samples, to make sure that at least one of them has some variant (controls may not have any)
-    my $select = $fields[9];
-    if ($select eq '.' || $select =~ /\.:/) {
-        $select = $fields[10];
-    }
-    if ($select eq '.' || $select =~ /\.:/){
-        $select = $fields[11];
-    }
-    if ($select eq '.' || $select =~ /\.:/){
-        $select = $fields[12];
-    }
-    if ($select eq '.' || $select =~ /\.:/){
-        $select = $fields[13];
-    }
-    if ($select eq '.' || $select =~ /\.:/){
-        next;
-    }
-    my @gt = split(':', $select);
-    my @gtsep = split('/', $gt[0]);
-    $ploidy = scalar @gtsep;
-    last if ($ploidy > 0);
+my @FILE=<$ifh>;
+for (my $column=9; $column<14; $column++){
+	for my $line(@FILE) {
+    		next if ($line =~ /#/);
+    		next unless ($line =~ /\//);
+    		my @fields = split("\t", $line);
+    		# Check in the columns corresponding to the first 5 samples, to make sure that at least one of them has some variant (controls may not have any)
+    		my $select = $fields[$column] unless $fields[$column] eq '.' || $fields[$column] =~ /\.:/;
+	        if (defined $select){
+			my @gt = split(':', $select);
+    			my @gtsep = split('/', $gt[0]);
+    			$ploidy = scalar @gtsep;
+		}
+	}
+last if ($ploidy > 0);
 }
 close($ifh);
 
