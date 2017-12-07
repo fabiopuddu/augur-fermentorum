@@ -21,8 +21,8 @@ cat samples.tsv | while read line
 					fi
 					t=$(($t+1))
 				done
-		folders=`cat name\ conversion.tsv | grep "Del$n"'_' | grep -oE '\bSD[[:alnum:]]*\b|\bSC_MFY[[:alnum:]]*\b' | tr "\n" "\t"`
-		fnames=`cat name\ conversion.tsv | grep "Del$n"'_' | grep -oE '\bSD[[:alnum:]]*\b|\bSC_MFY[[:alnum:]]*\b' | tr "\n" "\t"`
+		folders=`cat name\ conversion.tsv | grep "Del$n"'_' | awk '{print $1}' | tr "\n" "\t"`
+		fnames=`cat name\ conversion.tsv | grep "Del$n"'_' | awk '{print $5}' | tr "\n" "\t"`
 		mkdir -p "Del$n"'_'"$name"
 			cd "Del$n"'_'"$name"
 			mkdir -p "BAM"

@@ -257,7 +257,7 @@ foreach my $plate (@plates){
 #################
 # Print results #
 #################
-
+$column_number = $column_number+2;
 print "@header"."\n";
 foreach my $repeat (sort keys %data) {
 	for (my $i=1; $i <= $column_number; $i++) {

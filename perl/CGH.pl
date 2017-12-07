@@ -140,6 +140,7 @@ print "Genome wide median: $gw_median\n";
 #EXTRACT CHROMOSOME PLOIDY INFO FROM CENTROMERES AND OUTPUT COVERAGE IN FORMAT READABLE BY CIRCOS
 ###################################################
 my %ploidy_by_chr; #<- this will contain the ploidy by chromosome for future reference
+my %mean_centromere_ploidy;
 foreach my $chrom (@chromosomes){
 	my @centromere_block=();;
 	my %c_c = %{$genome{$chrom}};
@@ -151,6 +152,7 @@ foreach my $chrom (@chromosomes){
         			}
           }
 	$ploidy_by_chr{$chrom}=ploidy_mode(@centromere_block);
+	$mean_centromere_ploidy{$chrom}=mean(@centromere_block);
 	open( my $fh, '>>', $sample_name."_ploidy_data.txt");
 	my $cn=get_as_chr($chrom);
 	foreach my $pos (sort {$a <=> $b} keys %c_c) {
@@ -168,7 +170,14 @@ print ($statout "Chromosome\tPred.ploidy\n");
 my $tot_aneup=0;
 foreach my $chrom (@chromosomes){
 	my $cn=get_as_chr($chrom);		
-	my $chr_ploidy=$ploidy_by_chr{$chrom};
+        #assign an integer number to ploidy if the mean ploidy of the chromosome does not diverge too much from the predicted
+        my $chr_ploidy;
+        if (abs($mean_centromere_ploidy{$chrom}-$ploidy_by_chr{$chrom})<0.25){
+                $chr_ploidy=$ploidy_by_chr{$chrom};
+        }
+        else{
+                $chr_ploidy=$mean_centromere_ploidy{$chrom};
+        }
 	$tot_aneup += abs($chr_ploidy-$ploidy);
 	print ($statout "chr$cn\t$chr_ploidy\n");
 }
