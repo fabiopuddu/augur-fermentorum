@@ -149,7 +149,7 @@ mkdir -p calling
 cd calling
 cat ../bams_for_mpileup | while read line
 	do	n=$(echo $line |  tr '/' "\n" | tail -n1 | sed "s/\.bam//g" | sed "s/\.merged//g")
-		ers=`grep -w $n ../../name\ conversion.tsv | tr "\t" "\n" | tail -n 1 | sed -e 's/[[:space:]]*$//'`
+		ers=`grep -w $n ../../name\ conversion.tsv | awk '{print $6}'`
         check_pool=`echo $n | grep 'pool'`
         if [ -z $check_pool ]
             then ploidy=2
