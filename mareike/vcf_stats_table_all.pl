@@ -27,7 +27,7 @@ my $indel_count;
 my $snp_count;
 $indel_count='0';$snp_count='0';
 my $check=0;
-my $transitions; my $transversions;
+my $transitions=0; my $transversions=0;
 my @number; my %result;
 my $A_C=0;
 my $A_G=0;
@@ -41,7 +41,6 @@ my $G_T=0;
 my $T_A=0;
 my $T_C=0;
 my $T_G=0;
-
 #INDELs
 my $one=0;
 my $two=0;
@@ -71,7 +70,9 @@ my $ploidy = 0;
 # Check the ploidy of the sample by looking at the GT field of the vcf file
 open (my $ifh, '<', "$input") or die "Unable to open file, $!";
 my @FILE=<$ifh>;
-for (my $column=9; $column<14; $column++){
+chomp @FILE;
+my $number_of_columns = scalar(split("\t", $FILE[-1])); #get the number of columns by counting how many fields in the last line of the vcf file
+for (my $column=9; $column<$number_of_columns; $column++){
 	for my $line(@FILE) {
     		next if ($line =~ /#/);
     		next unless ($line =~ /\//);
