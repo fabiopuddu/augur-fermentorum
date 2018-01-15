@@ -12,13 +12,13 @@ use Getopt::Long;
 #################################################
 
 my ($input);
-my ($control);
+my $control='';
 GetOptions
 (
 'i|input=s'	  => \$input,
 'c|control=s'	  => \$control,
 );
-( $input && -f $input && $control) or die qq[Usage: $0 \n
+( $input && -f $input) or die qq[Usage: $0 \n
 					 	-i name conversion file\n
 						-c control ERS number(s), comma separated if > 1
 						];
@@ -34,8 +34,10 @@ my %delnm;
 my %is_control;
 
 my $multiref=0;
-if ($control =~ m/,/) {
-    $multiref=1;
+if (length $control>0){
+	if ($control =~ m/,/) {
+    		$multiref=1;
+	}
 }
 
 for my $line (@NC){
@@ -49,11 +51,14 @@ for my $line (@NC){
             $flnm{$ERSNO}=$barcodeID;
         }
 		$delnm{$ERSNO}=$delname;
-		if ($control =~ $ERSNO){$is_control{$ERSNO}='+'}
-		else{$is_control{$ERSNO}='-'}
-		# if ($plate =~ /C/){$is_control{$ERSNO}='+'}
-# 		elsif ($plate =~ /S/){$is_control{$ERSNO}='-'}
-# 		else{$is_control{$ERSNO}='?'}
+		if (length $control > 0){
+			if ($control =~ $ERSNO){$is_control{$ERSNO}='+'}
+			else{$is_control{$ERSNO}='-'}
+			# if ($plate =~ /C/){$is_control{$ERSNO}='+'}
+	# 		elsif ($plate =~ /S/){$is_control{$ERSNO}='-'}	
+	# 		else{$is_control{$ERSNO}='?'}
+		}
+		else{$is_control{$ERSNO}='?'}
 }
 
 my %rDNA;
@@ -111,46 +116,51 @@ my $refmito=0;
 my $reftelo=0;
 my $reftwom=0;
 
-
-if ($multiref){
-    my @allrefs;
-    my $i=0;
-    @allrefs=split(',', $control);
-    foreach my $ncontrol (sort @allrefs){
-        $refrDNA+=$rDNA{$ncontrol};
-        $refmito+=$mito{$ncontrol};
-        $reftelo+=$telo{$ncontrol};
-        $reftwom+=$twom{$ncontrol};
-        $i++;
-    }
-    $refrDNA/=$i;
-    $refmito/=$i;
-    $reftelo/=$i;
-    $reftwom/=$i;
-}
-else{
-    $refrDNA=$rDNA{$control};
-    $refmito=$mito{$control};
-    $reftelo=$telo{$control};
-    $reftwom=$twom{$control};
-
-}
-
-foreach my $ERSNO (sort @SAMPLES){
-    my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A'; my $twom_var='N/A';
-        if ($refrDNA ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$refrDNA;}
-        if ($refmito ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$refmito;}
-        if ($reftelo ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$reftelo;}
-        if ($reftwom ne 'N/A' and $twom{$ERSNO} ne 'N/A'){$twom_var=sprintf "%.2f", $twom{$ERSNO}/$reftwom;}
-
-    if ($control =~ $ERSNO){
-		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)",  "$twom{$ERSNO} (-)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
+if (length $control>0){
+	if ($multiref){
+    		my @allrefs;
+    		my $i=0;
+    		@allrefs=split(',', $control);
+    		foreach my $ncontrol (sort @allrefs){
+        		$refrDNA+=$rDNA{$ncontrol};
+        		$refmito+=$mito{$ncontrol};
+        		$reftelo+=$telo{$ncontrol};
+        		$reftwom+=$twom{$ncontrol};
+        		$i++;
+    		}
+    		$refrDNA/=$i;
+    		$refmito/=$i;
+    		$reftelo/=$i;
+    		$reftwom/=$i;
 	}
 	else{
-		printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "$twom{$ERSNO} ($twom_var)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
-	
+    		$refrDNA=$rDNA{$control};
+    		$refmito=$mito{$control};
+    		$reftelo=$telo{$control};
+    		$reftwom=$twom{$control};
+
 	}
 }
+else{
+	$refrDNA='N/A';
+        $refmito='N/A';
+        $reftelo='N/A';
+        $reftwom='N/A';
+}
+foreach my $ERSNO (sort @SAMPLES){
+    my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A'; my $twom_var='N/A';
+		if ($refrDNA ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$refrDNA;}
+        	if ($refmito ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$refmito;}
+        	if ($reftelo ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$reftelo;}
+        	if ($reftwom ne 'N/A' and $twom{$ERSNO} ne 'N/A'){$twom_var=sprintf "%.2f", $twom{$ERSNO}/$reftwom;}
+    		if ($control =~ $ERSNO){
+			printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)",  "$twom{$ERSNO} (-)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
+		}
+		else{
+			printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "$twom{$ERSNO} ($twom_var)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
+	
+		}
+}	
 print "\n====================================================================================================================================================================\n";
 
 open (my $outfile, '>', 'results.txt');
@@ -160,6 +170,6 @@ open (my $outfile, '>', 'results.txt');
 #print $outfile, "=========================================================================================================================================================================\n";
 #run through the has sorted by keys name
 foreach my $ERSNO (sort @SAMPLES){
-    print $outfile "$flnm{$ERSNO}\t$rDNA{$ERSNO}\t$CUP1{$ERSNO}\t$mito{$ERSNO}\t$twom{$ERSNO}\t$ty1{$ERSNO}\t$ty2{$ERSNO}\t$ty3{$ERSNO}\t$ty4{$ERSNO}\t$ty5{$ERSNO}\t$gwm{$ERSNO}\t$telo{$ERSNO}\t$ERSNO\t$delnm{$ERSNO}\n";
+    print $outfile "$flnm{$ERSNO}\t$rDNA{$ERSNO}\t$CUP1{$ERSNO}\t$mito{$ERSNO}\t$twom{$ERSNO}\t$ty1{$ERSNO}\t$ty2{$ERSNO}\t$ty3{$ERSNO}\t$ty4{$ERSNO}\t$ty5{$ERSNO}\t$gwm{$ERSNO}\t$telo{$ERSNO}\t$ERSNO\t$delnm{$ERSNO}\t$sex{$ERSNO}\n";
 }
 close ($outfile);
