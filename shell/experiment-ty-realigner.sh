@@ -7,5 +7,5 @@ for f in Del*_*
 		echo "Submitting $f"
 		ty-realign.sh
 		cd ..
-		sleep 1
+		sleep 10
 	done
