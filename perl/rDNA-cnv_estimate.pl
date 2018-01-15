@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 
 # Author:       mh23
 # Maintainer:   mh23
@@ -146,9 +146,9 @@ my $MATa_estimate = repeat_estimate($mat_bam,$MATa,$mat_ref);
 my $MATalpha_estimate = repeat_estimate($mat_bam,$MATalpha,$mat_ref);
 my $sex_estimate=log2($MATa_estimate/$MATalpha_estimate);
 my $sex;
-if    ($sex_estimate <= -0.6){$sex="alpha"}
-elsif ($sex_estimate >=  0.6){$sex="a"}
-elsif ($sex_estimate > -0.6 and $sex_estimate < 0.6){$sex="a/alpha"}
+if    ($sex_estimate <= -0.35){$sex="alpha"}
+elsif ($sex_estimate >=  0.35){$sex="a"}
+elsif ($sex_estimate > -0.35 and $sex_estimate < 0.35){$sex="a/alpha"}
 else { die "Cannot safely determine mating type and ploidy" }
 
 
