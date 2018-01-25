@@ -27,9 +27,10 @@ my $input = shift;
 #Get the path to say that the gene_name list is in the same folder
 my $path = __FILE__;
 my @path_components = split( /\//, $path );
-my $rem = pop @path_components;
+my $rem = pop @path_components; 
+$rem = pop @path_components;
 $path = (join "/",  @path_components);
-my $gene_file="$path".'/all_yeast_genes.txt';
+my $gene_file="$path".'/defaults/all_yeast_genes.txt';
 #my $gene_file = '/lustre/scratch109/sanger/mh23/Scripts/all_yeast_genes.txt';
 
 
@@ -75,7 +76,7 @@ close( $ifi );
 #Get the coverage of the gene of interest:
 my $range_goi = "$chrom".':'."$st".'-'."$en";
 #print("$range_goi\n");
-my @mp_out = `samtools mpileup  -A -Q 0 -r $range_goi -f $path/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa $input 2>/dev/null`; 
+my @mp_out = `samtools mpileup  -A -Q 0 -r $range_goi -f $path/mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa $input 2>/dev/null`; 
 #Get the coverage of the gene of interest:
 my $coverage=0; my $checker = 0; my $break = 0;
 for (my $i =0; $i < @mp_out; $i++) {
@@ -134,7 +135,7 @@ foreach my $range (@ranges) {
 	# 3- use samtools mpileup to get the coverage for that position
 	# execute samtools mpileup as a systems command and store the output in an array
 	# 4- capture results in array
-	@mpileup_out =  `samtools mpileup  -A -Q 0 -r $range -f $path/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa $input 2>/dev/null`; 
+	@mpileup_out =  `samtools mpileup  -A -Q 0 -r $range -f $path/mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa $input 2>/dev/null`; 
 
 	# 5- calculate average coverage of gene
 	#The output comes in the format: 
