@@ -75,8 +75,11 @@ use Data::Dumper qw(Dumper);
 
 my $rep_file = shift; #results file
 my $plate_file = shift; #name conversion
-#my $column = shift; # which measure you want to fix
-my @columns = (2,3,4,5,6,7,8,9,11);
+
+#which measure you want to fix
+
+my @columns = (2,3,4,5,6,7,8,9,10,13);
+
 
 #print "@columns\n";
 
@@ -92,53 +95,52 @@ my $target_median = ''; #The target median all plates should have after adjustme
 my @plates; #an array containing the name of all plates
 my %factors; #a hash to store plate => factor
 my %data;
-my $column_number;
 
 ################
 # Read in data #
 ################
 
 my @header;
-
+my $col_no;
+print STDERR "Reading repDNA file\n";
 my $fh;
 open $fh, "<", $rep_file or die $!;  #open provided fastq file
+chomp(my @REP_FILE=<$fh>);
+close $fh;
 
+print STDERR "Reading name conversion file\n";
+open $fh, "<", $plate_file or die $!;  #open provided fastq file
+chomp(my @PLATE_FILE=<$fh>);
+close $fh;
 
-while(my $row=<$fh>){ #read file or STDIN line by line
-	chomp $row;
+@PLATE_FILE=grep { $_ !~ /mock/ } @PLATE_FILE;
+
+print STDERR "Processing repDNA file:\n ";
+my $tot=scalar @REP_FILE;
+@header=split "\t",$REP_FILE[0];
+$col_no = scalar @header;
+my $i=0;
+for my $row(@REP_FILE){ #read file or STDIN line by lin
+	$i++;
+	next if $i==1;
 	#Split the line on the tab 
 	my @file_tags = split "\t", $row;
-	
+	print STDERR "\r $i / $tot";
 	#Set up the hash structure
-	if ($. == 1) {
-		foreach my $t (@file_tags) {
-			push @header, $t;
-		}
-		next;
-	}	
-	my $col_no = scalar @file_tags;
-	$col_no = $col_no -1; 
-	$column_number = $col_no -1;
-	
-	for (my $i=0; $i <= $col_no; $i++) {
+	for (my $i=0; $i <$col_no; $i++) {
 		#$data{$file_tags[0]}{$header[$i]}=$file_tags[$i]; #this writes the name of teh column into the key
 		my $c_n = $i + 1;
 		$data{$file_tags[0]}{$c_n}=$file_tags[$i];
 	}
 }
-close $fh;
 
+print STDERR "\n";
 #print Dumper \%data;
-
 #exit; 
 
 ###############################
 # Start the iterative process #
 ###############################
-
-foreach my $column (@columns){
-
-#print "Working on column $column\n";
 
 ##########
 # Step A #
@@ -148,20 +150,35 @@ foreach my $column (@columns){
 ##Find the wild-type plate 
 
 #This command executes an external command to quickly search the plate_file for any line containing the word "WT-" and prints the third column which is the plate. This only works if all wt strains were on the same plate and if they are the only samples with a name containing 'WT-'
-my $command = "cat '$plate_file' | grep 'WT-' | awk '{print ".'$3'."}' | sort | uniq | grep 'SD' -v";
-my $wt_plate = `$command`;
-chomp $wt_plate;
+my @wt_samples=grep { $_ =~ /WT-/ } @PLATE_FILE;
+@wt_samples=split ("\t", $wt_samples[0]);
+my $wt_plate=$wt_samples[2];
+
+
+
+######
+# Get a list of all plates
+my @plates;
+for my $line(@PLATE_FILE){
+        my @riga=split "\t", $line;
+        push @plates, $riga[2] if not $riga[2] ~~ @plates and not $riga[2] eq '';
+}
 
 ##########
 # Step B #
 ##########
+
+
+
+foreach my $column (@columns){
+
+print STDERR "Working on column $column\n";
 
 ######
 ## Get all the measurements & Compute the target median
 
 #For the $wt_plate get all the sample names into an array e.g. SD followed by number and b followed by a number e.g. SD5584b2
 my @samples = @{get_SD_numbers($wt_plate)}; 
-
 #Get all measurements for the column in question for those particular SD samples into an array
 my @wt_measurements; #array to store all the wild type measurements
 #the subroutine to extract the numbers needs to be passed the sample names and the column in question 
@@ -171,16 +188,10 @@ my @wt_measurements; #array to store all the wild type measurements
 #Compute the median of the plate containing the wild types
 $target_median = median (@wt_measurements);
 
-
 ##########
 # Step C #
 ##########
 
-######
-# Get a list of all plates
-my $command2 = "cat '$plate_file' | awk '{print ".'$3'."}' | sort | uniq | grep 'SD' -v";
-@plates = `$command2`;
-chomp @plates;
 
 ######
 # Get all the measurements plate by plate to determine the factor
@@ -226,15 +237,13 @@ foreach my $plate (@plates){
 ######
 # Replace the data line by line
 
-
 #Step C: Replace the data in the hash of hashes
 
 	foreach my $sample (keys %data){
-		
-		#print "$sample\t";
-		
+
+		#print "$sample\n";		
 		my $old_measure = $data{$sample}{$column};
-		#print "Old_measure: $old_measure\t";
+		#print "Old_measure: $old_measure\n";
 		
 		my $plate = get_plate_number($sample);
 		#print "Plate: $plate\t";
@@ -244,6 +253,7 @@ foreach my $plate (@plates){
 			
 	
 		#Get the adjusted measurement
+#		print STDERR "$old_measure\t$sample\t$column\n";
 		my $adj_measure = $old_measure * $factor;
 		#print "New measure: $adj_measure\n";
 		
@@ -257,11 +267,10 @@ foreach my $plate (@plates){
 #################
 # Print results #
 #################
-$column_number = $column_number+2;
 print "@header"."\n";
-foreach my $repeat (sort keys %data) {
-	for (my $i=1; $i <= $column_number; $i++) {
-	 print "$data{$repeat}{$i}\t";
+foreach my $strain (sort keys %data) {
+	for (my $i=1; $i <= $col_no; $i++) {
+	 	print "$data{$strain}{$i}\t";
 	}
 	print "\n";
 }
@@ -275,9 +284,15 @@ foreach my $repeat (sort keys %data) {
 
 sub get_SD_numbers {
 	my $pl = shift; #This subroutines first input variable is the plate number in question
-	my $command3 = "cat '$plate_file' | grep '$pl' | awk '{print ".'$5'."}'";
-	my @SDs = `$command3`;
-	chomp @SDs;
+	#my $command3 = "cat '$plate_file' | grep '$pl' | awk '{print ".'$5'."}'";
+	my @SDs;
+	#chomp @SDs;
+	$pl =substr $pl, 6;
+	my @samples=grep { $_ =~ /$pl/ } @PLATE_FILE;
+	foreach my $sample(@samples){
+		my @line=split ("\t", $sample);
+		push @SDs, $line[4];
+	}
 	return \@SDs; #just return the reference to the array
 }
 
@@ -285,13 +300,16 @@ sub mes_per_plate {
 	#This subroutine needs to be passed an array reference followed by the column of interest 
 	my @out_array = '';
 	my $array_ref = shift;
-	my $column_number = shift; #The column number is just a number like 11
-	my $column = '$'.$column_number; #In the awk command that is to follow it needs to be preceeded by a $
+	my $column = shift; #The column number is just a number like 11
+	#my $column = '$'.$column_number; #In the awk command that is to follow it needs to be preceeded by a $
 	for my $samp (@{$array_ref}){
-		my $command4 = "cat '$rep_file' | grep -w '$samp' | awk '{print ".$column."}'";
-		my @ts_per_sample = `$command4`;
-		chomp @ts_per_sample;
-		if (defined $ts_per_sample[0] and $ts_per_sample[0] =~ /[0-9]+/ ) {push @out_array, $ts_per_sample[0]};
+		#my $command4 = "cat '$rep_file' | grep -w '$samp' | awk '{print ".$column."}'";
+		#my @ts_per_sample = `$command4`;
+		#chomp @ts_per_sample;
+		#my row=(grep { $_ == /$samp/ } @REP_FILE)[0];
+		my $ts_per_sample=$data{$samp}{$column} if exists $data{$samp} and defined $data{$samp}{$column};
+		if (defined $ts_per_sample and $ts_per_sample =~ /[0-9]+/ ) {push @out_array, $ts_per_sample};
+
 	}
 	return \@out_array;
 }
@@ -303,11 +321,13 @@ sub median {
 
 sub get_plate_number {
 	my $sample = shift;
-	my $command2 = "cat '$plate_file' | grep -w $sample | awk '{print ".'$3'."}'";
-    my @results=`$command2`;
-    next if !defined $results[0];
+	my $line=(grep { $_ =~ /$sample/ } @PLATE_FILE)[0];
+	#my $command2 = "cat '$plate_file' | grep -w $sample | awk '{print ".'$3'."}'";
+    	#my @results=`$command2`;
+	my $results = (split "\t", $line)[2];
+        next if !defined $results;
     #my $plate = substr $results[0], 1, 4;
-    my $plate = $results[0];
+    my $plate = $results;
     chomp $plate;
 	return $plate;
 }
