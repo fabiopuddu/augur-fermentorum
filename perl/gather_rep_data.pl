@@ -4,16 +4,16 @@ use strict;
 use warnings;
 my @FILES=`ls */ploidy_data/*_plstats.txt`;
 my @SAMPLES=`cat "name conversion.tsv"`;
-printf "#SDname\trDNA\tCUP1\tmitochondria\tTy1\tTy2\tTy3\tTy4\tTy5\tGWM\tTelomeres\tERSno\tDeletion\tchr01\tchr02\tchr03\tchr04\tchr05\tchr06\tchr07\tchr08\tchr09\tchr10\tchr11\tchr12\tchr13\tchr14\tchr15\tchr16\tAneupNumber\n";
+printf "#SDname\trDNA\tCUP1\tmitochondria\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGWM\tTelomeres\tERSno\tDeletion\tMatType\tchr01\tchr02\tchr03\tchr04\tchr05\tchr06\tchr07\tchr08\tchr09\tchr10\tchr11\tchr12\tchr13\tchr14\tchr15\tchr16\tAneupNumber\n";
 my $rep_group;
 my $telo;
 for my $line (@SAMPLES){
 	chomp($line);
-	(my $sample_code, my $delname, my $plate, my $aka, my $fname, undef, my $ERS)=split("\t", $line);
+	(my $sample_code, my $delname, my $plate, my $aka, my $fname, my $ERS)=split("\t", $line);
 	if (-e "$delname/repDNA/$fname.txt"){ 
-		$rep_group=`cat $delname/repDNA/$fname.txt | grep -v Sample`;
+		$rep_group=`cat "$delname/repDNA/$fname.txt" | grep -v Sample`;
 		chomp($rep_group);
-        	$telo=`cat $delname/repDNA/$fname.tel`;
+        	$telo=`cat "$delname/repDNA/$fname.tel"`;
 		chomp($telo);
 	}
 	else{
