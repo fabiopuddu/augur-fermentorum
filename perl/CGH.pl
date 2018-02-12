@@ -232,7 +232,7 @@ foreach my $line (@PLO){
 	my $chr_name=get_as_rom($linea[0]);
 	#print "$linea[0]\t$linea[1]\tabs($linea[3]-$prev_plo)\n";
 	if (abs ($linea[3]-$ploidy_by_chr{$chr_name}) > 0.5 and abs($linea[3]-$prev_plo)<0.8){
-		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\n";
+		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\t$ploidy_by_chr{$chr_name}\n";
 		#print "positive\n";
 	}
 	else { 
@@ -295,7 +295,7 @@ sub collapse_region{
 			my $new_end=$next_line[2]; 				#the new end will be the end of the next block
 			splice @input, $i+1, 1; 			#remove the next line
 			my $mean_ploidy=sprintf('%.1f', mean(@br_ploidy));
-			$input[$i]="$line[0]\t$line[1]\t$new_end\t$mean_ploidy";		#assign to the current line the new end
+			$input[$i]="$line[0]\t$line[1]\t$new_end\t$mean_ploidy\t$line[4]";		#assign to the current line the new end
 			$endcycle=$endcycle-1;				#reduce the number of iterations by 1 since we removed an element
 			$i=$i-1;						#decrease the counter by 1 since we want to work on the same element for the next cycle	
 		}
