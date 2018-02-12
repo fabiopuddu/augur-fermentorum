@@ -35,10 +35,12 @@ sub Design_KO_Oligos {
 	#Tails used
 	my $F1_tail = ' CGGATCCCCGGGTTAATTAA';
 	my $R1_tail = ' GAATTCGAGCTCGTTTAAAC';
+	my $F2_tail = $F1_tail;
+#	$F2_tail = ' CGTACGCTGCAGGTCGAC';	
 
-	
 	my $F1_oligo='';
 	my $R1_oligo='';
+	my $F2_oligo='';
 	my $three_oligo='';
 	my $four_oligo='';
 
@@ -84,7 +86,7 @@ sub Design_KO_Oligos {
 
 
 	####################################
-	# Step 2: Get the F1 and R1 oligos #
+	# Step 2: Get the F1 and F2 and R1 oligos #
 	####################################
 
 	#Get the gene sequence from coordinates
@@ -108,6 +110,18 @@ sub Design_KO_Oligos {
 	if ( $strand == -1 ) {
 	$F1_oligo = RevComp($temp_seq)}
 
+	#F2 oligo 
+	if ( $strand == 1 ) {
+	$offset = $end - 42;
+        $slice = $slice_adaptor->fetch_by_region( 'chromosome', $chr, $offset, $end-3 );
+	$F2_oligo =  $slice->seq();
+	}
+	if ( $strand == -1 ) {
+	$offset = $start + 42;
+	$slice = $slice_adaptor->fetch_by_region( 'chromosome', $chr, $start+3, $offset );
+        $temp_seq = $slice->seq();
+	$F2_oligo = RevComp($temp_seq);
+	}
 
 	#######################################
 	# Step 3: Design the .3 and .4 oligos #
@@ -187,6 +201,7 @@ sub Design_KO_Oligos {
 	#Add the tails to F1 and R1
 	$F1_oligo = $F1_oligo . $F1_tail ;
 	$R1_oligo = $R1_oligo . $R1_tail ;
+	$F2_oligo = $F2_oligo . $F2_tail ;	#The tail is the same as of the F1	
 
 	#Fill Output
 	$output{'Name'}=$stable_id;
@@ -195,6 +210,7 @@ sub Design_KO_Oligos {
 	$output{'Strand'}=$strand;
 	$output{'F1'}=$F1_oligo;
 	$output{'R1'}=$R1_oligo;
+	$output{'F2'}=$F2_oligo;
 	$output{'.3'}=$three_oligo;
 	$output{'.4'}=$four_oligo;
 	$output{'Location3'}='-'.$three_from_stop;
