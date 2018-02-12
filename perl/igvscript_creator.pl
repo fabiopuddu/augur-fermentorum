@@ -63,7 +63,7 @@ while (my $file =<$bamlist_file>){
 	print "new\n";
 	print "genome sacCer3\n";
 	print "snapshotDirectory ",$outdir,"\n";
-	print "load  ".$file;
+	print "load  ".$cwd."/".$file;
 	print "goto ".$positions{$gene_name}."\n";
 	print "viewaspairs\n";
 	print "snapshot ".$SD.".png\n";
