@@ -23,13 +23,14 @@ for directory in Del*
         if [ -z $wt_name ]
             then
                 printf "Mutant sample\n"
-                variant_caller.sh -k $caller #the k option enforce a check of the deletion before calling the mutations
+                sbatch --partition=LONG --wrap="variant_caller.sh -k $caller" #the k option enforce a check of the deletion before calling the mutations
             else
                 printf "Wild type sample\n"
-                variant_caller.sh $caller      # No deletion check for wild type samples
+                sbatch --partition=LONG --wrap="variant_caller.sh $caller"      # No deletion check for wild type samples
         fi
 	printf "Done\n"
         cd ..
+	sleep 5
     done
 #  experiment-caller.sh
 #  

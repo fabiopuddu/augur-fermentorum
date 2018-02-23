@@ -101,9 +101,9 @@ if [[ $check_deletions == 1 ]]
 				cat bams_for_mpileup | while read line
 					do
 						name=`echo $line | grep -oE '\bSD[^ ]*\.|\bSC_MFY[^ ]*\.' | tr -d '.'`
-						printf "Gene: $gene_name\tProcessing...$name\t" >>../deletion_check_log
+						printf "Gene: $gene_name\tProcessing...$name\t" >>deletion_check_log
 						check=`detect_deletion_chr_region.pl $gene_name $line | tr "\t" "\n" | grep Deleted: | sed 's/Deleted://g'`
-						printf "$check\n" >>../deletion_check_log
+						printf "$check\n" >>deletion_check_log
 						if [[ $check == 'Y' || $check == 'Yp (p=partial)' ]] 
 							then echo $line >> bams_for_mpileup_filtered
 						fi	
