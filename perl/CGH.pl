@@ -231,14 +231,16 @@ foreach my $line (@PLO){
 	#check wether the ploidy of the current line falls outside of what is expected for that chromosome
 	my $chr_name=get_as_rom($linea[0]);
 	#print "$linea[0]\t$linea[1]\tabs($linea[3]-$prev_plo)\n";
-	if (abs ($linea[3]-$ploidy_by_chr{$chr_name}) > 0.5 and abs($linea[3]-$prev_plo)<0.8){
+	if (abs ($linea[3]-$ploidy_by_chr{$chr_name}) > 0.4 and abs($linea[3]-$prev_plo)<0.8){
 		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\t$ploidy_by_chr{$chr_name}\n";
 		#print "positive\n";
 	}
 	else { 
 		#but only if the size of the highlight array is greater than 3
-		if (scalar (@breakpoint_block) >= $threshold ){
+		if (scalar (@breakpoint_block) >= ($threshold*4) ){
 			#print the block of highlights
+			print "$threshold*4\n";
+			print Dumper \@breakpoint_block;
 			my $block=collapse_region(@breakpoint_block);
 			push @breakpoints, @$block;
 			
@@ -289,7 +291,7 @@ sub collapse_region{
 		my @line=split "\t", $input[$i];
 		my @next_line=split "\t", $input[$i+1];
 		chomp @line; chomp @next_line;
-		#If the chr on the next line equals the current one and the difference between start and end is less than 20kb
+		#If the chr on the next line equals the current one and the difference between start and end is less than 20kb (20 kb is the size of two adjacent Ty, which have been filtered)
 		if (($line[0] eq $next_line[0]) and ($next_line[1]-$line[2]<20000) and abs($line[3]-$next_line[3])<0.8){
 			push @br_ploidy, $next_line[3];
 			my $new_end=$next_line[2]; 				#the new end will be the end of the next block
