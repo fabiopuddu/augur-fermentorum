@@ -16,7 +16,7 @@
 			if [[ -a bams_for_mpileup ]]
 				then	if [[ $control_samples == '' ]] 
 								then analyser-multi.sh -a -r -n2 -x -F >> results.txt &#$folder
-								else analyser-multi.sh -a -r -n2 -F -C $control_samples >> results.txt &#$folder
+								else sbatch --partition=CIAO --wrap="analyser-multi.sh -a -r -n2 -F -c $control_samples > results.txt 2>&1"
 						fi
 			fi
 			cd ..
