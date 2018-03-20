@@ -240,7 +240,7 @@ if [[ $aneup == 1 ]]
                         else sampleploidy=$(( $ploidy * 2 ))
                     fi
          	    code1=`echo $line | tr '/' "\n" | tail -n1 | sed "s|\.bam||g"` #SCMFY or #SD code
-                code2=`grep -w ${code1} ../../name\ conversion.tsv | grep -oE '\bERS[^\s]*\b'` # Fetch ERS code (cut -f 7 gave issues depending on the tabulation of name\ conversion.tsv)
+                    code2=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 6` # Fetch ERS code (cut -f 7 gave issues depending on the tabulation of name\ conversion.tsv)
          	    name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
          	    command="CGH.pl -i ../$line -p $sampleploidy -f -l \"${name}:${code1}:${code2}\""
          	    if [[ ${v} -eq '1' ]]; then echo ${command}; fi
@@ -602,5 +602,5 @@ line_counter=0
 cd ..
 printf '\e[32m\n********************************************************************************************************\n\e[0m'
 
-
+echo 'DONEOK'
 
