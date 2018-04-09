@@ -231,8 +231,8 @@ foreach my $line (@PLO){
 	#check wether the ploidy of the current line falls outside of what is expected for that chromosome
 	my $chr_name=get_as_rom($linea[0]);
 	#print "$linea[0]\t$linea[1]\tabs($linea[3]-$prev_plo)\n";
-	if (abs ($linea[3]-$ploidy_by_chr{$chr_name}) > 0.4 and abs($linea[3]-$prev_plo)<0.8){
-		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\t$ploidy_by_chr{$chr_name}\n";
+	if (abs ($linea[3]-$mean_centromere_ploidy{$chr_name}) > 0.4 and abs($linea[3]-$prev_plo)<0.8){
+		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\t$mean_centromere_ploidy{$chr_name}\n";
 		#print "positive\n";
 	}
 	else { 
