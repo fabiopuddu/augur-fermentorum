@@ -187,8 +187,10 @@ $A_C =    $A_C + $T_G;
 
 #$transitions=$A_G+$C_T;
 #$transversions=$A_T+$A_C+$C_G+$G_T;
+my $number_of_samples=`ls ../calling/*.vcf.gz | wc -l`;
+chomp $number_of_samples;
 
 print("$indel_count\t$snp_count\t$transitions\t$transversions\t$pwd\t$C_T\t$A_G\t$A_T\t$C_G\t$G_T\t$A_C\t");
-print("$less\t$minthree\t$mintwo\t$minone\t$one\t$two\t$three\t$more\n");
+print("$less\t$minthree\t$mintwo\t$minone\t$one\t$two\t$three\t$more\t$number_of_samples\n");
 
 
