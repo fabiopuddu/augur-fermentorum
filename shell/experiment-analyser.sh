@@ -1,6 +1,7 @@
 #!/bin/bash
 #This program runs through all the folders matching the pattern Del123_Yfg1
 #then if a proper calling has been done, runs the analyser with standard options
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) #get the directory this program is stored in
 	for folder in Del*
 		do 	
 			echo $folder
@@ -16,9 +17,11 @@
 			if [[ -a bams_for_mpileup ]]
 				then	if [[ $control_samples == '' ]] 
 								then analyser-multi.sh -a -r -n2 -x -F >> results.txt &#$folder
-								else sbatch --partition=CIAO --wrap="analyser-multi.sh -a -r -n2 -F -c $control_samples > results.txt 2>&1"
+								else export SBATCH_CMD_CIAO="analyser-multi.sh -a -r -n2 -F -c $control_samples > results.txt 2>&1"
 						fi
 			fi
+			sbatch ${DIR}/submit_sbatch.sh
+			SBATCH_CMD_CIAO=""
 			cd ..
 			sleep 15
 		done
