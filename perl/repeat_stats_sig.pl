@@ -13,6 +13,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use List::Util qw(sum);
+use List::MoreUtils qw(uniq);
 use Pod::Usage;
 use Cwd 'abs_path';
 use POSIX qw(ceil);
@@ -61,10 +62,10 @@ pod2usage("$0: File $input is empty.")  if ( -z $input);
 
 #Define range of data columns
 my $first_col = 2; 
-my $last_col = 11; 
+my $last_col = 13; 
 
 #Define the order of the measures
-my @columns = qw[rDNA	CUP1	M	T1		T2		T3		T4		T5	gwm	TEL]; 
+my @columns = qw[rDNA	CUP1	M	2mic	T1		T2		T3		T4		T5	gwm	mat	TEL x x x x x x x x x x x x x x x x x x ANEUP CR]; 
 
 ### Step 1a
 # Compute the averages of wild types across all measures
@@ -83,7 +84,7 @@ my $multiplier = 3;
 
 ### Step 3b
 # Compile a list of all genes
-my $gene_column = 13;
+my $gene_column = 15;
 
 ### Step 4
 # Loop through all significant results and identify whether more than two measures for that gene are out of bounds
@@ -106,7 +107,7 @@ my @wt_stderr; my %wt_stderr_hash;
 # Compute the averages of wild types across all measures
 # Loop through all data columns and get the averages for the wild type in all columns
 # Loop from the first data column to the last
-for my $x ($first_col .. $last_col) {
+for my $x (2 .. 15, 32, 33) {
 	#Compute the average for the particular column
     my $average = wt_column_average($x);     
     #Push to array
@@ -143,20 +144,14 @@ for my $measure (@columns){
 	my $upper_bound = $wt_means_hash{$measure}+$interval;
 	#Save in hash
 	#We round and floor the intervals for distinct units eg everything but Telomeres
-	if ($measure ne 'TEL') {
-		$lower_bound=floor($lower_bound);
-		$upper_bound=ceil($upper_bound);
+	if ($measure eq 'ANEUP') {
+		$lower_bound=ceil($lower_bound);
+		$upper_bound=floor($upper_bound);
 	}
 	$lower_bounds{$measure}=$lower_bound; 
 	$upper_bounds{$measure}=$upper_bound;
 }
 ####
-# Print CIs
-print "Repeat\tWT_mean\tWT_StDev\tConfidence intervals (+/- StDev * $multiplier)\n";
-foreach my $rep (@columns){
-		printf ("%s\t%.2f\t%.2f\t(%.1f - %.1f)\n", $rep,$wt_means_hash{$rep},$wt_stdev_hash{$rep},$lower_bounds{$rep},$upper_bounds{$rep});
-}
-print "\n\n";
 
 
 ###############################
@@ -183,24 +178,40 @@ my %values;
 # a hash: measure (key) -> Gene (key) -> SD number (array)
 my %results; 
 
+my %counts_strains_failing;
+
+foreach (@columns) {$counts_strains_failing{$_.'_-'}=0; $counts_strains_failing{$_.'_+'}=0;};
 
 #Open rep.txt data file and loop through
 my $ifh;
+my $tc;
 if( $input =~ /\.gz/ ){open($ifh, qq[gunzip -c $input|]);}else{open($ifh, $input ) or die $!;}
 while( my $l = <$ifh> ){
+	next if $l =~ /^\#/;
 	#read the cover into a hash
 	chomp( $l );
     # - make a hash with gene as key and all SD numbers in a comma separated string or array 
-    my @s = split( /\t/, $l ); #Split the line into its columns and loop through columns
+	my @s = split( /\t/, $l ); #Split the line into its columns and loop through columns
 	my $SD_no = $s[0];
 	my ($del, $gene) = split('_',$s[$gene_column-1]);
 	#add SD number to hash of genes
 	$all_genes{$gene}.="$SD_no,"; 
 	# - determine for each SD number whether it is sig for any of the measures
-	for my $i (0 .. $#s) {
+	$tc++;
+	for my $i (0 .. 14,31,32) {
    		#skip any columns that are not numbers
-   		next if (!looks_like_number($s[$i]));
-   		#print "$columns[$i-1]\t$s[$i]\n"; #This shows that this is how you can relate column to its number
+   		#next if (!looks_like_number($s[$i]));
+  		next if $s[$i] =~ /ERS[0-9]{5,}/ or $s[$i] =~ /Del/ or $s[$i] =~ /SD/; #skip ERS column
+		#To allow mat field analysis instead of skipping we just remove non numerical characters
+		if ($s[$i] =~ /alpha|a/){
+			$s[$i] =~ s/[a-z]//g;
+			$s[$i] =~ s/\///g;
+			$s[$i] =~ s/\(//g;
+			$s[$i] =~ s/\)//g;
+			$s[$i] =~ s/ //g;
+	#		print "$s[$i]\n";				
+		}
+		#print "$columns[$i-1]\t$s[$i]\n"; #This shows that this is how you can relate column to its number
    		#Check whether the columns are outside the boundaries
 		# --> This bit could be coded a bit more elegant. Have a think. Too much repetition.
 		#First check the Lower bounds
@@ -209,6 +220,7 @@ while( my $l = <$ifh> ){
 		$values{$upper_key}{$SD_no}=$s[$i];
 		$values{$lower_key}{$SD_no}=$s[$i];
 		if (  $s[$i] <  $lower_bounds{$columns[$i-1]} ) {
+			$counts_strains_failing{$lower_key}++;
 			#print "YES:$lower_key  $s[$i] <  $lower_bounds{$columns[$i-1]}\n";
 			#Store the significant samples in a hash of arrays
 			push(@{$sig_SD_numbers{$lower_key}}, $SD_no); #creates a hash of array like this: push(@{$hash{$key}}, $insert_val); 
@@ -219,6 +231,7 @@ while( my $l = <$ifh> ){
 		} 
 		#Then check the higher bounds
 		elsif (  $s[$i] >  $upper_bounds{$columns[$i-1]} ) {
+			 $counts_strains_failing{$upper_key}++;
 			#print "YES: $upper_key $s[$i] <  $lower_bounds{$columns[$i-1]}\n";
 			#Store the significant samples in a hash of arrays
 			push(@{$sig_SD_numbers{$upper_key}}, $SD_no); #creates a hash of array like this: push(@{$hash{$key}}, $insert_val); 
@@ -230,6 +243,7 @@ while( my $l = <$ifh> ){
     }
 }
 close( $ifh );
+
 
 ### Step 3b
 #Print all genes to a file called ALL.txt
@@ -250,6 +264,12 @@ close $fh1;
 # Now we want to check whether at least two samples for each gene are significant 
 # If there was only one sample per gene
 
+my %counts_gene_failing;
+
+foreach (@columns) {$counts_gene_failing{$_.'_-'}=0; $counts_gene_failing{$_.'_+'}=0;};
+
+my %hits;
+
 #Loop through repeat by repeat (smaller and larger sets)
 foreach my $repeat (sort keys %results) {
 	#Print the results to file
@@ -268,8 +288,10 @@ foreach my $repeat (sort keys %results) {
 			next if ($number_of_samples != 1);
 			#Get the actual value associated with the one SD number
 			$val_string = $values{$repeat}{$SDs[0]};   		
+			 $counts_gene_failing{$repeat}++;
 		}
 		elsif ($number > 1) {
+			$counts_gene_failing{$repeat}++;
 			my @estimates='';
 			#Get the values
 			foreach my $sd (@SDs){
@@ -286,18 +308,81 @@ foreach my $repeat (sort keys %results) {
 		}
 		#Print the gene, followed by the values (all of them, bot just those that are significant) 
 		print $fh2 "$gene\t$val_string\n"; 	
+		push @{$hits{$gene}}, $repeat;
 	}
 	#Close the results file
 	close $fh2;
 }
 
+#print Dumper \%counts_gene_failing;
+print "Tot.strains ".scalar @genes."\n\n";
+# Print CIs
+print "Repeat\tWT_mean\tWT_StDev\tCI(+/-StDev*$multiplier)\tno. genes failing\tno. strains failing\n";
+foreach my $rep (@columns){
+		next if $rep eq 'x';
+		my $tot_fail=$counts_gene_failing{$rep.'_-'}+$counts_gene_failing{$rep.'_+'};
+		my $tot_str_fail=$counts_strains_failing{$rep.'_-'}+$counts_strains_failing{$rep.'_+'};
+                printf ("%s\t%.2f\t%.2f\t( %.1f - %.1f )\t%d ( %.2f%% )\t%d ( %.2f%% )\n", $rep,$wt_means_hash{$rep},$wt_stdev_hash{$rep},$lower_bounds{$rep},$upper_bounds{$rep}, $tot_fail, ($tot_fail/scalar @genes)*100, $tot_str_fail, ($tot_str_fail /$tc) *100 );
+
+}
+print "\n\n";
+
+#Now we want to print a table with all the strains
+
+@columns=qw[rDNA CUP1 M 2mic T1 T2 T3 TEL ANEUP CR];
+open(my $out, '>', 'overlaps.tsv');
+print $out "Gene\t".join("\t", @columns)."\tSum"."\n";
+my @output;
+my @keys;
+my %stats;
+foreach my $gene(@genes){
+	 print $out "$gene\t";
+	if (exists $hits{$gene} and defined $hits{$gene}){
+	 #    print $out "$gene\t"; 
+		for my $k (@columns){
+			my $out_value=0;
+			if ("$k"."_-" ~~ @{$hits{$gene}}){push @output, "-1"; push @keys, $k}
+			elsif ("$k"."_+" ~~ @{$hits{$gene}}){push @output,"1";push @keys, $k}
+			else {push @output, "0"}
+		}
+		 print $out join ("\t", @output);
+		my $sum=0;
+		$sum=$sum+abs foreach @output;
+		print $out "\t$sum";
+		s/^T[0-9]$/T/g for @keys;	
+		s/^rDNA$/Tandem/g for @keys;
+		s/^CUP1$/Tandem/g for @keys;
+		@keys=uniq(@keys);
+		$stats{join ':', @keys}++;
+		@output=();
+		@keys=();		
+	}
+	else{
+		for my $k (@columns){push @output,"0"}
+		print $out join ("\t", @output);
+		my $sum=0;
+                $sum=$sum+abs foreach @output;
+                print $out "\t$sum";
+                @output=();
+
+	}
+	print $out "\n";
+}
+close ($out);
+#print Dumper \%hits;
+
+open(my $out, '>', 'stats_hits.tsv');
+for my $k (keys %stats){
+	print $out "$k\t$stats{$k}\n" if ($k =~ tr/://) >= 2;
+}
+close ($out);
 ##################
 ##	SUBROUTINES ##
 ##################
 
 sub wt_column_average {
 	my $column_no = shift;
-	my $command = "cat $input | grep 'WT-' | awk '".'{ sum += $'."$column_no".'; n++ } END { if (n > 0) print'." sum / n; }'";
+	my $command = "cat $input | grep 'WT-' | tr -d \"[a-z]/()\" | awk -F \"\t\" '".'{ sum += $'."$column_no".'; n++ } END { if (n > 0) print'." sum / n; }'";
 	my $col_av = `$command`;
 	chomp $col_av;
 	return $col_av;
@@ -305,7 +390,7 @@ sub wt_column_average {
 
 sub wt_column_stdev {
 	my $column_no = shift;
-	my $command = "cat $input | grep 'WT-' | awk '". '{sum+=$'."$column_no".'; array[NR]=$'."$column_no".'} END '."{for(x=1;x<=NR;x++){sumsq+=((array[x]-(sum/NR))**2);}print sqrt(sumsq/NR)}'"; 
+	my $command = "cat $input | grep 'WT-' |tr -d \"[a-z]/()\"| awk -F \"\t\" '". '{sum+=$'."$column_no".'; array[NR]=$'."$column_no".'} END '."{for(x=1;x<=NR;x++){sumsq+=((array[x]-(sum/NR))**2);}print sqrt(sumsq/NR)}'"; 
 	my $stdev = `$command`; chomp $stdev;
 	return $stdev;
 }
