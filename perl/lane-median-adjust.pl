@@ -267,7 +267,9 @@ foreach my $plate (@plates){
 #################
 # Print results #
 #################
-print "@header"."\n";
+print (join "\t", @header);
+print "\n";
+
 foreach my $strain (sort keys %data) {
 	for (my $i=1; $i <= $col_no; $i++) {
 	 	print "$data{$strain}{$i}\t";
@@ -287,6 +289,7 @@ sub get_SD_numbers {
 	#my $command3 = "cat '$plate_file' | grep '$pl' | awk '{print ".'$5'."}'";
 	my @SDs;
 	#chomp @SDs;
+	#print "$pl\n";
 	$pl =substr $pl, 6;
 	my @samples=grep { $_ =~ /$pl/ } @PLATE_FILE;
 	foreach my $sample(@samples){
