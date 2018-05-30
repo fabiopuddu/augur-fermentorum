@@ -1,4 +1,10 @@
 #!/usr/bin/env perl
+
+# Author:       	Fabio Puddu
+# Maintainer:   	Fabio Puddu
+# Created: 	Apr 2017
+# Description:	
+
 use strict;
 use warnings;
 #This scripts runs through the deletion check log file and the name conversion file to determine

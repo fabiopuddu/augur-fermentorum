@@ -1,13 +1,11 @@
 #!/usr/bin/env perl
-# 
+ 
 # Author:       Fabio Puddu
 # Maintainer:   Fabio Puddu
-# Created:      01/06/2017
-###
-#This script runs through a file containing absolute paths to all the bam files to be processed
-#and writes a script that can be run in IGV to obtain snapshots of the  area around a gene knockout
-#To do so it reads the coordinates of each gene from another file
-###
+# Created:      Jun 2017
+# Description: This script runs through a file containing absolute paths to all the bam files to be processed and writes a script that can be run in IGV to obtain snapshots of the  area around a gene knockout
+#	       to do so it reads the coordinates of each gene from a database file
+
 use strict;
 use warnings;
 use Cwd 'abs_path';

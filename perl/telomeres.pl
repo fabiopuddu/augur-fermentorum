@@ -1,4 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
+
+# Author:       	Fabio Puddu  
+# Maintainer:   	Fabio Puddu
+# Created:      	Oct 2016
+# Description:	This script takes yeast fastq files in input and returns the number of telomeric reads per million
 
 use strict;
 use warnings;

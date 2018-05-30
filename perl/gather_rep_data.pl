@@ -1,5 +1,10 @@
 #!/usr/bin/env perl
 
+# Author:		Fabio Puddu  
+# Maintainer:	Fabio Puddu
+# Created:	Sep 2016
+# Description:	Once the analysis has been run, run this program from the main analysis folder to gather all the repetitive DNA data in one fole called and redirect the output to a file
+
 use strict;
 use warnings;
 my @FILES=`ls */ploidy_data/*_plstats.txt`;

@@ -1,15 +1,9 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
-# Author:       mh23
-# Maintainer:   mh23
-# Created: 		Sep 2016
-# Name:			rDNA_cnv_estimate.pl
-
-
-# test bam: /mnt/home3/jackson/fp305/data/Retta_di_taratura/Del1_Fob1/BAM/SC_MFY5971838/SC_MFY5971838.bam
-
-#Another test bam: /mnt/home3/jackson/fp305/data/Fabio_Mrc1_nico/Del1_Mrc1/BAM/SC_MFY6097876/SC_MFY6097876.bam
-# the ty bam is here: /mnt/home3/jackson/fp305/data/Fabio_Mrc1_nico/Del1_Mrc1/TR_BAMS/SC_MFY6097876.bam.Ty.bam 
+# Author:       	Mareike Herzog
+# Maintainer:   	Mareike Herzog and Fabio Puddu
+# Created: 	Sep 2016
+# Description:	This script calculates copy number of different repetitive elements and mating type using coverage data
 
 
 use autodie;

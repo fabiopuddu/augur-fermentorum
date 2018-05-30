@@ -1,40 +1,32 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
-#Author: Mareike Herzog	
-#Date: 20.4.2017
-#Name: rep_median_adjust_wt-plate_median.pl
-#Description: A script written for the normalisation of repetitive DNA measurements by the sequencing lane they were on.
-			# Based on rep_median_adjust_telomere_only.pl.
-			# Recent changes include: it determines the plate containing the wild-type samples, calculate that plate's median and sets that as a target median for every plate.
-			
-			# Input files needed: rep.txt/all_combined.tsv
-			#SDname rDNA    CUP1    mitochondria    Ty1     Ty2     Ty3     Ty4     Ty5     GWM     Telomeres       ERSno   Deletion        chr01   chr02   chr03   chr04   chr05   chr06   chr07   chr08   chr09   chr10   chr11   chr12   chr13   chr14   chr15   chr16   AneupNumber
-			#SD0863b 118.085106382979        11.468085106383 12.8936170212766        39.9787234042553        12.0531914893617        1.90425531914894        3.1063829787234 1.11702127659574        94      614.23391551713 ERS000001       Del1_TDA8       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       0
-			#SD0863b2        122.652631578947        12.1052631578947        12.3368421052632        39.7842105263158        12.4210526315789        1.93684210526316        3.23157894736842        0.989473684210526       95      598.304236757884        ERS000002       Del1_TDA8       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       0			
-			
-			# Input files needed: name\ conversion.tsv
-			#3792STDY6185637 Del1_TDA8       (C001)DN414641I TDA8    SD0863b         ERS000001
-			#3792STDY6185638 Del1_TDA8       (C001)DN414641I TDA8    SD0863b2                ERS000002
-			#3792STDY6185639 Del2_SCS22      (C001)DN414641I SCS22   SD0864b         ERS000003
-			#3792STDY6185640 Del2_SCS22      (C001)DN414641I SCS22   SD0864b2                ERS000004
-			#3792STDY6185641 Del3_SDH8       (C001)DN414641I SDH8    SD0865b         ERS000005
-
-			#You will also need to pass a column number to the script to indicate which repeat number you want to adjust
-			#Column 1: SD_number (don't pass that one); Column 2: rDNA repeats; Column 3: CUP1 repeats;
-			#Column 4: mtDNA copies; Column 5: Ty1 repeats; Column 6: Ty2 repeats;
-			#Column 7: Ty3 copies; Column 8: Ty4 repeats; Column 9: Ty5 repeats;
-			#Column 10: genome wide median; Column 11: Telomere repeats; Column 12: ERS numbers; Column 13: sample name/Deletion;
-			#Column 14: chr01   Column 15: chr02   Column 16:chr03   Column 17: chr04   Column 18: chr05   
-			#Column 19: chr06   Column 20: chr07   Column 21: chr08  Column 22: chr09   Column 23: chr10   
-			#Column 24: chr11   Column 25: chr12   Column 26: chr13  Column 27: chr14   Column 28: chr15   
-			#Column 29: chr16   Column 30: AneupNumber
-			
-			#THE SCRIPT WILL NOT WORK IF THE COLUMNS ARE NOT IN THE CORRECT ORDER
-
-
-#sample usage: perl rep_median_adjust_wt-plate_median.pl rep.txt name\ conversion.tsv *column_no*
-
-#Test command: perl rep_median_adjust_wt-plate_median.pl rep_example.txt name\ conversion.tsv 11
+#Author: 	Mareike Herzog	
+#Maintainer: 	Fabio Puddu
+#Created: 		Apr 2017
+#Description: 	A script written for the normalisation of repetitive DNA measurements by the sequencing lane they were on.
+# 		it determines the plate containing the wild-type samples, calculate that plate's median and sets that as a target median for every plate.
+# 		Input files needed: rep.txt/all_combined.tsv
+#			SDname rDNA    CUP1    mitochondria    Ty1     Ty2     Ty3     Ty4     Ty5     GWM     Telomeres       ERSno   Deletion        chr01   chr02   chr03   chr04   chr05   chr06   chr07   chr08   chr09   chr10   chr11   chr12   chr13   chr14   chr15   chr16   AneupNumber
+#			SD0863b 118.085106382979        11.468085106383 12.8936170212766        39.9787234042553        12.0531914893617        1.90425531914894        3.1063829787234 1.11702127659574        94      614.23391551713 ERS000001       Del1_TDA8       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       0
+#			SD0863b2        122.652631578947        12.1052631578947        12.3368421052632        39.7842105263158        12.4210526315789        1.93684210526316        3.23157894736842        0.989473684210526       95      598.304236757884        ERS000002       Del1_TDA8       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       2       0				
+# 		Input files needed: name\ conversion.tsv
+#			3792STDY6185637 Del1_TDA8       (C001)DN414641I TDA8    SD0863b         ERS000001
+#			3792STDY6185638 Del1_TDA8       (C001)DN414641I TDA8    SD0863b2                ERS000002
+#			3792STDY6185639 Del2_SCS22      (C001)DN414641I SCS22   SD0864b         ERS000003
+#			3792STDY6185640 Del2_SCS22      (C001)DN414641I SCS22   SD0864b2                ERS000004
+#			3792STDY6185641 Del3_SDH8       (C001)DN414641I SDH8    SD0865b         ERS000005
+#		You will also need to pass a column number to the script to indicate which repeat number you want to adjust
+#			Column 1: SD_number (don't pass that one); Column 2: rDNA repeats; Column 3: CUP1 repeats;
+#			Column 4: mtDNA copies; Column 5: Ty1 repeats; Column 6: Ty2 repeats;
+#			Column 7: Ty3 copies; Column 8: Ty4 repeats; Column 9: Ty5 repeats;
+#			Column 10: genome wide median; Column 11: Telomere repeats; Column 12: ERS numbers; Column 13: sample name/Deletion;
+#			Column 14: chr01   Column 15: chr02   Column 16:chr03   Column 17: chr04   Column 18: chr05   
+#			Column 19: chr06   Column 20: chr07   Column 21: chr08  Column 22: chr09   Column 23: chr10   
+#			Column 24: chr11   Column 25: chr12   Column 26: chr13  Column 27: chr14   Column 28: chr15   
+#			Column 29: chr16   Column 30: AneupNumber
+#	THE SCRIPT WILL NOT WORK IF THE COLUMNS ARE NOT IN THE CORRECT ORDER
+#sample usage: 	perl rep_median_adjust_wt-plate_median.pl rep.txt name\ conversion.tsv *column_no*
+#Test command: 	perl rep_median_adjust_wt-plate_median.pl rep_example.txt name\ conversion.tsv 11
 
 use strict;
 use warnings;

@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 
-# Author:       Mareike Herzog	
-# Maintainer:   Mareike Herzog
-# Created: 		Nov 2016
+# Author:       	Mareike Herzog	
+# Maintainer:   	Mareike Herzog and Fabio Puddu
+# Created: 	Nov 2016
 # Rewritten: 	Aug 2017
-# Name:			repeat_stats_sig.pl
+# Description:
 
 use autodie;
 use utf8;

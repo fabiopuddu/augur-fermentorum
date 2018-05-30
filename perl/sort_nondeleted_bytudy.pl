@@ -1,10 +1,16 @@
 #!/usr/bin/env perl
+
+# Author:       	Fabio Puddu
+# Maintainer:   	Fabio Puddu
+# Created: 	Apr 2017
+# Description:	This scripts runs through the deletion check log file and the name conversion file to determine
+#		How did undeleted and failed samples distributes across the different studies
+#		Two known bugs: WT samples and deletion of MF(ALPHA)1 and MF(ALPHA)2 are reported as not deleted but are good 
+#		at least in the samples before the propagation
+
 use strict;
 use warnings;
-#This scripts runs through the deletion check log file and the name conversion file to determine
-#How did undeleted and failed samples distributes across the different studies
-#Two known bugs: WT samples and deletion of MF(ALPHA)1 and MF(ALPHA)2 are reported as not deleted but are good 
-#at least in the samples before the propagation
+
 open (my $del_log, '<', 'deletion_check_log');
 open (my $name_conversion, '<', 'name conversion.tsv');
 

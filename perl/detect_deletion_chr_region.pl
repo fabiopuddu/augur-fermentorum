@@ -1,13 +1,12 @@
 #!/usr/bin/env perl
 
-# Author:       mh23
-# Maintainer:   mh23
-# Created: 		July 2014
-# Name:			detec_deletion_chr_region.pl
+# Author:		Mareike Herzog
+# Maintainer:	Mareike Herzog
+# Created: 	July 2014
+# Description:
 # Test: 		perl /nfs/users/nfs_m/mh23/Scripts/detect_deletion.pl <gene> <bam_file>
 # Test: 		perl /lustre/scratch109/sanger/mh23/Scripts/detect_deletion_chr_region.pl YML061C SD0735b.bam
-# Description:
-
+	
 use Carp;
 use strict;
 use warnings;
