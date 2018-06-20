@@ -1,3 +1,10 @@
+# Author:       Fabio Puddu  
+# Maintainer:   Fabio Puddu
+# Created:      Jun 2018
+# Description:
+
+
+
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) 
 mkdir -p BAM_repository
 cd BAM_repository
