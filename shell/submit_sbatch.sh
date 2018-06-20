@@ -1,7 +1,7 @@
 #!/bin/bash
 #!
 #! Name of the job:
-#SBATCH -J analyser
+#SBATCH -J exp-analyser
 #SBATCH --mail-type=FAIL
 #SBATCH -m cyclic:block
 #SBATCH -n 1
@@ -19,7 +19,7 @@ echo -e "JobID: $JOBID\n======"
 echo "Time: `date`"
 echo "Running on master node: `hostname`"
 echo "Current directory: `pwd`"
-echo -e "\nExecuting command:\n==================\n$SBATCH_CMD\n"
+echo -e "\nExecuting command:\n==================\n$SBATCH_CMD_CIAO\n"
 
 echo -e "\n$SBATCH_CMD_CIAO\n"
 
