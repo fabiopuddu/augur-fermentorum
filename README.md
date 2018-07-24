@@ -6,7 +6,8 @@ This repository contains a set of tool to analyse yeast whole genome sequencing 
 * HPC based on SLURM workload manager
 * Perl 
 * Python
-* 
+* Samtools 1.3.1
+* Pigz 2.3.1
 
 ### Usage
 #### Data input requirements:
@@ -23,4 +24,13 @@ This repository contains a set of tool to analyse yeast whole genome sequencing 
 * A folder containing all the BAM files to be analysed. 
 
 #### Creation of the analysis folder structure:
+
 #### Fastq extraction and realignment to custom genomes:
+
+#### Variant Calling
+
+#### Running the Pipeline
+
+#### Recovering information on repetitive DNA and ploidy
+
+#### Adjusting repetitive DNA estimates from samples across different sequencing lanes
