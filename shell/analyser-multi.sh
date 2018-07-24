@@ -23,7 +23,7 @@ aneup=0;
 #############################################
 waitforcompletion(){
 if [[ ${v} -eq '1' ]]; then printf "Waiting for jobs $1  to complete"; else printf "Waiting for jobs to complete"; fi
-list="ciao${1}"
+list="ffsaknerogd${1}"
 finito=`squeue | grep "${list}" |wc -l | tr -d "\t"`
 while [[ $finito != '0' ]]    
     do  finito=`squeue  | grep "${list}" |wc -l | tr -d "\t"`
@@ -191,11 +191,12 @@ cd ../analysis
 proclist=''
 while read -r line 
     do if [[ ! -a csq.$line ]]
-           then command1="variant_effect_predictor.pl --species saccharomyces_cerevisiae -i $line  --format vcf -o vep.$line.txt --no_progress --force_overwrite --offline"
-                command2="vcf2consequences_vep -v $line -i vep.$line.txt 2>/dev/null | bgzip > csq.$line"
-                PROC1=$(sbatch --partition=LONG  --wrap="${command1}" | sed 's/Submitted batch job //g') 
-                PROC2=$(sbatch --partition=LONG  --dependency=afterok:${PROC1} --wrap="${command2}" | sed 's/Submitted batch job //g')
-                proclist="${proclist}\|${PROC2}"
+           then export SBATCH_CMD="variant_effect_predictor.pl --species saccharomyces_cerevisiae -i $line  --format vcf -o vep.$line.txt --no_progress --force_overwrite --offline"
+                PROC1=$(sbatch submit_sbatch_analyser.sh | sed 's/Submitted batch job //g') 
+		export SBATCH_CMD="vcf2consequences_vep -v $line -i vep.$line.txt 2>/dev/null | bgzip > csq.$line"
+                PROC2=$(sbatch --dependency=afterok:${PROC1} submit_sbatch_analyser.sh | sed 's/Submitted batch job //g')
+                export SBATCH_CMD=""
+		proclist="${proclist}\|${PROC2}"
        fi
     done < <(ls mito.ERS*.vcf.gz)
 cd ..    
@@ -215,13 +216,14 @@ if [[   $rDNA == 1 ]]
                         else sampleploidy=$(( $ploidy * 2 ))
                     fi
                name=`echo $line | tr "/" "\n" | tail -n1 | sed "s|\.bam||g" | head -n1`
-	      command="rDNA-cnv_estimate.pl -p ${sampleploidy} -i ../$line > $name.txt"
+	       export SBATCH_CMD="rDNA-cnv_estimate.pl -p ${sampleploidy} -i ../$line > $name.txt"
                if [[ ${v} -eq '1' ]]; then echo $command; fi
-               PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
+               PROC1=$(sbatch submit_sbatch_analyser.sh | sed 's/Submitted batch job //g') 
                proclist="${proclist}\|${PROC1}"
-      	     command="zcat ../BAM/${name}.fq1.gz ../BAM/${name}.fq2.gz | telomeres.pl 5  > ${name}.tel"
-               PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
+      	       export SBATCH_CMD="zcat ../BAM/${name}.fq1.gz ../BAM/${name}.fq2.gz | telomeres.pl 5  > ${name}.tel"
+               PROC1=$(sbatch submit_sbatch_analyser.sh | sed 's/Submitted batch job //g') 
                proclist="${proclist}\|${PROC1}"  	 
+		 export SBATCH_CMD=""
              done < <(cat ../bams_for_mpileup)
              cd ..
 fi
@@ -242,10 +244,11 @@ if [[ $aneup == 1 ]]
          	    code1=`echo $line | tr '/' "\n" | tail -n1 | sed "s|\.bam||g"` #SCMFY or #SD code
                     code2=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 6` # Fetch ERS code (cut -f 7 gave issues depending on the tabulation of name\ conversion.tsv)
          	    name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
-         	    command="CGH.pl -i ../$line -p $sampleploidy -f -l \"${name}:${code1}:${code2}\""
+         	    export SBATCH_CMD="CGH.pl -i ../$line -p $sampleploidy -f -l \"${name}:${code1}:${code2}\""
          	    if [[ ${v} -eq '1' ]]; then echo ${command}; fi
-         	    PROC1=$(sbatch --partition=LONG  --wrap="${command}" | sed 's/Submitted batch job //g') 
+         	    PROC1=$(sbatch submit_sbatch_analyser.sh | sed 's/Submitted batch job //g') 
          	    proclist="${proclist}\|${PROC1}"
+		    export SBATCH_CMD=""
            done < <(cat ../bams_for_mpileup)
          cd ..	
 fi
@@ -533,7 +536,8 @@ printf "\n"
 if [[ ${rDNA} ]]
 	then
         cd ../repDNA
-            get_repetitive_table.pl -i ../../name\ conversion.tsv -c ${formatcontrol}
+		get_repetitive_table.pl -i ../../name\ conversion.tsv
+#            get_repetitive_table.pl -i ../../name\ conversion.tsv -c ${formatcontrol}
         cd ../analysis
 fi
 printf "\n"
@@ -572,7 +576,6 @@ printf "\n"
 printf "\nSTATISTICS\n"
 printf "=======================================================================================================================================================================\n"
 perl $DIR/../mareike/vcf_stats_table_all.pl experiment_merge.vcf > stat_table.txt
-#echo $number_of_samples >>stat_table.txt
 cat stat_table.txt
 printf "\nHETEROZYGOUS SNV MUTATION OVERLAP\n"
 printf "=======================================================================================================================================================================\n"
