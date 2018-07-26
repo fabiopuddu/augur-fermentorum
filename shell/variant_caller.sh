@@ -63,14 +63,13 @@ rm -f bams_for_mpileup
 #create a list of BAM files to analyse
 ls BAM/*.bam >> bams_for_mpileup
 #index files if the index does not exist
-cat bams_for_mpileup | parallel -j20 --no-notice '
-				x={};
-				n=`echo $x | tr '/' "\n" | tail -n1 | sed 's/.bam//g'`; 
-	    			printf "\r\033[K  Indexing $n"
-		 		if [[ ! -a $x.bai || $force_rewrite == 1  ]] #if the file does not exist or if force_rewrite is called
-                			then samtools index $x
-        			fi'
-printf "\n"
+#cat bams_for_mpileup | while read line;
+#	do n=`echo $line | tr '/' "\n" | tail -n1 | sed 's/.bam//g'`; 
+#	printf "\r\033[K  Indexing $n"
+#	if [[ ! -a $line.bai || $force_rewrite == 1  ]] #if the file does not exist or if force_rewrite is called
+#        	then sbatch  --wrap="samtools index $line"
+#        fi
+#printf "\n"
 #generate igv.txt
 #sed 's|^BAM|load "/Volumes/LuCia/BAM files/Yeast|' bams_for_mpileup > igv.txt 
 #sed 's|$|"|' igv.txt > igv_loader.txt
@@ -107,20 +106,17 @@ cat ../bams_for_mpileup | while read line
             	then ploidy=2
             	else ploidy=4
         fi
-		printf "\r\033[K  Processing $ers\t"
-#		if [[ ! -a $m.vcf.gz ]]
-
-        # Set some parameters according to ploidy
-        minfrac=`bc -l <<< "scale=1; 2/$ploidy/5"` # Bash doesn't do floating point arithmetic
-        minfrac=`echo "0$minfrac"`
-
+	printf "\r\033[K  Processing $ers\t"
 	#What caller are we using?
 	if [ "$used_caller" == "S" ]
 		then export SBATCH_CMD="samtools mpileup -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -g -t DP,DV -C0 -pm3 -F0.2 -d10000 ../$line | bcftools call -vm -f GQ | bgzip -f > $ers.vcf.gz"
 	 elif [ "$used_caller" == "F" ]
-                then export SBATCH_CMD="freebayes -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -p $ploidy -m0 -C3 -F $minfrac --max-coverage 10000 -E-1 -J -= $n.no2m.bam | bgzip -f > $ers.vcf.gz"
+                then
+			# Set some parameters according to ploidy
+			minfrac=`bc -l <<< "scale=1; 2/$ploidy/5"` # Bash doesn't do floating point arithmetic
+        		minfrac=`echo "0$minfrac"`
+			export SBATCH_CMD="freebayes -f $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa -p $ploidy -m0 -C3 -F $minfrac --max-coverage 10000 -E-1 -J -= $n.no2m.bam | bgzip -f > $ers.vcf.gz"
         fi
-	
         ### Check if bam contains 2-micron reads
         hits2m=`samtools idxstats ../$line | cut -f1 | grep "2-micron" | wc -l` # Optimise? (stop checking if one 2-micron is found)
         if [ "$hits2m" -gt 0 ]
@@ -137,7 +133,6 @@ cat ../bams_for_mpileup | while read line
 		   sbatch  submit_sbatch_caller.sh
 		   export SBATCH_CMD=''
             fi
-
 # freebayes outputs to vcf instead of bcf (no equivalent to -g mpileup tag)
 # freebayes can't choose just two tags for output (-t DP,AD/DV)
 	sleep 0.3
