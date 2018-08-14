@@ -577,6 +577,9 @@ printf "\nSTATISTICS\n"
 printf "=======================================================================================================================================================================\n"
 perl $DIR/../mareike/vcf_stats_table_all.pl experiment_merge.vcf > stat_table.txt
 cat stat_table.txt
+vcf_stats_by_colony.pl  > stats_table_col.txt
+cat stats_table_col.txt
+
 printf "\nHETEROZYGOUS SNV MUTATION OVERLAP\n"
 printf "=======================================================================================================================================================================\n"
 line_counter=0

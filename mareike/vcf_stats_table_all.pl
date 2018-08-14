@@ -92,11 +92,11 @@ close($ifh);
 my $command='';
 if ($ploidy eq 2){
     #$command =  "cat $input"." | grep ".'"'.'1/1" -v'." | vcf-stats";
-    $command = "cat $input"." | grep ".'"'.'1/1\|0/1\|#"'." | bcftools stats"; #edited by FABIO to resolve bug that does eliminates rows where one of the mutation is masked
+    $command = "cat $input". '| grep "[0-9]/[0-9]\|#" | grep "PASS\|#" | bcftools stats'; #edited by FABIO to resolve bug that does eliminates rows where one of the mutation is masked
 }
 
 if ($ploidy eq 4){
-    $command = "cat $input"." | grep ".'"'.'1/1/1/1\|0/0/1/1\|0/1/1/1\|0/0/0/1\|#"'." | bcftools stats"; #edited by FABIO to resolve bug that does eliminates rows where one of the mutation is masked
+    $command = "cat $input".' | grep "[0-9]/[0-9]/[0-9]/[0-9]\|#" | grep "PASS\|#" | bcftools stats"; #edited by FABIO to resolve bug that does eliminates rows where one of the mutation is masked
 }
 
 my @stats_out =  readpipe("$command");
