@@ -3,7 +3,7 @@
 use strict; 
 use warnings;
 use Cwd;
-
+use Data::Dumper;
 
 #Declare variables
  
@@ -16,128 +16,92 @@ my @ERS;
 #INDELs
 my @one;my @two;my @three;my @more;
 my @minone;my @mintwo;my @minthree;my @less;
-
-my @files=`ls filt.isec.sort.norm.csq.genomic.ERS*.vcf`;
-chomp @files;
-
-for my $f (@files){ 
-	my $command = "cat $f". '| grep "[0-9]/[0-9]\|[0-9]/[0-9]\|#" | grep "PASS\|#" |  bcftools stats';
-	my @stats_out =  readpipe("$command");
-	my $MM=0; my $LL=0;
-	my $M1=0; my $M2=0; my $M3=0;
-	my $L1=0; my $L2=0; my $L3=0;
-	my $ers;
-	if ($f =~ /(ERS[0-9]+)/) {$ers=$1}
-	if  ($pwd ne 'Del4733_WT-1'){
-		next if $ers eq 'ERS1076728';
+my %mutations;
+my %null; my $totlines=0;
+open (my $mergehandle, '<', 'experiment_merge.vcf');
+  my @samples;
+while (my$line=<$mergehandle>){
+	chomp $line;
+	next if $line =~ /^##/;
+	if ($line =~ /^#/){
+			#read header
+			my @row=split "\t", $line;
+			@samples=splice @row, 9;
+			for my $sample (@samples){
+				$null{$sample}=0;
+			}
+			next
 	}
-	push @ERS, $ers;
-	foreach my $l (@stats_out){
-	        	my $k = $l;
-   		my @s;
-		chomp( $l );
-		next if ($l =~ /#/);
-        		if ($l =~ /SN/){
-            		if ($l =~ /number of indels/){
-                			@s = split("\t", $l); push @indel_count, $s[3];
-            		}
-            		if ($l =~ /number of SNP/){
-                			@s = split("\t", $l); push @snp_count, $s[3];
-            		}
-    		}
-
-    		if ($l =~ /TSTV/){
-                		@s = split("\t", $l); push @transitions, $s[2]; push @transversions, $s[3];
-    		}	
-		if ($l =~ /ST/){
-			if ($l =~ /A>C/){
-				@s = split("\t", $l); push @A_C, $s[3];
-		        	}
-		        	if ($l =~ /A>G/){
-				@s = split("\t", $l); push @A_G,$s[3];
-		        	}
-		        	if ($l =~ /A>T/){
-				@s = split("\t", $l); push @A_T,$s[3];
-		        	}
-		        	if ($l =~ /C>A/){
-				@s = split("\t", $l); push @C_A,$s[3];
-		        	}
-		        	if ($l =~ /C>G/){
-				@s = split("\t", $l); push @C_G,$s[3];
-		        	}
-		        	if ($l =~ /C>T/){
-				@s = split("\t", $l); push @C_T,$s[3];
-		        	}
-		        	if ($l =~ /G>A/){
-				@s = split("\t", $l); push @G_A,$s[3];
-		        	}
-		        	if ($l =~ /G>C/){
-				@s = split("\t", $l); push @G_C,$s[3];
-		        	}
-		        	if ($l =~ /G>T/){
-				@s = split("\t", $l); push @G_T,$s[3];
-		        	}
-		        	if ($l =~ /T>A/){
-				@s = split("\t", $l); push @T_A,$s[3];
-		        	}
-		        	if ($l =~ /T>C/){
-				@s = split("\t", $l); push @T_C,$s[3];
-		        	}
-		        	if ($l =~ /T>G/){
-				@s = split("\t", $l); push @T_G,$s[3];
-		        	}
-	    	}
-
-    		if ($l =~ /IDD/){
-    			@s = split("\t", $l);
-	       	   	my $num = $s[2];
-  	      		if ($num == 1){$M1+=$s[3];}
-  	      		if ($num == 2){$M2+=$s[3];}	
-  	      		if ($num == 3){$M3+=$s[3];}
-  	      		if ($num == -1){$L1+=$s[3];}
- 	      		if ($num == -2){$L2+=$s[3];}
-  	      		if ($num == -3){$L3+=$s[3];}
-  	      		if ($num > 3) {$MM = $MM + $s[3];}
- 	      		if ($num < -3) {$LL = $LL + $s[3];}
-   		}
-	}
-	push @more, $MM;
-	push @less, $LL;
-	push @one , $M1;
-	push @two , $M2;
-	push @three,$M3;
-	push @minone,$L1;
-	push @mintwo,$L2;
-	push @minthree,$L3;
-# close
-}
-foreach (@files){
-		if ($_ =~ /(ERS[0-9]+)/) {$_=$1}
-		else{$_='ERROR'}
+	(my $chrom, my $pos, my $ID, my $REF, my $ALT, my $QUAL, my $FILT, my $INFO, my $FORMAT, my @mutations) = split "\t", $line;
+	next if $FILT ne 'PASS';
+	$totlines++;
+	for (my $c=0; $c<scalar @samples; $c++){
+		if ($mutations[$c] =~ /[0-9]\/[0-9]/){
+#			print "$line\n";
+			if ($INFO =~ /INDEL/){
+				my $size = length($ALT) - length($REF);
+			     	$mutations{$samples[$c]}{'IND_COUNT'}++;
+				if (abs($size)<4){
+					$mutations{$samples[$c]}{$size}++
+				}
+				elsif ($size > 3){
+					$mutations{$samples[$c]}{'>3'}++
+				}
+				 elsif ($size < -3){
+                                	$mutations{$samples[$c]}{'<-3'}++
+	                        }
+				else {die "Something odd happened, investigate!!!\n"}
+			}
+			elsif (length $REF  == 1 and length $ALT == 1){
+				$mutations{$samples[$c]}{$REF.">".$ALT}++;
+			        $mutations{$samples[$c]}{'SNP_COUNT'}++;
+			}
+			else {
+				die "Bad line in vcf file\n";
+			}
+		}	
+		elsif ($mutations[$c] =~ /^\.$/){
+			$null{$samples[$c]}++;
+		}
+	}	
 }
 
-my @output=( (join ':', @indel_count) ,
-	   (join ':', @snp_count) ,
-	   (join ':', @transitions) ,
-	   (join ':', @transversions) ,
-	   $pwd,
-	   (join ':', @C_T),
-	   (join ':', @A_G), 
-	   (join ':', @A_T),
-	   (join ':', @C_G),
-	   (join ':', @G_T), 
-	   (join ':', @A_C),
-	   (join ':', @less),
-	   (join ':', @minthree) ,
-	   (join ':', @mintwo) ,
-	   (join ':', @minone) ,
-	   (join ':', @one) ,
-	   (join ':', @two) ,
-	   (join ':', @three) ,
-	   (join ':', @more), 
-	   scalar @ERS,
-	   (join ':', @ERS)   );
+close $mergehandle;
 
+#Identify control sample
+foreach my $k (@samples){
+	$mutations{$k}{'SAMPLES'}=$k;
+	$mutations{$k} = 'control' if $null{$k} == $totlines;
+}
+my $s=0;
+foreach my $k (@samples){
+	next if $mutations{$k} eq 'control';
+	$mutations{$k}{'G>T'} = ( $mutations{$k}{'G>T'} || 0 )+ ( $mutations{$k}{'C>A'} || 0);
+	$mutations{$k}{'C>T'} = ( $mutations{$k}{'C>T'} || 0 )+ ( $mutations{$k}{'G>A'} || 0);
+	$mutations{$k}{'C>G'} = ( $mutations{$k}{'C>G'} || 0 )+ ( $mutations{$k}{'G>C'} || 0);
+	$mutations{$k}{'A>T'} = ( $mutations{$k}{'A>T'} || 0 )+ ( $mutations{$k}{'T>A'} || 0);
+	$mutations{$k}{'A>G'} = ( $mutations{$k}{'A>G'} || 0 )+ ( $mutations{$k}{'T>C'} || 0);
+	$mutations{$k}{'A>C'} = ( $mutations{$k}{'A>C'} || 0 )+ ( $mutations{$k}{'T>G'} || 0);
+	$mutations{$k}{'TS'} =  $mutations{$k}{'C>T'} +  $mutations{$k}{'A>G'};
+	$mutations{$k}{'TV'} =  $mutations{$k}{'G>T'} +  $mutations{$k}{'C>G'} +  $mutations{$k}{'A>T'} +  $mutations{$k}{'A>C'};
+	$s++;	
+}
+
+
+my @fields=qw[IND_COUNT SNP_COUNT TS TV C>T A>G A>T C>G G>T A>C <-3 -3 -2 -1 1 2 3 >3 SAMPLES];
+my %out;
+my @output;
+for my $field (@fields){
+	for my $sample(@samples){
+		push @{$out{$field}}, ($mutations{$sample}{$field} || 0) unless  $mutations{$sample} eq 'control';
+
+	}
+	push @output , (join ':', @{$out{$field}});
+}
+
+splice @output, 4, 0, $pwd;
+splice @output, -1, 0, $s;
+#print Dumper \@output;
 
 print("INDEL\tSNP\tTs\tTv\tSample    \tC>T\tA>G\tA>T\tC>G\tG>T\tA>C\t<-3\t-3\t-2\t-1\t1\t2\t3\t>3\tNumber of samples\n");
 print join "\t", @output;
