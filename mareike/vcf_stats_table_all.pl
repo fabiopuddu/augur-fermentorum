@@ -64,7 +64,7 @@ my $less=0;
 #go through file line by line
 #open my $fh, "<", $input or die $!;
 my $input = shift;
-my $line;
+	my $line;
 my $ploidy = 0;
 
 # Check the ploidy of the sample by looking at the GT field of the vcf file
@@ -96,7 +96,7 @@ if ($ploidy eq 2){
 }
 
 if ($ploidy eq 4){
-    $command = "cat $input".' | grep "[0-9]/[0-9]/[0-9]/[0-9]\|#" | grep "PASS\|#" | bcftools stats"; #edited by FABIO to resolve bug that does eliminates rows where one of the mutation is masked
+    $command = "cat $input".' | grep "[0-9]/[0-9]/[0-9]/[0-9]\|#" | grep "PASS\|#" | bcftools stats'; #edited by FABIO to resolve bug that does eliminates rows where one of the mutation is masked
 }
 
 my @stats_out =  readpipe("$command");
