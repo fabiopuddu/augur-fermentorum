@@ -22,9 +22,9 @@ use IO::File;
 
 #######################################
 #######################################
-##    								 ##
-##				USAGE				 ##
-##									 ##
+##    			       ##
+##	USAGE		       ##
+##			       ##
 #######################################
 #######################################
 
@@ -43,14 +43,18 @@ my $ref_genome = $dir.'/mpileup_defaults/reference_genome/Saccharomyces_cerevisi
 my $ty_ref = $dir.'/mpileup_defaults/repDNA_ref/repDNA.fa'; # default Ty reference genome
 my $mat_ref = $dir.'/mpileup_defaults/repDNA_ref/repDNA.fa';
 my $twom_ref = $dir.'/mpileup_defaults/repDNA_ref/repDNA.fa';
-
+my $mt_only=0;
+my $qPCR=0;
 ## Parse options and print usage if there is a syntax error,
 ## or if usage was explicitly requested.
 GetOptions('help|?' => \$help, 
 		   'i|input=s' => \$input,
 		   'p|ploidy=s' => \$ploidy,
 		   'r|reference=s' => \$ref_genome,
+		   'M|mitochondrial_data_only=s' => \$mt_only,	
+		   'Q|qPCR_data_only=s' => \$qPCR,
 		   't|ty=s' => \$ty_ref,) or pod2usage(2);
+
 pod2usage(1) if $help;
 ## If no input argument were given, then allow STDIN to be used only
 ## if it's not connected to a terminal (otherwise print usage)
@@ -102,9 +106,9 @@ pod2usage("$0: BedTools does not seem to work.") if ($bed_command !~ /.+/);
 
 #######################################
 #######################################
-##    								 ##
-##	 		Main programme			 ##
-##									 ##
+##    			       ##
+##	 Main programme   	       ##
+##			       ##
 #######################################
 #######################################
 
@@ -112,10 +116,6 @@ pod2usage("$0: BedTools does not seem to work.") if ($bed_command !~ /.+/);
  
 my $gen_cov_ref = genome_cov($input);
 my $genome_wide_median_coverage = median(@$gen_cov_ref);
-
-########################################
-###	MATING TYPE AND PLOIDY ESTIMATION
-#########################################
 
 # check that the TY bam is there 
 
@@ -128,123 +128,192 @@ my $sample_name = substr($bam, 0, -4);
 my $bam_dir = join ('/',@b);
 my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
 my $mat_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
-
 my $twom_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
-
-
-my $MATa = 'MATa_HMR:1400-2000';
-my $MATalpha=  'MATalpha_HML:1700-2700';
-#print "$mat_bam,$MATa,$mat_ref\n";
-my $MATa_estimate = repeat_estimate($mat_bam,$MATa,$mat_ref);
-#exit;
-my $MATalpha_estimate = repeat_estimate($mat_bam,$MATalpha,$mat_ref);
-my $sex_estimate=log2($MATa_estimate/$MATalpha_estimate);
-my $sex;
-if    ($sex_estimate <= -0.35){$sex="alpha"}
-elsif ($sex_estimate >=  0.35){$sex="a"}
-elsif ($sex_estimate > -0.35 and $sex_estimate < 0.35){$sex="a/alpha"}
-else { die "Cannot safely determine mating type and ploidy" }
-
-
 my @s = split ('/', $input);
 my $sa = $s[-1];
 my @samp = split (/\./, $sa);
 
-print "Sample\trDNA\tCUP1\tMito\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGenome_wide_median\n";
-print "$samp[0]\t";
-my $rDNA_loc = 'XII:452000-459000';
-my $rDNA_estimate = repeat_estimate($input,$rDNA_loc,$ref_genome)*2;
-#$rDNA_estimate = sprintf("%.3f", $rDNA_estimate);
-print "$rDNA_estimate\t";
-
-my $cup1_loc = 'VIII:212986-213525';
-my $cup1_estimate = repeat_estimate($input,$cup1_loc,$ref_genome)*2;
-#$cup1_estimate = sprintf("%.3f", $cup1_estimate);
-print "$cup1_estimate\t";
-
-my $mito_loc = 'Mito:14000-20000';
-my $mito_estimate = repeat_estimate($input,$mito_loc,$ref_genome)*$ploidy;
-#$mito_estimate = sprintf("%.3f", $mito_estimate);
-print "$mito_estimate\t";
-
-my $twom_loc = '2-micron:2000-4500';
-my $twom_estimate = repeat_estimate($twom_bam,$twom_loc,$twom_ref)*$ploidy;
-#$mito_estimate = sprintf("%.3f", $mito_estimate);
-print "$twom_estimate\t";
 
 
-#######################################
-#######################################
-##    								 ##
-##	 		 Ty elements			 ##
-##									 ##
-#######################################
-#######################################
-
-my $ty1 = 0;
-my $ty2 = 0;
-my $ty3 = 0;
-my $ty4 = 0;
-my $ty5 = 0;
-
-my $genome_cov_file = $bam.'.genomewide_median';
-
-#Save Genome Wide Median in a File 
-open(my $FH, '>', $genome_cov_file);
-print $FH "$bam\t$genome_wide_median_coverage\n";
-close $FH;
-
-#print "TY bam: $ty_bam\n";
-#If the Ty bam file does not exist set them all to -1
-if (! -e $ty_bam || -z $ty_bam){
-	$ty1 = -1;
-	$ty2 = -1;
-	$ty3 = -1;
-	$ty4 = -1;
-	$ty5 = -1;	
-}
-else {
-	#Check that input exists and has a size bigger than 0		
-	pod2usage("$0: File $ty_bam is empty.")  if ( -z $ty_bam);
-	#Check that there is a .bai index file
-	$index_file = $ty_bam.'.bai';
-	pod2usage("$0: File $ty_bam is not indexed.")  unless ( -e $index_file);
-	pod2usage("$0: File $ty_bam is not indexed properly.")  if ( -z $index_file);
+if ( ! $qPCR and ! $mt_only){  
+	print "Sample\trDNA\tCUP1\tMito\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGenome_wide_median\tMatType\n";
+	print "$samp[0]\t";
+	#####    Ribosomal DNA    #######
+	#   Average number of copies per haploid genome  ####
+	my $location = 'XII:452000-459000';
+	my $rDNA_estimate = repeat_estimate($input,$location,$ref_genome)*2;
+	#$rDNA_estimate = sprintf("%.3f", $rDNA_estimate);
+	print "$rDNA_estimate\t";
 	
-	#get locations of the ty elements
-	my $ty1_ctrl = 'YDRWTy1-5:100-2699';
-	my $ty1_reg = 'YDRWTy1-5:4000-6999';
-	my $ty2_ctrl = 'YLRWTy2-1:100-2699';
-	my $ty2_reg = 'YLRWTy2-1:4000-6999';
-	my $ty3_ctrl = 'YILWTy3-1:100-2699';
-	my $ty3_reg = 'YILWTy3-1:4000-6999';
-	my $ty4_ctrl = 'YHLWTy4-1:100-2699';
-	my $ty4_reg = 'YHLWTy4-1:4000-6999';
-	my $ty5_reg = 'YCLWTy5-1:2000-2999';
-	my $ty5_ctrl = 'YCLWTy5-1:5000-5999';
-
-	$ty1 =  repeat_estimate($ty_bam, $ty1_reg, $ty_ref);
-	$ty2 =  repeat_estimate($ty_bam, $ty2_reg, $ty_ref);
-	$ty3 =  repeat_estimate($ty_bam, $ty3_reg, $ty_ref);
-	$ty4 =  repeat_estimate($ty_bam, $ty4_reg, $ty_ref);
-	$ty5 =  repeat_estimate($ty_bam, $ty5_reg, $ty_ref);
+	#####    CUP1     #######
+	#   Average number of copies per haploid genome  ####
+	$location = 'VIII:212986-213525';
+	my $cup1_estimate = repeat_estimate($input,$location,$ref_genome)*2;
+	#$cup1_estimate = sprintf("%.3f", $cup1_estimate);
+	print "$cup1_estimate\t";
 	
-	#$ty1 = sprintf("%.3f", $ty1);
-	#$ty2 = sprintf("%.3f", $ty2);
-	#$ty3 = sprintf("%.3f", $ty3);
-	#$ty4 = sprintf("%.3f", $ty4);
-	#$ty5 = sprintf("%.3f", $ty5);
+	#####    mitochondrial DNA     #######
+	#   Average number of copies per cell  ####
+	$location = 'Mito:14000-20000'; #COX1
+	my $mito_estimate = repeat_estimate($input,$location,$ref_genome)*$ploidy;
+	#$mito_estimate = sprintf("%.3f", $mito_estimate);
+	print "$mito_estimate\t";
+	
+	#####    2 micron plasmid     #######
+	#   Average number of copies per cell  ####
+	$location = '2-micron:2000-4500';
+	my $twom_estimate = repeat_estimate($twom_bam,$location,$twom_ref)*$ploidy;
+	#$mito_estimate = sprintf("%.3f", $mito_estimate);
+	print "$twom_estimate\t";
 
 }
 
-	print ("$ty1\t");
-	print ("$ty2\t");
-	print ("$ty3\t");
-	print ("$ty4\t");
-	print ("$ty5\t");
-	print ("$genome_wide_median_coverage\t");
-	printf ("%s (%.1f)\n",$sex,$sex_estimate);
+if ($mt_only){
+	print "Sample\tCOX1\tCOX3\tC1C3 ratio\n";
+	print "$samp[0]\t";
+	#####    mitochondrial DNA     #######
+	#   Average number of copies per cell estimated via COX1 ####
+	my $location = 'Mito:14000-20000'; #COX1
+	my $mito_estimate = repeat_estimate($input,$location,$ref_genome)*$ploidy;
+	$mito_estimate = sprintf("%.3f", $mito_estimate);
+	print "$mito_estimate\t";
+	
+	#####    mitochondrial DNA     #######
+	#   Average number of copies per cell estimated via COX3 ####
+	$location = 'Mito:79213-80022'; #COX3
+	my $mito2_estimate = repeat_estimate($input,$location,$ref_genome)*$ploidy;
+	$mito2_estimate = sprintf("%.3f", $mito2_estimate);
+	print "$mito2_estimate\t";
+	my $ratio = $mito_estimate/$mito2_estimate;
+	$ratio = sprintf("%.3f", $ratio);
+	print "$ratio\t";	
+	print "\n";
+}
 
+if ($qPCR){
+	print "Sample\tCOX1_qPCR\tGAL1_qPCR\tCUP1_qPCR\tmtDNA_qPCR_ratio\tCUP1_qPCR_ratio\n";
+	print "$samp[0]\t";
+	
+	####qPCR amplicon on COX1 (Oligos Cox1-qF2 + Cox1-qR2)
+	my $location = 'Mito:25574-25686';
+	my $mito_qpcr_estimate = repeat_estimate($input,$location,$ref_genome)*$ploidy;
+	$mito_qpcr_estimate = sprintf("%.3f", $mito_qpcr_estimate);
+	print "$mito_qpcr_estimate\t";
+	
+	#####qPCR amplicon on GAL1 (GAL1(+1442)up + GAL1(+1442)low)
+	$location = 'II:280382-280459';
+	my $gal1_qpcr_estimate = repeat_estimate($input,$location,$ref_genome);
+	$gal1_qpcr_estimate = sprintf("%.3f", $gal1_qpcr_estimate);
+	print "$gal1_qpcr_estimate\t";
+
+	####qPCR amplicon on CUP1( Oligos CUP1-qPCR-F1 + CUP1-qPCR-R1/R2 )
+	$location = 'VIII:212551-212669';
+	my $cup1_qpcr_estimate = repeat_estimate($input,$location,$ref_genome)*2;
+	$cup1_qpcr_estimate = sprintf("%.3f", $cup1_qpcr_estimate);
+	print "$cup1_qpcr_estimate\t";
+	
+	my $ratio = sprintf("%.3f", $mito_qpcr_estimate/$gal1_qpcr_estimate);
+	print "$ratio\t";
+	$ratio = sprintf("%.3f", $cup1_qpcr_estimate/$gal1_qpcr_estimate);
+	print "$ratio\t";
+	print "\n";
+	
+}
+
+
+#######################################
+#######################################
+##      			       ##
+##	Ty elements	       ##
+##			       ##
+#######################################
+#######################################
+if ( ! $qPCR and ! $mt_only){  
+
+
+	my $ty1 = 0;
+	my $ty2 = 0;
+	my $ty3 = 0;
+	my $ty4 = 0;
+	my $ty5 = 0;
+
+	my $genome_cov_file = $bam.'.genomewide_median';
+
+	#Save Genome Wide Median in a File 
+	open(my $FH, '>', $genome_cov_file);
+	print $FH "$bam\t$genome_wide_median_coverage\n";
+	close $FH;
+
+	#print "TY bam: $ty_bam\n";
+	#If the Ty bam file does not exist set them all to -1
+	if (! -e $ty_bam || -z $ty_bam){
+		$ty1 = -1;
+		$ty2 = -1;
+		$ty3 = -1;
+		$ty4 = -1;
+		$ty5 = -1;	
+	}
+	else {
+		#Check that input exists and has a size bigger than 0		
+		pod2usage("$0: File $ty_bam is empty.")  if ( -z $ty_bam);
+		#Check that there is a .bai index file
+		$index_file = $ty_bam.'.bai';
+		pod2usage("$0: File $ty_bam is not indexed.")  unless ( -e $index_file);
+		pod2usage("$0: File $ty_bam is not indexed properly.")  if ( -z $index_file);
+	
+		#get locations of the ty elements
+		my $ty1_ctrl = 'YDRWTy1-5:100-2699';
+		my $ty1_reg = 'YDRWTy1-5:4000-6999';
+		my $ty2_ctrl = 'YLRWTy2-1:100-2699';
+		my $ty2_reg = 'YLRWTy2-1:4000-6999';
+		my $ty3_ctrl = 'YILWTy3-1:100-2699';
+		my $ty3_reg = 'YILWTy3-1:4000-6999';
+		my $ty4_ctrl = 'YHLWTy4-1:100-2699';
+		my $ty4_reg = 'YHLWTy4-1:4000-6999';
+		my $ty5_reg = 'YCLWTy5-1:2000-2999';
+		my $ty5_ctrl = 'YCLWTy5-1:5000-5999';
+
+		$ty1 =  repeat_estimate($ty_bam, $ty1_reg, $ty_ref);
+		$ty2 =  repeat_estimate($ty_bam, $ty2_reg, $ty_ref);
+		$ty3 =  repeat_estimate($ty_bam, $ty3_reg, $ty_ref);
+		$ty4 =  repeat_estimate($ty_bam, $ty4_reg, $ty_ref);
+		$ty5 =  repeat_estimate($ty_bam, $ty5_reg, $ty_ref);
+	
+		#$ty1 = sprintf("%.3f", $ty1);
+		#$ty2 = sprintf("%.3f", $ty2);
+		#$ty3 = sprintf("%.3f", $ty3);
+		#$ty4 = sprintf("%.3f", $ty4);
+		#$ty5 = sprintf("%.3f", $ty5);
+
+	}
+
+		
+		########################################
+		###	MATING TYPE ESTIMATION
+		#########################################
+
+		my $MATa = 'MATa_HMR:1400-2000';
+		my $MATalpha=  'MATalpha_HML:1700-2700';
+		#print "$mat_bam,$MATa,$mat_ref\n";
+		my $MATa_estimate = repeat_estimate($mat_bam,$MATa,$mat_ref);
+		#exit;
+		my $MATalpha_estimate = repeat_estimate($mat_bam,$MATalpha,$mat_ref);
+		my $sex_estimate=log2($MATa_estimate/$MATalpha_estimate);
+		my $sex;
+		if    ($sex_estimate <= -0.35){$sex="alpha"}
+		elsif ($sex_estimate >=  0.35){$sex="a"}
+		elsif ($sex_estimate > -0.35 and $sex_estimate < 0.35){$sex="a/alpha"}
+		else { die "Cannot safely determine mating type and ploidy" }
+		
+		print ("$ty1\t");
+		print ("$ty2\t");
+		print ("$ty3\t");
+		print ("$ty4\t");
+		print ("$ty5\t");
+		print ("$genome_wide_median_coverage\t");
+		printf ("%s (%.1f)\n",$sex,$sex_estimate);
+
+}
 
 #################
 ## Subroutines ##
@@ -350,7 +419,8 @@ rDNA_cnv_estimate.pl [options] -i F<filename.bam>
    -p		ploidy (default: 1)
    -r		a S. cerevisiae reference genome, FASTA 
    -t		a Ty element custom reference genome, FASTA
-   
+   -M=1		only report mtDNA comparisons
+   -Q=1		only report qPCR comparisons
 This program requires that samtools and bedtools are installed and in the path.
 
 =head1 OPTIONS
