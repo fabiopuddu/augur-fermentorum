@@ -1,7 +1,7 @@
 #!/bin/bash
 #!
 #! Name of the job:
-#SBATCH -J exp-analyser
+#SBATCH -J exp-pipeline
 #SBATCH --mail-type=FAIL
 #SBATCH -m cyclic:block
 #SBATCH -n 1
