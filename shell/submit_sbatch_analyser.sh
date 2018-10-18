@@ -1,7 +1,7 @@
 #!/bin/bash
 #!
 #! Name of the job:
-#SBATCH -J sample-analyser
+#SBATCH -J smpl-pipeline
 #SBATCH --mail-type=FAIL
 #SBATCH -m cyclic:block
 #SBATCH -n 1

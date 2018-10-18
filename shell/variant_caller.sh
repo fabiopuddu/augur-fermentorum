@@ -62,6 +62,7 @@ fi
 rm -f bams_for_mpileup
 #create a list of BAM files to analyse
 ls BAM/*.bam >> bams_for_mpileup
+wd=`pwd | tr '/' "\n" | tail -n 1`
 #index files if the index does not exist
 #cat bams_for_mpileup | while read line;
 #	do n=`echo $line | tr '/' "\n" | tail -n1 | sed 's/.bam//g'`; 
@@ -100,7 +101,8 @@ mkdir -p calling
 cd calling
 cat ../bams_for_mpileup | while read line
 	do	n=$(echo $line |  tr '/' "\n" | tail -n1 | sed "s/\.bam//g" | sed "s/\.merged//g")
-		ers=`grep -w $n ../../name\ conversion.tsv | awk '{print $6}'`
+		#We also need to grep for the  current directory so that I can have duplicate samples in two different experiments in the name conversion file
+		ers=`cat ../../name\ conversion.tsv | grep  "$wd" | grep -w $n | awk '{print $6}'`
         	check_pool=`echo $n | grep 'pool'`
         if [ -z $check_pool ]
             	then ploidy=2

@@ -14,7 +14,7 @@ function hlp {
    printf "\t-h\tThis Help\n"    
    printf "\t-a\tAutomatic Detection of the control\n"
    printf "\t-m\tAllow multiple automatic controls\n"
-   printf "\t-s\tDefine a standard wild-type control for all samples\n"  
+   printf "\t-c\tDefine a standard wild-type control for all samples\n"  
    exit 1
 }
 
