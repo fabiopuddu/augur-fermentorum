@@ -1,7 +1,7 @@
 #!/bin/bash
 
 submit_sbatch(){
-sbatch --partition=LONG --output /dev/null --error /dev/null ${1} --wrap="${2}" 
+sbatch --partition=LONG --output /dev/null  ${1} --wrap="${2}" 
 }
 
 waitforcompletion(){
@@ -17,6 +17,23 @@ printf "\n"
 }
 
 
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+#cramTObam preprocessing
+
+proclist=''
+while read -r f
+	do 	fname=`echo $f | sed "s/.cram//g"`
+		command="samtools view  -b -o $fname.bam -T $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa  $f"
+		echo $command
+		PROC1=$(submit_sbatch " " "${command}" | sed 's/Submitted batch job //g')
+		#$command
+		#proclist="${proclist}\|${PROC1}"
+		sleep 0.5
+	 done  < <(ls *.cram)
+waitforcompletion "${proclist}"
+
+#extraction
 proclist=''
 while read -r line
  do              fl=`echo $line | sed "s/.bam//g"`
@@ -41,3 +58,7 @@ do 	name=`echo "${f}" | sed 's/.bam//g'` ;
 	mkdir "${name}"; 
 	mv ${name}.* ${name};
 done
+
+for f in */*.bam; 
+	do sbatch --wrap "samtools index $f" ; 
+	done
