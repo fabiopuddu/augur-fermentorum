@@ -40,15 +40,21 @@ foreach my $line (@VCF){
 			next
 	}
 	(my $chrom, my $pos, my $ID, my $REF, my $ALT, my $QUAL, my $FILT, my $INFO, my $FORMAT, my @mutations) = split "\t", $line;
-	next if $FILT ne 'PASS'; next if $QUAL<180;
+#	next if $FILT ne 'PASS'; next if $QUAL<180;
 	$totlines++;
+	my @alt_list=split ",", $ALT;
 	for (my $c=0; $c<scalar @samples; $c++){
 		if ($mutations[$c] =~ /[0-9]\/[0-9]/){
+			#split the sample field and recover the genotype information
+			my @mm1=split ":", $mutations[$c];
+			my @mm2=split "/", $mm1[0]; 
+			my $alt_pos=$mm2[1]-1;
+			die if $alt_pos<0;
 #			print "$line\n";
 			if ($INFO =~ /INDEL/){
 				push @{$mutations{$samples[$c]}{'ID_INDEL'}},  "$chrom-$pos";
-				my $size = length($ALT) - length($REF);
-			     	$mutations{$samples[$c]}{'IND_COUNT'}++;
+				my $size = length($alt_list[$alt_pos]) - length($REF);
+				$mutations{$samples[$c]}{'IND_COUNT'}++;
 				if (abs($size)<4){
 					$mutations{$samples[$c]}{$size}++
 				}
@@ -60,13 +66,13 @@ foreach my $line (@VCF){
 	                        }
 				else {die "Something odd happened, investigate!!!\n"}
 			}
-			elsif (length $REF  == 1 and length $ALT == 1){
+			elsif (length $REF== 1 and length $alt_list[$alt_pos] == 1){
 				push @{$mutations{$samples[$c]}{'ID_SNV'}},  "$chrom-$pos";
-				$mutations{$samples[$c]}{$REF.">".$ALT}++;
+				$mutations{$samples[$c]}{$REF.">".$alt_list[$alt_pos]}++;
 			        $mutations{$samples[$c]}{'SNP_COUNT'}++;
 			}
 			else {
-				die "Bad line in vcf file\n";
+				die "Bad line in vcf file > $line\n";
 			}
 		}	
 		elsif ($mutations[$c] =~ /^\.$/){
