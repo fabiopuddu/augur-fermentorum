@@ -1,4 +1,4 @@
-Ensembl Gene ID	Chromosome Name	Gene Start (bp)	Gene End (bp)	Associated Gene Name
+#Ensembl Gene ID	Chromosome Name	Gene Start (bp)	Gene End (bp)	Associated Gene Name
 YML033W	XIII	211715	212155
 YLR391W	XII	903929	904387
 YOR088W	XV	488286	489734
