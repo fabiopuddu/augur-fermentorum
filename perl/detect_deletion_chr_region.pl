@@ -45,7 +45,6 @@ while( my $line = <$ifi> ) {
                	my($f1, $f2, $f3, $f4, $f5) = split '\t', $line; #split the line into its columns
                 	my $f6 = $f4 - $f3 +1;
                 	$gene_oi = $f1; $chrom = $f2; $st = $f3; $en = $f4;
-		break;
           }          
 }
 close( $ifi );
