@@ -24,7 +24,7 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 proclist=''
 while read -r f
 	do 	fname=`echo $f | sed "s/.cram//g"`
-		command="samtools view  -b -o $fname.bam -T $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa  $f"
+		command="samtools view  -@ 8 -b -o $fname.bam -T $DIR/../mpileup_defaults/reference_genome/Saccharomyces_cerevisiae.EF4.69.dna_sm.toplevel.fa  $f"
 		echo $command
 		PROC1=$(submit_sbatch " " "${command}" | sed 's/Submitted batch job //g')
 		#$command
@@ -38,7 +38,7 @@ proclist=''
 while read -r line
  do              fl=`echo $line | sed "s/.bam//g"`
                 echo $fl
-                 command1="samtools sort -n -T ${fl}_temp.bam -O BAM -o ${fl}_sorted.bam ${fl}.bam"
+                 command1="samtools sort -@ 8 -n -T ${fl}_temp.bam -O BAM -o ${fl}_sorted.bam ${fl}.bam"
                  command2="bamToFastq -i ${fl}_sorted.bam -fq ${fl}.fq1 -fq2 ${fl}.fq2"
                  command3="pigz -9 -f ${fl}.fq1 ${fl}.fq2"
                  command4="rm ${fl}_sorted.bam"

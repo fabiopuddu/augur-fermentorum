@@ -414,7 +414,7 @@ sub chrom_cov{
 	my $c = $_[0];
 	# execute samtools mpileup as a systems command and store the output in an array
 	# define a subroutine to calculate the mean
-	my @mpileup_out =  `samtools view -b $input -F 0x0400 \'$c\'| genomeCoverageBed -dz -ibam stdin -g  `; 
+	my @mpileup_out =  `samtools view -@ 8 -b $input -F 0x0400 \'$c\'| genomeCoverageBed -dz -ibam stdin -g  `; 
 	#print @mpileup_out;
 	# declare variables
 	my %mpileup_hash;

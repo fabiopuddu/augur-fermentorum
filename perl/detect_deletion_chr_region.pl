@@ -66,7 +66,7 @@ my $threshold=$CWM * 0.15;
 
 my $range_goi = "$chrom".':'."$st".'-'."$en";
 #print("$range_goi\n");
-@mp_out = `samtools view -b $input -F 0x0400 \'$range_goi\'| genomeCoverageBed -dz -ibam stdin -g  `; 
+@mp_out = `samtools view -@ 8 -b $input -F 0x0400 \'$range_goi\'| genomeCoverageBed -dz -ibam stdin -g  `; 
 #Get the coverage of the gene of interest:
 my @coverage; 
 my $cons_bas=0;
