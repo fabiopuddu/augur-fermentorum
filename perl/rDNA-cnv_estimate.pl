@@ -1,14 +1,14 @@
 #!/usr/bin/env perl
 
 # Author:       	Mareike Herzog
-# Maintainer:   	Mareike Herzog and Fabio Puddu
+# Maintainer:   	Fabio Puddu
 # Created: 	Sep 2016
 # Description:	This script calculates copy number of different repetitive elements and mating type using coverage data
 
 
 use autodie;
-use utf8;
-use Carp;
+#use utf8;
+#use Carp;
 use strict;
 use warnings;
 use Getopt::Long;
@@ -18,6 +18,7 @@ use Cwd 'abs_path';
 use POSIX qw(ceil);
 use IPC::Open3;
 use IO::File;
+#use Data::Dumper;
 
 
 #######################################
@@ -114,9 +115,6 @@ pod2usage("$0: BedTools does not seem to work.") if ($bed_command !~ /.+/);
 
  #For regions of the genome with two copies in the genome multiply by two (eg rDNA, CUP1)
  
-my $gen_cov_ref = genome_cov($input);
-my $genome_wide_median_coverage = median(@$gen_cov_ref);
-
 # check that the TY bam is there 
 
 #split the path 
@@ -126,13 +124,23 @@ my $bam = pop @b; #pop @b;
 my $sample_name = substr($bam, 0, -4);
 #join and add the others
 my $bam_dir = join ('/',@b);
-my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
-my $mat_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
-my $twom_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
+my $rep_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
 my @s = split ('/', $input);
 my $sa = $s[-1];
 my @samp = split (/\./, $sa);
 
+my $ty_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
+my $mat_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
+my $twom_bam = $bam_dir.'/../TR_BAMS/'.$sample_name.'.Ty.bam';
+
+my $gen_cov_ref = genome_cov($input);
+my @g_cov;
+foreach (keys %{$gen_cov_ref}){
+	push @g_cov, values %{%{$gen_cov_ref}{$_}}
+}
+my $GWM = median(@g_cov);
+
+my $rep_gen_cov_ref = genome_cov($rep_bam);
 
 
 if ( ! $qPCR and ! $mt_only){  
@@ -141,28 +149,28 @@ if ( ! $qPCR and ! $mt_only){
 	#####    Ribosomal DNA    #######
 	#   Average number of copies per haploid genome  ####
 	my $location = 'XII:452000-459000';
-	my $rDNA_estimate = repeat_estimate($input,$location,$ref_genome)*2;
+	my $rDNA_estimate = (local_coverage($gen_cov_ref, $location)/$GWM)*2;
 	#$rDNA_estimate = sprintf("%.3f", $rDNA_estimate);
 	print "$rDNA_estimate\t";
 	
 	#####    CUP1     #######
 	#   Average number of copies per haploid genome  ####
 	$location = 'VIII:212986-213525';
-	my $cup1_estimate = repeat_estimate($input,$location,$ref_genome)*2;
+	my $cup1_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*2;
 	#$cup1_estimate = sprintf("%.3f", $cup1_estimate);
 	print "$cup1_estimate\t";
 	
 	#####    mitochondrial DNA     #######
 	#   Average number of copies per cell  ####
 	$location = 'Mito:14000-20000'; #COX1
-	my $mito_estimate = repeat_estimate($input,$location,$ref_genome)*$ploidy;
+	my $mito_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*$ploidy;
 	#$mito_estimate = sprintf("%.3f", $mito_estimate);
 	print "$mito_estimate\t";
 	
 	#####    2 micron plasmid     #######
 	#   Average number of copies per cell  ####
 	$location = '2-micron:2000-4500';
-	my $twom_estimate = repeat_estimate($twom_bam,$location,$twom_ref)*$ploidy;
+	my $twom_estimate =  (local_coverage($rep_gen_cov_ref, $location)/$GWM)*$ploidy;
 	#$mito_estimate = sprintf("%.3f", $mito_estimate);
 	print "$twom_estimate\t";
 
@@ -174,14 +182,14 @@ if ($mt_only){
 	#####    mitochondrial DNA     #######
 	#   Average number of copies per cell estimated via COX1 ####
 	my $location = 'Mito:14000-20000'; #COX1
-	my $mito_estimate = repeat_estimate($input,$location,$ref_genome)*$ploidy;
+	my $mito_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*$ploidy;
 	$mito_estimate = sprintf("%.3f", $mito_estimate);
 	print "$mito_estimate\t";
 	
 	#####    mitochondrial DNA     #######
 	#   Average number of copies per cell estimated via COX3 ####
 	$location = 'Mito:79213-80022'; #COX3
-	my $mito2_estimate = repeat_estimate($input,$location,$ref_genome)*$ploidy;
+	my $mito2_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*$ploidy;
 	$mito2_estimate = sprintf("%.3f", $mito2_estimate);
 	print "$mito2_estimate\t";
 	my $ratio = $mito_estimate/$mito2_estimate;
@@ -196,19 +204,19 @@ if ($qPCR){
 	
 	####qPCR amplicon on COX1 (Oligos Cox1-qF2 + Cox1-qR2)
 	my $location = 'Mito:25574-25686';
-	my $mito_qpcr_estimate = repeat_estimate($input,$location,$ref_genome)*$ploidy;
+	my $mito_qpcr_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*$ploidy;
 	$mito_qpcr_estimate = sprintf("%.3f", $mito_qpcr_estimate);
 	print "$mito_qpcr_estimate\t";
 	
 	#####qPCR amplicon on GAL1 (GAL1(+1442)up + GAL1(+1442)low)
 	$location = 'II:280382-280459';
-	my $gal1_qpcr_estimate = repeat_estimate($input,$location,$ref_genome);
+	my $gal1_qpcr_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM);
 	$gal1_qpcr_estimate = sprintf("%.3f", $gal1_qpcr_estimate);
 	print "$gal1_qpcr_estimate\t";
 
 	####qPCR amplicon on CUP1( Oligos CUP1-qPCR-F1 + CUP1-qPCR-R1/R2 )
 	$location = 'VIII:212551-212669';
-	my $cup1_qpcr_estimate = repeat_estimate($input,$location,$ref_genome)*2;
+	my $cup1_qpcr_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*2;
 	$cup1_qpcr_estimate = sprintf("%.3f", $cup1_qpcr_estimate);
 	print "$cup1_qpcr_estimate\t";
 	
@@ -241,7 +249,7 @@ if ( ! $qPCR and ! $mt_only){
 
 	#Save Genome Wide Median in a File 
 	open(my $FH, '>', $genome_cov_file);
-	print $FH "$bam\t$genome_wide_median_coverage\n";
+	print $FH "$bam\t$GWM\n";
 	close $FH;
 
 	#print "TY bam: $ty_bam\n";
@@ -273,11 +281,11 @@ if ( ! $qPCR and ! $mt_only){
 		my $ty5_reg = 'YCLWTy5-1:2000-2999';
 		my $ty5_ctrl = 'YCLWTy5-1:5000-5999';
 
-		$ty1 =  repeat_estimate($ty_bam, $ty1_reg, $ty_ref);
-		$ty2 =  repeat_estimate($ty_bam, $ty2_reg, $ty_ref);
-		$ty3 =  repeat_estimate($ty_bam, $ty3_reg, $ty_ref);
-		$ty4 =  repeat_estimate($ty_bam, $ty4_reg, $ty_ref);
-		$ty5 =  repeat_estimate($ty_bam, $ty5_reg, $ty_ref);
+		$ty1 =  local_coverage($rep_gen_cov_ref, $ty1_reg)/$GWM;
+		$ty2 =  local_coverage($rep_gen_cov_ref, $ty2_reg)/$GWM;
+		$ty3 =  local_coverage($rep_gen_cov_ref, $ty3_reg)/$GWM;
+		$ty4 =  local_coverage($rep_gen_cov_ref, $ty4_reg)/$GWM;
+		$ty5 =  local_coverage($rep_gen_cov_ref, $ty5_reg)/$GWM;
 	
 		#$ty1 = sprintf("%.3f", $ty1);
 		#$ty2 = sprintf("%.3f", $ty2);
@@ -295,9 +303,9 @@ if ( ! $qPCR and ! $mt_only){
 		my $MATa = 'MATa_HMR:1400-2000';
 		my $MATalpha=  'MATalpha_HML:1700-2700';
 		#print "$mat_bam,$MATa,$mat_ref\n";
-		my $MATa_estimate = repeat_estimate($mat_bam,$MATa,$mat_ref);
+		my $MATa_estimate = local_coverage($rep_gen_cov_ref,$MATa)/$GWM;
 		#exit;
-		my $MATalpha_estimate = repeat_estimate($mat_bam,$MATalpha,$mat_ref);
+		my $MATalpha_estimate = local_coverage($rep_gen_cov_ref,$MATalpha)/$GWM;
 		my $sex_estimate=log2($MATa_estimate/$MATalpha_estimate);
 		my $sex;
 		if    ($sex_estimate <= -0.35){$sex="alpha"}
@@ -310,7 +318,7 @@ if ( ! $qPCR and ! $mt_only){
 		print ("$ty3\t");
 		print ("$ty4\t");
 		print ("$ty5\t");
-		print ("$genome_wide_median_coverage\t");
+		print ("$GWM\t");
 		printf ("%s (%.1f)\n",$sex,$sex_estimate);
 
 }
@@ -335,67 +343,40 @@ sub mean {
 sub genome_cov{
         my $file= $_[0];
         my $CH;
-		my @genome_cov;
+	my %genome_cov;
 		#choose either of the open commands below to exclude low quality reads (2nd option) or not
 		#open($CH, "$bed_command -d -ibam $input -g 2>/dev/null |") || die "Failed: $!\n";
-		$in = '';
-		local *CATCHERR = IO::File->new_tmpfile;
-		my $pid = open3($in, \*CATCHOUT, ">&CATCHERR", "samtools view -q10 -b $file | $bed_command -d -ibam stdin -g");
+	$in = '';
+	local *CATCHERR = IO::File->new_tmpfile;
+		my $pid = open3($in, \*CATCHOUT, ">&CATCHERR", "samtools view -@ 8 -F 0x0400 -b $file | $bed_command -d -ibam stdin -g");
 		while( <CATCHOUT> ) {
 		  my $line = $_;
 		  chomp $line;
 		  my @s = split(/\t/,$line);
 		  #if the output is as expected then $s[0] is the chr, [1] is the position, [2] is the coverage
-		  push (@genome_cov, $s[2]);
+		  $genome_cov{$s[0]}{$s[1]}=$s[2];
 		}
 		waitpid($pid, 0);
 		seek CATCHERR, 0, 0;
 		while( <CATCHERR> ) {pod2usage("$0: BedTools does not seem to work.")}
-    	return (\@genome_cov);
+    	return \%genome_cov;
 }
 
-sub repeat_estimate {
-	#This subroutine will be given a location string like: "XII:123000-789000"
-	#and the variable containing the appropriate reference
-	my $in_file = $_[0];
-	my $loc = $_[1];
-	my $ref_g = $_[2];
-	#split this to get the numbers
-	my @t = split (':', $loc);
-	my @n = split ('-', $t[1]);
-	my %Cov_hash;
-	#Set the coverage to 0 at each position
-	foreach my $i ($n[0]..$n[1]) { $Cov_hash{$i}=0;}
-
-	#check that the samtools mpileup command works
-	#Ignore the standard STDERR
-	$in = '';
-	$check = 0;
-	my $err = '';
-	local *CATCHERR = IO::File->new_tmpfile;
-	$pid = open3($in, \*CATCHOUT, ">&CATCHERR", "samtools mpileup  -A -Q 0 -r $loc -f $ref_g $in_file");
-	while( <CATCHOUT> ) {
-	my $l = $_;
-	chomp $l;
-	my @s = split("\t",$l);
-	#if the output is as expected then $s[0] is the chr, [1] is the position, [3] is the coverage
-	$Cov_hash{$s[1]}=$s[3];
-	#print "$s[1]\t$s[3]\n";
+sub local_coverage{
+	my $coverage_hash=shift;
+	my %coverage=%{$coverage_hash};
+	my $position=shift;
+	my ($CHR,$RANGE)=split ":", $position;
+	my ($START, $END)=split "-", $RANGE;
+	my @loc_cov;
+	foreach my $k (sort {$a <=> $b} keys %{$coverage{$CHR}}){
+		last if $k>$END;
+		if ($k>=$START){
+			push @loc_cov, $coverage{$CHR}{$k};
+		}
 	}
-	waitpid($pid, 0);
-	seek CATCHERR, 0, 0;
-	while( <CATCHERR> ) {if ($_ =~ /[0-9]+\s+samples\s+in\s+[0-9]+\s+input/i) {$check = 1;} else {$err = $_;}}
-	pod2usage("$0: samtools mpileup did not run correctly.\nError: $_\n")  if ( $check == 0);
-	
-	#Get the median of all rDNA coverage values extracted
-	my $med_cov = median(values(%Cov_hash));
-	#print "$med_cov\n";	
-
-	#Divide query coverage by genome wide median coverage and round
-	my $estimate = $med_cov/$genome_wide_median_coverage;
-	
-	return $estimate;
-	
+	my $out=median(@loc_cov);
+	return $out;
 }
 
 
