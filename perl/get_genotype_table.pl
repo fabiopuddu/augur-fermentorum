@@ -76,7 +76,7 @@ chomp(my @NC = <$nameconversion>);
 close ($nameconversion);
 my %nc;
 for my $line (@NC){
-		(my $barcodeID, my $delname, my $plate, my $aka, my $filename, my $ERSNO)=split("\t", $line);
+		(my $barcodeID, my $delname, my $plate, my $aka, my $filename, my $ERSNO, my $smpl_ploidy)=split("\t", $line);
 		$nc{$ERSNO}=$aka;
 }
 

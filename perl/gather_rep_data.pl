@@ -15,7 +15,7 @@ my $telo;
 my @CHROMOSOMES=('chr01', 'chr02', 'chr03', 'chr04', 'chr05', 'chr06', 'chr07', 'chr08', 'chr09', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16');
 for my $line (@SAMPLES){
 	chomp($line);
-	(my $sample_code, my $delname, my $plate, my $aka, my $fname, my $ERS)=split("\t", $line);
+	(my $sample_code, my $delname, my $plate, my $aka, my $fname, my $ERS, my $sample_ploidy)=split("\t", $line);
 	if (-e "$delname/repDNA/$fname.txt"){ 
 		$rep_group=`cat "$delname/repDNA/$fname.txt" | grep -v Sample`;
 		chomp($rep_group);

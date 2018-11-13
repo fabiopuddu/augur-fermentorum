@@ -48,7 +48,7 @@ if ($control =~ m/,/) {
 }
 
 for my $line (@NC){
-    (my $barcodeID, my $delname, my $plate, my $aka, my $filename, my $ERSNO)=split("\t", $line);
+    (my $barcodeID, my $delname, my $plate, my $aka, my $filename, my $ERSNO, my $sample_ploidy)=split("\t", $line);
     # Removed 'undef' between my $filename and my $ERSNO, because the empty column was not being recognised
     $nc{$ERSNO}=substr($aka,0,10);
     $bcID{$ERSNO}=$barcodeID;

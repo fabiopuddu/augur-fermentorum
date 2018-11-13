@@ -156,7 +156,7 @@ if [[ $first_run == 1 ]]
                 do     if [[ ! $tab =~ "ERS" ]]
                         then     printf "Fixing headers...\n"
                         #name=`echo $tab | tr -d '..' 
-                        ERSnumber=`grep -w $tab ../../name\ conversion.tsv | tr "\t" "\n" | tail -n 1`
+                        ERSnumber=`grep -w $tab ../../name\ conversion.tsv | tr "\t" "\n" | awk -F"\t" '$6 ~ ERS {print $6}'`
                         new_headr=`printf "$new_headr$ERSnumber\t"`
                     else     new_headr=`printf "$new_headr$tab\t"`
 
@@ -242,8 +242,8 @@ if [[ $aneup == 1 ]]
                         else sampleploidy=$(( $ploidy * 2 ))
                     fi
          	    code1=`echo $line | tr '/' "\n" | tail -n1 | sed "s|\.bam||g"` #SCMFY or #SD code
-                    code2=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 6` # Fetch ERS code (cut -f 7 gave issues depending on the tabulation of name\ conversion.tsv)
-         	    name=`grep -w ${code1} ../../name\ conversion.tsv | cut -f 2`
+                    code2=`grep -w ${code1} ../../name\ conversion.tsv | awk -F"\t" '$6 ~ ERS {print $6}'` # Fetch ERS code (cut -f 7 gave issues depending on the tabulation of name\ conversion.tsv)
+         	    name=`grep -w ${code1} ../../name\ conversion.tsv | awk -F"\t" '{print $2}'`
          	    export SBATCH_CMD="CGH.pl -i ../$line -p $sampleploidy -f -l \"${name}:${code1}:${code2}\""
          	    if [[ ${v} -eq '1' ]]; then echo ${command}; fi
          	    PROC1=$(sbatch submit_sbatch_analyser.sh | sed 's/Submitted batch job //g') 

@@ -42,6 +42,7 @@ if  ls Del*_* 1> /dev/null 2>&1
 			if  [ $control_defined == 1 ]
 				then control_samples=$control #WT control is ERS1076728
 				elif [ $automatic_defined == 1 ]
+						ploidy=`cat name\ conversion.tsv | grep "${del_number}_" | grep C[0123456789] | awk -F"\t" '{print $7}' | sed -e 's/[[:space:]]*$//' | head -n1 `
 				  		then if [ $multiple == 1 ]
 							then    control_samples=`cat name\ conversion.tsv | grep "${del_number}_" | grep C[0123456789] | awk -F"\t" '$6 ~ ERS {print $6}' | sed -e 's/[[:space:]]*$//' | tr "\n" ',' | sed 's/,*$//' `
 							else	control_samples=`cat name\ conversion.tsv | grep "${del_number}_" | grep C[0123456789] | awk -F"\t" '$6 ~ ERS {print $6}' | sed -e 's/[[:space:]]*$//' | head -n1    | sed 's/,*$//'`
@@ -53,10 +54,19 @@ if  ls Del*_* 1> /dev/null 2>&1
 		
 			cd $folder
 			if [[ -a bams_for_mpileup ]]
-				then if [ $multiple == 1 ]
-				 		then export SBATCH_CMD_CIAO="analyser-multi.sh -a -r -n2 -F -C $control_samples > results.txt 2>&1" 
-						else export SBATCH_CMD_CIAO="analyser-multi.sh -a -r -n2 -F -c $control_samples > results.txt 2>&1"
-				     fi
+				then 
+					if [[ $ploidy > 0 || $ploidy < 5 ]]
+						then
+							if [ $multiple == 1 ]
+				 				then export SBATCH_CMD_CIAO="analyser-multi.sh -a -r -n${ploidy} -F -C $control_samples > results.txt 2>&1" 
+								else export SBATCH_CMD_CIAO="analyser-multi.sh -a -r -n${ploidy} -F -c $control_samples > results.txt 2>&1"
+				     			fi
+						else
+							if [ $multiple == 1 ]
+                                                	        then export SBATCH_CMD_CIAO="analyser-multi.sh -a -r -n1 -F -C $control_samples > results.txt 2>&1"
+                                                        	else export SBATCH_CMD_CIAO="analyser-multi.sh -a -r -n1 -F -c $control_samples > results.txt 2>&1"
+                                               	 	fi
+					fi
 			fi
 			sbatch ${DIR}/submit_sbatch.sh
 			echo "Command: $SBATCH_CMD_CIAO"
