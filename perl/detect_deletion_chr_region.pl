@@ -60,7 +60,7 @@ for my $line(@mp_out){
 }
 my $CWM=median(@cwm_coverage);
 
-my $threshold=$CWM * 0.15;
+my $threshold=$CWM * 0.05;
 
 #Get the coverage of the gene of interest:
 
@@ -75,16 +75,18 @@ my $prev_cov=1000;
 for my $line(@mp_out){
 	chomp $line;
 	my($s0, $s1, $s2) = split '\t', $line;
-	push @coverage, $s2;
-	#calculate if there are gaps in the coverage that are smaller than the whole gene
-	if ($s2 < $threshold and $prev_cov < $threshold){
-		$cons_bas++;
-		$longest_cons_bas=$cons_bas if $cons_bas>$longest_cons_bas;
-	}
-	else{
-		$cons_bas=0;
+	if ($s1 >= $st && $s1 <= $en){
+		print "$s2 ";	
+		push @coverage, $s2;
+		#calculate if there are gaps in the coverage that are smaller than the whole gene
+		if ($s2 < $threshold and $prev_cov < $threshold){
+			$cons_bas++;
+			$longest_cons_bas=$cons_bas if $cons_bas>$longest_cons_bas;
+		}
+		else{
+			$cons_bas=0;
+		}	
 	}	
-	
 	$prev_cov=$s2;
 }
 #Calculate statistics
@@ -93,7 +95,7 @@ my $perc_cov = sprintf("%.1f", $cov_of_interest/$CWM*100);
 $cov_of_interest = sprintf("%.1f", $cov_of_interest);
 
 #Output the result
-print ("$gene_oi\t$gene_name\t$cov_of_interest\t$perc_cov %\tDeleted:");
+print ("\n$gene_oi\t$gene_name\t$cov_of_interest\t$perc_cov %\tDeleted:");
 if ($perc_cov < 15) {print "Y\n";} elsif ($longest_cons_bas > 9) {print "Yp (p=partial)\n";} else {print "N\n";}
 
 
