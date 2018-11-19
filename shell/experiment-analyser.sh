@@ -12,13 +12,14 @@ function hlp {
    printf "This program automates the running of the analyser pipeline,\n"
    printf "providing it with the reference to the proper control\n"
    printf "\t-h\tThis Help\n"    
-   printf "\t-a\tAutomatic Detection of the control\n"
+   printf "\t-a\tAutomatic Detection of the control: if not chosen, please specify control and ploidy expected\n"
    printf "\t-m\tAllow multiple automatic controls\n"
    printf "\t-c\tDefine a standard wild-type control for all samples\n"  
+   printf "\t-p\tDefine a standard ploidy for all samples\n"
    exit 1
 }
 
-while getopts "hac:m" opt
+while getopts "hac:mp:" opt
     do  case "$opt" in
                         h)  hlp
                         ;;
@@ -26,6 +27,8 @@ while getopts "hac:m" opt
                             control_defined=1
                         ;;
                         a)  automatic_defined=1
+			;;
+		        p) ploidy="$OPTARG"	
                         ;;
 			m) multiple=1
 	esac
