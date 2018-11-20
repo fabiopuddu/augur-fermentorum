@@ -11,6 +11,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use List::Util qw(sum);
+use Data::Dumper;
 
 #Get the bam file as input
 my $gene_name = shift;
@@ -68,16 +69,22 @@ my $range_goi = "$chrom".':'."$st".'-'."$en";
 #print("$range_goi\n");
 @mp_out = `samtools view -@ 8 -b $input -F 0x0400 \'$range_goi\'| genomeCoverageBed -dz -ibam stdin -g  `; 
 #Get the coverage of the gene of interest:
-my @coverage; 
-my $cons_bas=0;
-my $longest_cons_bas=0;
-my $prev_cov=1000;
+my %cov;
 for my $line(@mp_out){
 	chomp $line;
 	my($s0, $s1, $s2) = split '\t', $line;
-	if ($s1 >= $st && $s1 <= $en){
-		print "$s2 ";	
-		push @coverage, $s2;
+	$cov{$s1}=$s2;
+}
+my @coverage;
+my $cons_bas=0;
+my $longest_cons_bas=0;
+my $prev_cov=1000;
+
+print Dumper \%cov;
+for (my $i=$st; $i<=$en; $i++){
+		my $s2=$cov{$i} || 0; # This is required because genomeCoverageBed -dz does not output positions with zero coverage
+		print "$s2 ";
+                push @coverage, $s2;	
 		#calculate if there are gaps in the coverage that are smaller than the whole gene
 		if ($s2 < $threshold and $prev_cov < $threshold){
 			$cons_bas++;
@@ -85,9 +92,8 @@ for my $line(@mp_out){
 		}
 		else{
 			$cons_bas=0;
-		}	
-	}	
-	$prev_cov=$s2;
+		}		
+		$prev_cov=$s2;
 }
 #Calculate statistics
 my $cov_of_interest = median(@coverage);
