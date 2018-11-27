@@ -12,7 +12,10 @@ use Getopt::Long;
 use List::Util qw(sum);
 use Data::Dumper;
 use Cwd 'abs_path';
+use AutoLoader qw/AUTOLOAD/;
 use Math::Round;
+use Parallel::Loops;
+
 #####
 my $bin_size=400; #define the size of the bin to make averages in base pairs
 my $min_span_highlight=2500; #define the minimum lenght of a jump in ploidy to be reported in highlights
@@ -38,7 +41,7 @@ my %centromere=(
    	XVI   => [ "550957", "561073" ],
 );
 
-
+#define a hash of telomeres that we want to hide from the data
 my %chr_ends=(
 	I     => [ "15000", "215218" ],
     	II    => [ "15000", "798184" ],
@@ -58,14 +61,9 @@ my %chr_ends=(
    	XVI   => [ "15000", "933066" ],
 );
 
-
-
-
 my @chromosomes=('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI');
 
 #@chromosomes=('V','VII');
-
-
 
 ###################################################
 ##### INPUT DATA
@@ -90,7 +88,6 @@ GetOptions
 						-p <ploidy 1,2,...> \n
 						-f (optional:filter LRT, transposons and telomeres) \n
 						-l (optional: label circos plots with strain name in the form of yfg1∆:Del1234:SD1234b")\n];
-
 my $sample_name = (split "/",$input)[-1];
 $sample_name =~ s/.bam//;
 if (defined $label and length $label>0) {
@@ -119,36 +116,42 @@ if ($fil){
 }
 
 
-
-
 ###################################################
 #RUN THROUGH ALL THE CHROMOSOMES AND EXTRACT COVERAGE INFORMATION FROM BAM FILES
 ###################################################
+#read the data from bedtools genomeCoverageBed
+my %raw_data=read_data($input);
+#define a hash 'genome' with chromosomes names and average coverage across
 
-my %genome;#define a hash ;genome'  chromosomes names as keys and the coverage hash as value.
 my @val;
+my %threads;
+my $maxProcs = 16;
+my $pl = Parallel::Loops->new($maxProcs);
+my %genome;
+$pl->share( \%genome );
+
+$pl->foreach( \@chromosomes, sub{
+	print "processing chromosome $_\n";
+	$genome{$_} = chrom_cov( $_, \%raw_data);
+});
+	#my %c_c = chrom_cov($chrom, \%raw_data);
 foreach my $chrom (@chromosomes){
-	print "processing chromosome $chrom\n";
-	my %c_c = chrom_cov($chrom);
-	$genome{$chrom}=\%c_c;
-	foreach my $elem (values %c_c){
+	#$genome{$chrom}=\%c_c;
+	foreach my $elem (values %{$genome{$chrom}}){
 		push (@val,$elem); 
 	}
 }	
 my $gw_median = median(@val);
 print "Genome wide median: $gw_median\n";
 
-
-
-
 ###################################################
 #RUN THROUGH ALL THE CHROMOSOMES AGAIN, NORMALISE DATA,
 #EXTRACT CHROMOSOME PLOIDY INFO FROM CENTROMERES AND OUTPUT COVERAGE IN FORMAT READABLE BY CIRCOS
 ###################################################
 my %ploidy_by_chr; #<- this will contain the ploidy by chromosome for future reference
-my %mean_centromere_ploidy;
+my %centromere_ploidy;
 foreach my $chrom (@chromosomes){
-	my @centromere_block=();;
+	my @centromere_block=();
 	my %c_c = %{$genome{$chrom}};
 	#normalise all the coverage data using the genome wide median and the expected ploidy
 	foreach my $k (keys %c_c){
@@ -158,31 +161,30 @@ foreach my $chrom (@chromosomes){
         			}
           }
 	$ploidy_by_chr{$chrom}=ploidy_mode(@centromere_block);
-	$mean_centromere_ploidy{$chrom}=mean(@centromere_block);
+	$centromere_ploidy{$chrom}=median(@centromere_block);
 	open( my $fh, '>>', $sample_name."_ploidy_data.txt");
 	my $cn=get_as_chr($chrom);
 	foreach my $pos (sort {$a <=> $b} keys %c_c) {
-		my $end = $pos+($bin_size-1);
-    	#print "chr$cn\t$pos\t$end\t$c_c{$pos}\n";
-    	printf $fh "chr$cn\t$pos\t$end\t$c_c{$pos}\n";	
+		my $start=$pos-($bin_size/2); 
+		my $end = $pos+(($bin_size/2)-1);
+    		printf $fh "chr$cn\t$start\t$end\t$c_c{$pos}\n";	
 	}
 	close ($fh);
 }
 
 ###write the chromosome ploidy info in a file
 open (my $statout, '>', $sample_name."_plstats.txt");
-
 print ($statout "Chromosome\tPred.ploidy\n");
 my $tot_aneup=0;
 foreach my $chrom (@chromosomes){
 	my $cn=get_as_chr($chrom);		
         #assign an integer number to ploidy if the mean ploidy of the chromosome does not diverge too much from the predicted
         my $chr_ploidy;
-        if (abs($mean_centromere_ploidy{$chrom}-$ploidy_by_chr{$chrom})<0.25){
+        if (abs($centromere_ploidy{$chrom}-$ploidy_by_chr{$chrom})<0.15){
                 $chr_ploidy=$ploidy_by_chr{$chrom};
         }
         else{
-                $chr_ploidy=$mean_centromere_ploidy{$chrom};
+                $chr_ploidy=$centromere_ploidy{$chrom};
         }
 	$tot_aneup += abs($chr_ploidy-$ploidy);
 	print ($statout "chr$cn\t$chr_ploidy\n");
@@ -237,18 +239,18 @@ foreach my $line (@PLO){
 	#check wether the ploidy of the current line falls outside of what is expected for that chromosome
 	my $chr_name=get_as_rom($linea[0]);
 	#print "$linea[0]\t$linea[1]\tabs($linea[3]-$prev_plo)\n";
-	if (abs ($linea[3]-$mean_centromere_ploidy{$chr_name}) > 0.4 and abs($linea[3]-$prev_plo)<0.8){
-		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\t$mean_centromere_ploidy{$chr_name}\n";
+	if (abs ($linea[3]-$centromere_ploidy{$chr_name}) > 0.4 and abs($linea[3]-$prev_plo)<0.8){
+		push @breakpoint_block, "$linea[0]\t$linea[1]\t$linea[2]\t$linea[3]\t$centromere_ploidy{$chr_name}";
 		#print "positive\n";
 	}
 	else { 
 		#but only if the size of the highlight array is greater than 3
 		if (scalar (@breakpoint_block) >= ($threshold*4) ){
 			#print the block of highlights
-			print "$threshold*4\n";
-			print Dumper \@breakpoint_block;
-			my $block=collapse_region(@breakpoint_block);
-			push @breakpoints, @$block;
+			#print "$threshold*4\n";
+			#print Dumper \@breakpoint_block;
+			my @block=collapse_region(@breakpoint_block);
+			push @breakpoints, @block;
 			
 		}
 		#always re-initialise the @highlight_block array
@@ -261,14 +263,14 @@ foreach my $line (@PLO){
 } 
 #
 #print Dumper \@breakpoints;
-my $final_breakpoints=collapse_region(@breakpoints);
+my @final_breakpoints=collapse_region(@breakpoints);
 
 open (my $out_brkp, '>', $sample_name."_breakpoints.txt");
-print $out_brkp join("\n", @$final_breakpoints);
+print $out_brkp join("\n", @final_breakpoints);
 close ($out_brkp);
 
 
-sleep 10;
+sleep 2;
 system("mkdir -p png; mkdir -p svg");
 print "Executing circos\n";
 #Execute circos silently 
@@ -286,37 +288,64 @@ system("convert png/".$sample_name.".png -quality 96 -resize 500x500  png/".$sam
 #############################################################
 #SUBROUTINES
 #############################################################
+
+#################
+
 sub collapse_region{
 	my @input=@_;
-	#print Dumper \@input;
-	push @input, '-\t-\t-'; #put in an extra record for comparison purposes
-	my $endcycle=scalar(@input)-1;
-	my @br_ploidy;
-	#print $endcycle;
-	for (my $i=0; $i < $endcycle; $i++){	
-		my @line=split "\t", $input[$i];
-		my @next_line=split "\t", $input[$i+1];
-		chomp @line; chomp @next_line;
-		#If the chr on the next line equals the current one and the difference between start and end is less than 20kb (20 kb is the size of two adjacent Ty, which have been filtered)
-		if (($line[0] eq $next_line[0]) and ($next_line[1]-$line[2]<20000) and abs($line[3]-$next_line[3])<0.8){
-			push @br_ploidy, $next_line[3];
-			my $new_end=$next_line[2]; 				#the new end will be the end of the next block
-			splice @input, $i+1, 1; 			#remove the next line
-			my $mean_ploidy=sprintf('%.1f', mean(@br_ploidy));
-			$input[$i]="$line[0]\t$line[1]\t$new_end\t$mean_ploidy\t$line[4]";		#assign to the current line the new end
-			$endcycle=$endcycle-1;				#reduce the number of iterations by 1 since we removed an element
-			$i=$i-1;						#decrease the counter by 1 since we want to work on the same element for the next cycle	
+	my @output;
+	my @block;
+	my $c=0;
+	my $prev_chr;
+	my $prev_start;
+	my $prev_end;
+ 	my $prev_plo;
+	
+	print Dumper \@input;
+	#push @input, '-\t-\t-'; #put in an extra record for comparison purposes
+	foreach my $line (@input){	
+		my ($chr, $start, $end, $plo, $cen_plo)=split "\t", $line;	
+		if ($c>0){
+			if (   ($chr ne $prev_chr) or ($start-$prev_end>20000) or (abs($prev_plo-$plo)>0.8) ){
+				my $block_chr= (split "\t", $block[0])[0];#process block
+				my $block_start= (split "\t", $block[0])[1];#process block
+				my $block_end= (split "\t", $block[-1])[2];#process block
+				my @plo;
+				foreach (@block){
+					push @plo, (split "\t", $_)[3] 
+				}
+				my $block_ploidy = sprintf('%.1f', mean(@plo));
+				my $chr_plo=(split "\t", $block[-1])[4];#process block
+				#and push the information
+				push @output, "$block_chr\t$block_start\t$block_end\t$block_ploidy\t$chr_plo";
+				#reinitialise the block
+				@block=();	
+			}	
 		}
-		else{
-		@br_ploidy=();
-		}
-	#	print "$i\n";
-		#print "$line[0]\t$next_line[0]\t$i\n";
+		push @block, $line;
+		$prev_chr = $chr;
+		$prev_start = $start;
+		$prev_end = $end;
+		$prev_plo = $plo;
+		$c++;
 	}
-	pop @input; #remove the extra record put in before
-	#print Dumper \@input;
-	return \@input;
-}
+	
+	my $block_chr= (split "\t", $block[0])[0];#process block
+	my $block_start= (split "\t", $block[0])[1];#process block
+	my $block_end= (split "\t", $block[-1])[2];#process block
+	my @plo;
+	foreach (@block){
+		push @plo, (split "\t", $_)[3] 
+	}
+	my $block_ploidy = sprintf('%.1f', mean(@plo));
+	my $chr_plo=(split "\t", $block[-1])[4];#process block
+	#and push the information
+	push @output, "$block_chr\t$block_start\t$block_end\t$block_ploidy\t$chr_plo";
+	
+	return @output;
+}	
+	
+
 
 
 
@@ -336,15 +365,7 @@ sub median {
 sub mean {
     return sum(@_)/@_;
 }
-#############################################################
-sub geomean{
-my $product=1;
-foreach my $number (@_){
-	$product=$number*$product;
-}
-my $log_e = log($product);
-return exp($log_e/@_);
-}
+
 #############################################################
 sub get_as_chr{
 	my $chrom=$_[0];
@@ -398,8 +419,8 @@ sub get_as_rom{
 sub ploidy_mode{
         my %counts;
         foreach my $element (@_){
-                $element=round($element);
-                $counts{$element}++;
+                my $rounded_element=round($element);
+                $counts{$rounded_element}++;
         }
 	my @sorted_array = sort { $counts{$a} <=> $counts{$b} } keys %counts;
         return $sorted_array[-1];
@@ -409,71 +430,63 @@ sub ploidy_mode{
 #############################################################
 
 #THIS SUBROUTINE TAKES IN INPUT A CHROMOSOME NAME EG 'IV' AND RETURNS A HASH WITH POSITIONS AS KEYS AND COVERAGES AS VALUES
-sub chrom_cov{
-	#Get current chromosome
-	my $c = $_[0];
+
+sub read_data{
+	my $in=shift;
 	# execute samtools mpileup as a systems command and store the output in an array
-	# define a subroutine to calculate the mean
-	my @mpileup_out =  `samtools view -@ 8 -b $input -F 0x0400 \'$c\'| genomeCoverageBed -dz -ibam stdin -g  `; 
+	my $command=  "samtools view -@ 8 -b $in -F 0x0400 | genomeCoverageBed -d -ibam stdin -g |" ; 
+	open (my $mpileup_out, $command);
 	#print @mpileup_out;
 	# declare variables
 	my %mpileup_hash;
-	my @positions;
-	my @values;
 	#go through the mpileup array and extract the position and coverage 
-	foreach my $l (@mpileup_out){
+	while (my $l=<$mpileup_out>){
 	        chomp( $l );    
 	        my @s = split( /\t/, $l );
 	        #the position is $s[1] & coverage is $s[3]
 	        #make it into a hash and arrays
-	        $mpileup_hash{$s[1]} = $s[2];
-	        push(@positions, $s[1]); 
-	        push(@values, $s[2]); 
+	        $mpileup_hash{$s[0]}{$s[1]} = $s[2];
  	}
-	#go through the hash and take the mean of each 25	
-	#get length of array to determine how long the for loop should be
-	my $length_ar = scalar @positions;
-	my $length = $length_ar/$bin_size;
-		#declare variable 
-	#first of all, check wether we have filtering on and if so import the coordinates of the regions to be excluded
-       	my @curr_filt;
+ 	close $mpileup_out;
+	return %mpileup_hash;
+}
+
+
+
+
+sub chrom_cov{
+	my $c=shift; # get the chromosome we are working on
+	my $data_ref=shift; #get the data structure containing the coverage data
+	my %data=%{$data_ref};
+	#let's load the filter for the correct chromosome
+	my @curr_filt;
        	if ($fil){
        		 @curr_filt=@{$filter{$c}};
        	}
 	my %output;
-	#calculate the average every 25 
-	for (my $i=0; $i < $length; $i++) {
-		#get a subset of 25 values at a time
-       		my @mean_values=();
-       		@mean_values = splice (@values, 0, $bin_size);
-       		my @mean_positions=();
-        	 	@mean_positions = splice (@positions, 0, $bin_size); 
-        	#check wether filtering is on
-	 	my $skip=0;
-	 	if ($fil){
- 			foreach my $range(@curr_filt){
-				#check wether the current slice overlaps any of the ranges
-		 	 	if (($mean_positions[0] > $range->[0] and $mean_positions[0] < $range->[1] ) or 
-		 	 	    ($mean_positions[-1] > $range->[0] and $mean_positions[-1] < $range->[1]) or
-		 	 	    ($mean_positions[0] < $range->[0] and $mean_positions[-1] > $range->[0] ) or
-		 	 	    ($mean_positions[0] < $range->[1] and $mean_positions[-1] > $range->[1])
-		 	 	    ){
-					$skip=1;	 	 	    
-		 	 		#print "Filter triggered:: Start: $mean_positions[0] End: $mean_positions[-1] Filter start: $range->[0] Filter ends: $range->[1] \n";  
-		 	 		last;
+	for (my $i=1; $i< scalar keys %{$data{$c}}; $i+=$bin_size){
+		#go through the array in steps of bin size
+		my @values=();
+		my $skip=0;
+		#within each bin go in step of one nucleotide
+		for (my $j=1; $j<$bin_size; $j++){
+			#if the filtering was chosen
+			if ($fil){
+	 			#we need to check if the current position falls within a region to be filtered
+	 			foreach my $range(@curr_filt){
+					if ((($i+$j) > $range->[0] )and (($i+$j) < $range->[1])){
+						#if it does, let's raise a flag and stop searching
+						$skip=1;	 	 	    
+		 		 		last;
+		 	 		}
 		 	 	}
-		 	 }
-		 } 
-		 #print "$skip\n";
-		 next if $skip;
-        		 #get the first position from the list of 25
-        		 my $pos = shift @mean_positions;
-       		 #get the mean of the 25 coverage values
-       		 my $mean = eval(join("+", @mean_values)) / @mean_values; 
-       	 	 #put the output into a hash
-       	 	 #print "Position = $pos\n";
-        		 $output{$pos}=$mean;
+		 	}
+		 	last if $skip; 			
+			push @values, $data{$c}{$i+$j} if exists $data{$c}{$i+$j};				
+		}
+		next if $skip;
+		$output{$i+($bin_size/2)}=mean(@values) if scalar @values>0;
 	}
-	#print Dumper(\%output);
-	return %output;	  
-}
+	return \%output;
+}	
+
