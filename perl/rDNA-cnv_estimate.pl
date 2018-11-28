@@ -18,7 +18,8 @@ use Cwd 'abs_path';
 use POSIX qw(ceil);
 use IPC::Open3;
 use IO::File;
-#use Data::Dumper;
+use Parallel::Subs;
+use Data::Dumper;
 
 
 #######################################
@@ -65,12 +66,12 @@ pod2usage("$0: No ploidy given.")  if ($ploidy eq 0);
 pod2usage("$0: No .bam file given.")  if ($input !~ /\.bam$/i); 
 
 #Check that reference files exist and have a size bigger than 0		
-pod2usage("$0: File $ref_genome does not exist.")  unless ( -e $ref_genome);
-pod2usage("$0: File $ref_genome is empty.")  if ( -z $ref_genome);
-pod2usage("$0: File $ty_ref does not exist.")  unless ( -e $ty_ref);
-pod2usage("$0: File $ty_ref is empty.")  if ( -z $ty_ref);
-pod2usage("$0: File $twom_ref does not exist.")  unless ( -e $twom_ref);
-pod2usage("$0: File $twom_ref is empty.")  if ( -z $twom_ref);
+#pod2usage("$0: File $ref_genome does not exist.")  unless ( -e $ref_genome);
+#pod2usage("$0: File $ref_genome is empty.")  if ( -z $ref_genome);
+#pod2usage("$0: File $ty_ref does not exist.")  unless ( -e $ty_ref);
+#pod2usage("$0: File $ty_ref is empty.")  if ( -z $ty_ref);
+#pod2usage("$0: File $twom_ref does not exist.")  unless ( -e $twom_ref);
+#pod2usage("$0: File $twom_ref is empty.")  if ( -z $twom_ref);
 
 #Check that input exists and has a size bigger than 0		
 pod2usage("$0: File $input does not exist.")  unless ( -e $input);
@@ -144,35 +145,53 @@ my $rep_gen_cov_ref = genome_cov($rep_bam);
 
 
 if ( ! $qPCR and ! $mt_only){  
+
 	print "Sample\trDNA\tCUP1\tMito\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGenome_wide_median\tMatType\n";
 	print "$samp[0]\t";
-	#####    Ribosomal DNA    #######
-	#   Average number of copies per haploid genome  ####
-	my $location = 'XII:452000-459000';
-	my $rDNA_estimate = (local_coverage($gen_cov_ref, $location)/$GWM)*2;
-	#$rDNA_estimate = sprintf("%.3f", $rDNA_estimate);
+	my $p = Parallel::Subs->new();
+	$p->add(
+    		sub { 
+			#####    Ribosomal DNA    #######
+			#   Average number of copies per haploid genome  ####
+			my $location = 'XII:452000-459000';
+			my $rDNA_estimate = (local_coverage($gen_cov_ref, $location)/$GWM)*2;
+			#$rDNA_estimate = sprintf("%.3f", $rDNA_estimate);
+		});
+	$p->add(
+                sub {
+			#####    CUP1     #######
+			#   Average number of copies per haploid genome  ####
+			my $location = 'VIII:212986-213525';
+			my $cup1_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*2;
+			#$cup1_estimate = sprintf("%.3f", $cup1_estimate);
+	});
+	$p->add(
+                sub {
+
+			#####    mitochondrial DNA     #######
+			#   Average number of copies per cell  ####
+			my $location = 'Mito:14000-20000'; #COX1
+			my $mito_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*$ploidy;
+			#$mito_estimate = sprintf("%.3f", $mito_estimate);
+	});
+
+		$p->add(
+                sub {	#####    2 micron plasmid     #######
+			#   Average number of copies per cell  ####
+			my $location = '2-micron:2000-4500';
+			my $twom_estimate =  (local_coverage($rep_gen_cov_ref, $location)/$GWM)*$ploidy;
+			#$mito_estimate = sprintf("%.3f", $mito_estimate);
+		}
+	);
+	$p->wait_for_all();
+	my @res=$p->results();
+	my $rDNA_estimate=$res[0][0];my $cup1_estimate=$res[0][1];my $mito_estimate=$res[0][2];my $twom_estimate=$res[0][3];
 	print "$rDNA_estimate\t";
-	
-	#####    CUP1     #######
-	#   Average number of copies per haploid genome  ####
-	$location = 'VIII:212986-213525';
-	my $cup1_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*2;
-	#$cup1_estimate = sprintf("%.3f", $cup1_estimate);
 	print "$cup1_estimate\t";
-	
-	#####    mitochondrial DNA     #######
-	#   Average number of copies per cell  ####
-	$location = 'Mito:14000-20000'; #COX1
-	my $mito_estimate =  (local_coverage($gen_cov_ref, $location)/$GWM)*$ploidy;
-	#$mito_estimate = sprintf("%.3f", $mito_estimate);
 	print "$mito_estimate\t";
-	
-	#####    2 micron plasmid     #######
-	#   Average number of copies per cell  ####
-	$location = '2-micron:2000-4500';
-	my $twom_estimate =  (local_coverage($rep_gen_cov_ref, $location)/$GWM)*$ploidy;
-	#$mito_estimate = sprintf("%.3f", $mito_estimate);
 	print "$twom_estimate\t";
+	
+
 
 }
 
