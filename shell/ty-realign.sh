@@ -18,7 +18,7 @@ cat bams_for_mpileup | while read line
  	do 	percorso=`echo ${line} | sed "s|/.*\.bam|/|g"`
 		name=`echo ${line} | tr '/' "\n" | tail -n1 | sed "s/\.bam//g"`
 
-		export SBATCH_CMD="bwa mem -R \"@RG\tID:$name\tSM:$name\" $DIR/../mpileup_defaults/repDNA_ref/repDNA.fa $percorso$name.fq1.gz $percorso$name.fq2.gz | samtools view -@ 8 -b -F 4 - | bamsormadup threads=16 SO=coordinate level=0 verbose=0 fixmate=1 adddupmarksupport=1 tmpfile=$name.tmp | samtools sort -@ 8 > TR_BAMS/$name.Ty.bam"
+		export SBATCH_CMD="bwa mem -t 16 -T0 -R \"@RG\tID:$name\tSM:$name\" $DIR/../mpileup_defaults/repDNA_ref/repDNA.fa $percorso$name.fq1.gz $percorso$name.fq2.gz | samtools view -@ 8 -b -F 4 - | samtools collate -O - tmp.$name| bamsormadup threads=16 SO=coordinate level=0 verbose=0 fixmate=1 adddupmarksupport=1 tmpfile=$name.tmp | samtools sort -@ 8 > TR_BAMS/$name.Ty.bam"
 		PROC=$(sbatch submit_sbatch_ty_realign.sh | sed 's/Submitted batch job //g') 
 		
 		export SBATCH_CMD="samtools index TR_BAMS/$name.Ty.bam"
