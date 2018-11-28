@@ -41,26 +41,6 @@ my %centromere=(
    	XVI   => [ "550957", "561073" ],
 );
 
-#define a hash of telomeres that we want to hide from the data
-my %chr_ends=(
-	I     => [ "15000", "215218" ],
-    	II    => [ "15000", "798184" ],
-    	III   => [ "15000", "301620" ],
-   	IV    => [ "15000", "1516933" ],
-          V     => [ "15000", "561874" ],
-          VI    => [ "15000", "255161" ],
-   	VII   => [ "15000", "1075940" ],
-          VIII  => [ "15000", "547643" ],
-          IX    => [ "15000", "424888" ],
-   	X     => [ "15000", "730751" ],
-          XI    => [ "15000", "651816" ],
-          XII   => [ "15000", "1063177" ],
-   	XIII  => [ "15000", "909431" ],
-          XIV   => [ "15000", "769333" ],
-          XV    => [ "15000", "1076291" ],
-   	XVI   => [ "15000", "933066" ],
-);
-
 my @chromosomes=('I','II','III','IV','V', 'VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV', 'XVI');
 
 #@chromosomes=('V','VII');
@@ -180,7 +160,7 @@ foreach my $chrom (@chromosomes){
 	my $cn=get_as_chr($chrom);		
         #assign an integer number to ploidy if the mean ploidy of the chromosome does not diverge too much from the predicted
         my $chr_ploidy;
-        if (abs($centromere_ploidy{$chrom}-$ploidy_by_chr{$chrom})<0.15){
+        if (abs($centromere_ploidy{$chrom}-$ploidy_by_chr{$chrom})<0.20){
                 $chr_ploidy=$ploidy_by_chr{$chrom};
         }
         else{
@@ -301,7 +281,7 @@ sub collapse_region{
 	my $prev_end;
  	my $prev_plo;
 	
-	print Dumper \@input;
+	#print Dumper \@input;
 	#push @input, '-\t-\t-'; #put in an extra record for comparison purposes
 	foreach my $line (@input){	
 		my ($chr, $start, $end, $plo, $cen_plo)=split "\t", $line;	
