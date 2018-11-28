@@ -1,7 +1,7 @@
 #!/bin/bash
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 caller=""
-
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 while getopts "SF" opt
     do  case "$opt" in
             S)
@@ -23,14 +23,17 @@ for directory in Del*
         if [ -z $wt_name ]
             then
                 printf "Mutant sample\n"
-                sbatch --partition=LONG --wrap="variant_caller.sh -k $caller" #the k option enforce a check of the deletion before calling the mutations
+                export SBATCH_CMD_CIAO="variant_caller.sh -k $caller" #the k option enforce a check of the deletion before calling the mutations
             else
                 printf "Wild type sample\n"
-                sbatch --partition=LONG --wrap="variant_caller.sh $caller"      # No deletion check for wild type samples
+                export SBATCH_CMD_CIAO="variant_caller.sh $caller"      # No deletion check for wild type samples
         fi
+	sbatch ${DIR}/submit_sbatch.sh
+        echo "Command: $SBATCH_CMD_CIAO"
 	printf "Done\n"
+	export SBATCH_CMD_CIAO=""
         cd ..
-	sleep 5
+	sleep 1
     done
 #  experiment-caller.sh
 #  
