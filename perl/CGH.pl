@@ -329,19 +329,19 @@ sub collapse_region{
 		$prev_plo = $plo;
 		$c++;
 	}
-	
-	my $block_chr= (split "\t", $block[0])[0];#process block
-	my $block_start= (split "\t", $block[0])[1];#process block
-	my $block_end= (split "\t", $block[-1])[2];#process block
-	my @plo;
-	foreach (@block){
-		push @plo, (split "\t", $_)[3] 
+	if (scalar @block > 0){
+		my $block_chr= (split "\t", $block[0])[0];#process block
+		my $block_start= (split "\t", $block[0])[1];#process block
+		my $block_end= (split "\t", $block[-1])[2];#process block
+		my @plo;
+		foreach (@block){
+			push @plo, (split "\t", $_)[3] 
+		}
+		my $block_ploidy = sprintf('%.1f', mean(@plo));
+		my $chr_plo=(split "\t", $block[-1])[4];#process block
+		#and push the information
+		push @output, "$block_chr\t$block_start\t$block_end\t$block_ploidy\t$chr_plo";
 	}
-	my $block_ploidy = sprintf('%.1f', mean(@plo));
-	my $chr_plo=(split "\t", $block[-1])[4];#process block
-	#and push the information
-	push @output, "$block_chr\t$block_start\t$block_end\t$block_ploidy\t$chr_plo";
-	
 	return @output;
 }	
 	
