@@ -431,38 +431,55 @@ fi
 #######
 #MASKED DIRECT INTERSECTION
 #create a control reference with masked hets: this allows for detection of LOH events (reference: 0/1, sample 1/1)
-if [[ $ploidy == '2' ]]
-    then    zcat sort.control.vcf.gz | vcf-annotate -f $DIR/../mareike/mask-hets.pl > combined.control.masked.vcf
-            grep -Ev "\./\." combined.control.masked.vcf > combined.control.masked2.vcf #These two lines are needed to remove ./. from the masked control file, otherwise they will be intersected
-            mv combined.control.masked2.vcf combined.control.masked.vcf                 # and the corresponding mutations in the sample files will be removed leading to  incorrect numbers of LOH TO ALT.
+
+
+
+# if [[ $ploidy == '2' ]]
+#     then    zcat sort.control.vcf.gz | vcf-annotate -f $DIR/../mareike/mask-hets.pl > combined.control.masked.vcf
+#             grep -Ev "\./\." combined.control.masked.vcf > combined.control.masked2.vcf #These two lines are needed to remove ./. from the masked control file, otherwise they will be intersected
+#             mv combined.control.masked2.vcf combined.control.masked.vcf                 # and the corresponding mutations in the sample files will be removed leading to  incorrect numbers of LOH TO ALT.
+
+
+
+
 #vcf-subset -c $control combined.control.masked.vcf -e > control.masked.vcf.subset
 #           mv control.masked.vcf.subset control.masked.vcf
-            if [[ $v == '1' ]] ; then printf "Of which homozygous: " ;fi
-            if [[ $v == '1' ]] ; then cat  combined.control.masked.vcf | grep '##' -v  | grep '#CHROM' -v | grep 'INDEL' -v | wc -l ;fi
-fi
+
+
+# 
+#             if [[ $v == '1' ]] ; then printf "Of which homozygous: " ;fi
+#             if [[ $v == '1' ]] ; then cat  combined.control.masked.vcf | grep '##' -v  | grep '#CHROM' -v | grep 'INDEL' -v | wc -l ;fi
+# fi
+
+
+
+
 #intersection with masked het-masked reference
-if [[ ( ! -a intersect_masked || "$force_rewrite" == "1" ) && $ploidy == "2" ]]
-    then    printf "\n"
-            mkdir intersect_masked
-            cd intersect_masked
-            cat ../combined.control.masked.vcf | vcf-sort > sort.control.masked.vcf
-            bgzip -f sort.control.masked.vcf
-            tabix -f -p vcf sort.control.masked.vcf.gz
-            echo '......Intersecting samples with masked control: '$control
-            for x in ../sort.ERS*vcf.gz
-                do  n=$(echo $x | sed 's/.vcf.gz//g')
-                    n=$(echo $n | sed 's/..\///g')
-                    if [[ $v == '1' ]] ; then printf "\r\033[K                       Intersecting $n";fi
-                    bedtools intersect -header -a $x -b sort.control.masked.vcf.gz -v > $n.isec.vcf
-                    #vcf-isec -f -a -c $x sort.control.masked.vcf.gz 2>/dev/null > $n.isec.vcf #actual intersect command
-                    if [[ $low = 1 ]] #filtering mutations from non-control samples based on quality
-                            then cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter-lax.pl > $n.isec.filt.vcf #lax filter
-                            else cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter.pl > $n.isec.filt.vcf #strict filter
-                    fi
-                    mv $n.isec.filt.vcf $n.isec.vcf
-                done
-                cd ..
-fi
+
+
+
+# if [[ ( ! -a intersect_masked || "$force_rewrite" == "1" ) && $ploidy == "2" ]]
+#     then    printf "\n"
+#             mkdir intersect_masked
+#             cd intersect_masked
+#             cat ../combined.control.masked.vcf | vcf-sort > sort.control.masked.vcf
+#             bgzip -f sort.control.masked.vcf
+#             tabix -f -p vcf sort.control.masked.vcf.gz
+#             echo '......Intersecting samples with masked control: '$control
+#             for x in ../sort.ERS*vcf.gz
+#                 do  n=$(echo $x | sed 's/.vcf.gz//g')
+#                     n=$(echo $n | sed 's/..\///g')
+#                     if [[ $v == '1' ]] ; then printf "\r\033[K                       Intersecting $n";fi
+#                     bedtools intersect -header -a $x -b sort.control.masked.vcf.gz -v > $n.isec.vcf
+#                     #vcf-isec -f -a -c $x sort.control.masked.vcf.gz 2>/dev/null > $n.isec.vcf #actual intersect command
+#                     if [[ $low = 1 ]] #filtering mutations from non-control samples based on quality
+#                             then cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter-lax.pl > $n.isec.filt.vcf #lax filter
+#                             else cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter.pl > $n.isec.filt.vcf #strict filter
+#                     fi
+#                     mv $n.isec.filt.vcf $n.isec.vcf
+#                 done
+#                 cd ..
+# fi
 
 #TO BE USED WHEN INVERSE INTERSECTING WITH MASKED REF
 #for x in ../ERS*.vcf
