@@ -28,7 +28,7 @@ finito=`squeue | grep "${list}" |wc -l | tr -d "\t"`
 while [[ $finito != '0' ]]    
     do  finito=`squeue  | grep "${list}" |wc -l | tr -d "\t"`
         if [[ ${v} -eq '1' ]]; then printf ".${finito}"; else printf "."; fi
-        sleep 5
+        sleep $[ ( $RANDOM % 20 )  + 1 ]s
     done  
 printf "\n"    
 }
@@ -150,16 +150,17 @@ if [[ -a analysis/csq.file ]]; then rm analysis/*.file; fi
 cd calling
 if [[ $first_run == 1 ]]  
  then for f in ERS*.vcf.gz
-        do headr=`zcat $f | grep "CHROM"  | cut -f10-`
+        do headr=`zcat $f | grep "CHROM"  | cut -f10- | sed "s/\t*$//g"`
             new_headr=''
-            for tab in $headr
+            for tab in "$headr"
                 do     if [[ ! $tab =~ "ERS" ]]
                         then     printf "Fixing headers...\n"
                         #name=`echo $tab | tr -d '..' 
-                        ERSnumber=`grep -w $tab ../../name\ conversion.tsv | tr "\t" "\n" | awk -F"\t" '$6 ~ ERS {print $6}'`
+                        #ERSnumber=`grep -w $tab ../../name\ conversion.tsv | awk -F"\t" '$6 ~ ERS {print $6}'`
+			ERSnumber=`echo $f | sed 's/.vcf.gz//g'`
                         new_headr=`printf "$new_headr$ERSnumber\t"`
                     else     new_headr=`printf "$new_headr$tab\t"`
-
+			
                     fi
                 done
             new_headr=`printf "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t$new_headr"`
@@ -580,31 +581,32 @@ cat stat_table.txt
 vcf_stats_by_colony.pl  > stats_table_col.txt
 cat stats_table_col.txt
 
-printf "\nHETEROZYGOUS SNV MUTATION OVERLAP\n"
-printf "=======================================================================================================================================================================\n"
-line_counter=0
- cat experiment_merge.vcf | grep -v '##' | grep -v 'INDEL' | while read line
-                                     do  tab_counter=1
-                                         line_counter=$(($line_counter+1))
-                                         for tab in $line
-                                             do  if [[ $tab_counter == '1' || $tab_counter == '2' ]]
-                                                     then printf "$tab\t\t" >> overlap_table.txt
-                                                 elif [[ $tab_counter -gt 9 && $line_counter == '1' ]]
-                                                     then     printf "$tab\t" >> overlap_table.txt
-                                                 elif [[ $tab_counter -gt 9 && $line_counter -gt 1 ]]
-                                                     then    g=$(echo $tab | grep -o "./.")
-                                                             if [[ $g == '' ]]
-                                                                 then   printf ".\t\t" >> overlap_table.txt
-                                                                 else   printf "$g\t\t" >> overlap_table.txt
-                                                             fi
-                                                 fi
-                                                 tab_counter=$(($tab_counter+1))
-                                             done
-                                         printf "\n" >> overlap_table.txt
-                                     done
+#printf "\nHETEROZYGOUS SNV MUTATION OVERLAP\n"
+#printf "=======================================================================================================================================================================\n"
+#line_counter=0
+# cat experiment_merge.vcf | grep -v '##' | grep -v 'INDEL' | while read line
+#                                     do  tab_counter=1
+#                                         line_counter=$(($line_counter+1))
+#                                         for tab in $line
+#                                             do  if [[ $tab_counter == '1' || $tab_counter == '2' ]]
+#                                                     then printf "$tab\t\t" >> overlap_table.txt
+#                                                 elif [[ $tab_counter -gt 9 && $line_counter == '1' ]]
+#                                                     then     printf "$tab\t" >> overlap_table.txt
+#                                                 elif [[ $tab_counter -gt 9 && $line_counter -gt 1 ]]
+#                                                     then    g=$(echo $tab | grep -o "./.")
+#                                                             if [[ $g == '' ]]
+#                                                                 then   printf ".\t\t" >> overlap_table.txt
+#                                                                 else   printf "$g\t\t" >> overlap_table.txt
+#                                                             fi
+#                                                 fi
+#                                                 tab_counter=$(($tab_counter+1))
+#                                             done
+#                                         printf "\n" >> overlap_table.txt
+#                                     done
 # cat overlap_table.txt | grep "0/1\|1/1\|2/2\|0/2\|CHROM"
 #rm sort*.vcf.gz*
 #rm csq.file
+
 cd ..
 printf '\e[32m\n********************************************************************************************************\n\e[0m'
 
