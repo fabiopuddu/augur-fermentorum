@@ -51,6 +51,35 @@ pod2usage("$0: No input given.")  if (($input eq 0) && (-t STDIN));
 pod2usage("$0: File $input does not exist.")  unless ( -e $input);
 pod2usage("$0: File $input is empty.")  if ( -z $input);
 
+##############################################################
+## Read the database converting systematic and common names ##
+##############################################################
+
+#Get the path of the current script to localise gene_name list file
+my $path = __FILE__;
+my @path_components = split( /\//, $path );
+my $rem = pop @path_components; $rem = pop @path_components;
+$path = (join "/",  @path_components);
+my $gene_file="$path".'/defaults/all_yeast_genes.txt';
+
+# Open the Conversion file and make an array for the location of the gene:
+my $ifi;
+if( $gene_file =~ /\.gz/ ){open($ifi, qq[gunzip -c $gene_file|]);}else{open($ifi, $gene_file ) or die $!;}
+
+#go through file line by line
+my %gene_db;
+while( my $line = <$ifi> ) {
+        	chomp $line;	
+          next if $line =~ /^#/ ; #header lines skipped
+	my($f1, $f2, $f3, $f4, @f5) = split '\t', $line; #split the line into its columns
+	if ($f5[0]){
+		$gene_db{$f5[0]}=$f1;	
+	}
+	else {
+		$gene_db{$f1}=$f1;
+	}
+}
+close( $ifi );
 
 
 ########################################
@@ -276,7 +305,7 @@ foreach my $repeat (sort keys %results) {
 	my $file_name = $repeat.'.txt';
 	open(my $fh2, '>', $file_name);
 	#Loop through all the genes that have at least one significant sample for this significance category
-	foreach my $gene (sort keys $results{$repeat}){
+	foreach my $gene (sort keys %{$results{$repeat}}){
 		my $val_string = '';
 		#Check how many significant samples there are
 		my $number = scalar (@{$results{$repeat}{$gene}});	
@@ -307,7 +336,7 @@ foreach my $repeat (sort keys %results) {
 			print "Something funny happened here: $repeat\t$gene\t$number! Investigate!\n";
 		}
 		#Print the gene, followed by the values (all of them, bot just those that are significant) 
-		print $fh2 "$gene\t$val_string\n"; 	
+		print $fh2 "$gene_db{$gene}\t$gene\t$val_string\n"; 	
 		push @{$hits{$gene}}, $repeat;
 	}
 	#Close the results file
@@ -371,7 +400,7 @@ foreach my $gene(@genes){
 close ($out);
 #print Dumper \%hits;
 
-open(my $out, '>', 'stats_hits.tsv');
+open($out, '>', 'stats_hits.tsv');
 for my $k (keys %stats){
 	print $out "$k\t$stats{$k}\n" if ($k =~ tr/://) >= 2;
 }
