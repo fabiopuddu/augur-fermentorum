@@ -94,7 +94,7 @@ my $first_col = 2;
 my $last_col = 13; 
 
 #Define the order of the measures
-my @columns = qw[rDNA	CUP1	M	2mic	T1		T2		T3		T4		T5	gwm	mat	TEL x x x x x x x x x x x x x x x x x x ANEUP CR]; 
+my @columns = qw[rDNA CUP1 M 2mic T1 T2 T3 T4 T5 gwm mat TEL x x x x x x x x x x x x x x x x x x ANEUP AC CR]; 
 
 ### Step 1a
 # Compute the averages of wild types across all measures
@@ -136,7 +136,7 @@ my @wt_stderr; my %wt_stderr_hash;
 # Compute the averages of wild types across all measures
 # Loop through all data columns and get the averages for the wild type in all columns
 # Loop from the first data column to the last
-for my $x (2 .. 15, 32, 33) {
+for my $x (2 .. 15, 32, 33, 34) {
 	#Compute the average for the particular column
     my $average = wt_column_average($x);     
     #Push to array
@@ -173,9 +173,9 @@ for my $measure (@columns){
 	my $upper_bound = $wt_means_hash{$measure}+$interval;
 	#Save in hash
 	#We round and floor the intervals for distinct units eg everything but Telomeres
-	if ($measure eq 'ANEUP') {
-		$lower_bound=ceil($lower_bound);
-		$upper_bound=floor($upper_bound);
+	if ($measure eq 'ANEUP' || $measure eq 'AC') {
+		$lower_bound=0;
+		#$upper_bound=ceil($upper_bound);
 	}
 	$lower_bounds{$measure}=$lower_bound; 
 	$upper_bounds{$measure}=$upper_bound;
@@ -227,7 +227,7 @@ while( my $l = <$ifh> ){
 	$all_genes{$gene}.="$SD_no,"; 
 	# - determine for each SD number whether it is sig for any of the measures
 	$tc++;
-	for my $i (0 .. 14,31,32) {
+	for my $i (0 .. 14,31,32,33) {
    		#skip any columns that are not numbers
    		#next if (!looks_like_number($s[$i]));
   		next if $s[$i] =~ /ERS[0-9]{5,}/ or $s[$i] =~ /Del/ or $s[$i] =~ /SD/; #skip ERS column
@@ -278,7 +278,7 @@ close( $ifh );
 #Print all genes to a file called ALL.txt
 my @genes = sort(keys %all_genes);
 open(my $fh1, '>', 'ALL.txt');
-for my $gene (@genes){ print $fh1 "$gene\n"; }
+for my $gene (@genes){  print $fh1 "$gene_db{$gene}\t$gene\n" unless $gene =~ /WT-/; }
 close $fh1;
 
 #If you want to check the multi-dimensional data structures:
@@ -336,7 +336,7 @@ foreach my $repeat (sort keys %results) {
 			print "Something funny happened here: $repeat\t$gene\t$number! Investigate!\n";
 		}
 		#Print the gene, followed by the values (all of them, bot just those that are significant) 
-		print $fh2 "$gene_db{$gene}\t$gene\t$val_string\n"; 	
+		print $fh2 "$gene_db{$gene}\t$gene\t$val_string\n";
 		push @{$hits{$gene}}, $repeat;
 	}
 	#Close the results file
@@ -358,14 +358,15 @@ print "\n\n";
 
 #Now we want to print a table with all the strains
 
-@columns=qw[rDNA CUP1 M 2mic T1 T2 T3 TEL ANEUP CR];
+@columns=qw[rDNA CUP1 M T1 T2 T3 TEL ANEUP CR];
 open(my $out, '>', 'overlaps.tsv');
-print $out "Gene\t".join("\t", @columns)."\tSum"."\n";
+print $out "Gene\t".join("\t", @columns)."\tSum\tCommonName"."\n";
 my @output;
 my @keys;
 my %stats;
 foreach my $gene(@genes){
-	 print $out "$gene\t";
+	next if $gene =~ /WT-/;
+	 print $out "$gene_db{$gene}\t";
 	if (exists $hits{$gene} and defined $hits{$gene}){
 	 #    print $out "$gene\t"; 
 		for my $k (@columns){
@@ -395,7 +396,7 @@ foreach my $gene(@genes){
                 @output=();
 
 	}
-	print $out "\n";
+	print $out "\t$gene\n";
 }
 close ($out);
 #print Dumper \%hits;
@@ -408,6 +409,16 @@ close ($out);
 ##################
 ##	SUBROUTINES ##
 ##################
+
+sub mean{
+        my $ref_i=shift;
+        my @i=@$ref_i;
+        my $s;
+        foreach (@i){
+                $s += $_;
+        }
+        return ($s / scalar @i);
+}
 
 sub wt_column_average {
 	my $column_no = shift;
