@@ -263,9 +263,12 @@ print (join "\t", @header);
 print "\n";
 
 foreach my $strain (sort keys %data) {
+	my @out_line=();
 	for (my $i=1; $i <= $col_no; $i++) {
-	 	print "$data{$strain}{$i}\t";
+		push @out_line, $data{$strain}{$i}; 
+	# 	print "$data{$strain}{$i}\t";
 	}
+	print join "\t", @out_line;
 	print "\n";
 }
 
