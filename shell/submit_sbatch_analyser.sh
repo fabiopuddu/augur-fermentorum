@@ -7,7 +7,7 @@
 #SBATCH -n 1
 #SBATCH -N 1
 #SBATCH --mem-per-cpu=1500
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=4
 #SBATCH -p LONG
 #SBATCH --mail-user=fp305@cam.ac.uk
 
