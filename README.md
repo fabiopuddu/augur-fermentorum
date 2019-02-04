@@ -1,5 +1,5 @@
 ## Augur Fermentorum
-This repository contains a set of tool to analyse yeast whole genome sequencing data and measure genomic stability
+This repository contains a set of tools to analyse yeast whole genome sequencing data for repetitive DNA genome variation and aneuploidies.
 
 ### Requirements
 * A unix system
@@ -8,12 +8,16 @@ This repository contains a set of tool to analyse yeast whole genome sequencing 
 * Python
 * Samtools 1.3.1
 * Pigz 2.3.1
+*...
+
 
 ### Usage
 #### Data input requirements:
+
 * A tab-separated file named "samples.tsv" containing on each line an isogenic group of samples to be analysed together. One line per sample and the following columns:
    * Sample number (e.g. "1")
    * Sample name(e.g. "TEL1")
+
 * A tab separated file named "name conversion.tsv" containing details of all the sequencing data to be analysed. One line per BAM file and the following columns:
    * Sequencing Name (barcode)
    * Sample name, derived from samples.tsv and in the format "Del1_TEL1"
@@ -21,11 +25,29 @@ This repository contains a set of tool to analyse yeast whole genome sequencing 
    * Human-friendly Sample name, ideally unique
    * Name of the BAM file
    * ERS Accession number; has to be unique in each line if not available can be a custom number in the format "ERS000000"
-* A folder containing all the BAM files to be analysed. 
+
+* A folder containing the BAM files to be analysed. 
+
+
+#### Fastq extraction:
+
+In the directory containing the BAM files run:
+
+`shell/extract-fastq.sh`
+
+This detects BAM or CRAM files in the current directory, converts them in the appropriate form (cram>bam>fastq) and sorts the files in the structure that is required by subsequent programs:
 
 #### Creation of the analysis folder structure:
 
-#### Fastq extraction and realignment to custom genomes:
+In the directory where the "samples.tsv" and "name conversion.tsv" files have been created run:
+
+`shell/create_folder_structure.sh <absolute/path/to/folder/with/BAM/files>`
+
+This will create symlinks to the appropriate BAM and fastq files.
+
+#### Realignment to custom genomes for Ty and 2µ counting and mating type estimation:
+
+
 
 #### Variant Calling
 
