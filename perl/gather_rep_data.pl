@@ -9,7 +9,7 @@ use strict;
 use warnings;
 my @FILES=`ls */ploidy_data/*_plstats.txt`;
 my @SAMPLES=`cat "name conversion.tsv"`;
-printf "#SDname\trDNA\tCUP1\tmitochondria\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGWM\tMatType\tTelomeres\tERSno\tDeletion\tchr01\tchr02\tchr03\tchr04\tchr05\tchr06\tchr07\tchr08\tchr09\tchr10\tchr11\tchr12\tchr13\tchr14\tchr15\tchr16\tAneupNumber\tGCR\n";
+printf "#SDname\trDNA\tCUP1\tmitochondria\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGWM\tMatType\tTelomeres\tERSno\tDeletion\tchr01\tchr02\tchr03\tchr04\tchr05\tchr06\tchr07\tchr08\tchr09\tchr10\tchr11\tchr12\tchr13\tchr14\tchr15\tchr16\tANtot\tANchr\tGCR\n";
 my $rep_group;
 my $telo;
 my @CHROMOSOMES=('chr01', 'chr02', 'chr03', 'chr04', 'chr05', 'chr06', 'chr07', 'chr08', 'chr09', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16');
@@ -72,20 +72,26 @@ sub get_ploidy(){
 	my $dname=$_[1];
 	my $delta;
 	$delta=0;
+	my $cc_aff=0;
 	my $filename="$dname/ploidy_data/$fn"."_plstats.txt";
 	if (-e $filename){
 		open (my $fh, '<', $filename);
 		chomp(my @CCN = <$fh>);
 		close ($fh);
 		my @output;
-		
+		#Go through each chromosome		
         	for my $chr (@CHROMOSOMES){
                 	my $matching_line = (grep { /$chr/ } @CCN)[0];
 			my $ccn=(split "\t", $matching_line)[1];
-		 	$delta += abs($ccn-2);
-                	push @output, $ccn;
+			push @output, $ccn;
+			#increase total aneuploidy and number of chromosomes affected; 
+			#if ($ccn <=1 or $ccn >=3){
+			 $delta += abs($ccn-2);
+			$cc_aff++ if $ccn != 2;
+			#}
         	}
         	push @output, $delta;
+        	push @output, $cc_aff;
 		return \@output;
 	}
 	else{
