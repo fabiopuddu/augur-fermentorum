@@ -398,8 +398,8 @@ echo 'Intersecting samples with control: '$control
                     if [[ $v == '1' ]] ; then printf "\r\033[K                       Intersecting $n";fi
                     bedtools intersect -header -a $x -b sort.control.vcf.gz -v > $n.isec.vcf #actual intersect command
                     if [[ $low = 1 ]] #filtering mutations from non-control samples based on quality
-                            then cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter-lax.pl > $n.isec.filt.vcf #lax filter
-                            else cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter.pl > $n.isec.filt.vcf #strict filter
+                            then cat $n.isec.vcf  | vcf-annotate -f $DIR/../perl/gt-filter-lax.pl > $n.isec.filt.vcf #lax filter
+                            else cat $n.isec.vcf  | vcf-annotate -f $DIR/../perl/gt-filter.pl > $n.isec.filt.vcf #strict filter
                     fi
                     mv $n.isec.filt.vcf $n.isec.vcf
                 done
@@ -417,8 +417,8 @@ if [[ ( ! -a inverse_intersection || "$force_rewrite" == "1" ) ]]
                     #vcf-isec -f -a -c ../sort.control.vcf.gz $x 2>/dev/null > $n.isec.vcf
                     bedtools intersect -header -a ../sort.control.vcf.gz -b $x -v > $n.isec.vcf #actual intersect command
                     if [[ $low = 1 ]] #filtering mutations from non-control samples based on quality
-                        then cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter-lax.pl > $n.isec.filt.vcf #lax filter
-                        else cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter.pl > $n.isec.filt.vcf #strict filter
+                        then cat $n.isec.vcf  | vcf-annotate -f $DIR/../perl/gt-filter-lax.pl > $n.isec.filt.vcf #lax filter
+                        else cat $n.isec.vcf  | vcf-annotate -f $DIR/../perl/gt-filter.pl > $n.isec.filt.vcf #strict filter
                     fi
                     mv $n.isec.filt.vcf $n.isec.vcf
                 done
@@ -435,7 +435,7 @@ fi
 
 
 # if [[ $ploidy == '2' ]]
-#     then    zcat sort.control.vcf.gz | vcf-annotate -f $DIR/../mareike/mask-hets.pl > combined.control.masked.vcf
+#     then    zcat sort.control.vcf.gz | vcf-annotate -f $DIR/../perl/mask-hets.pl > combined.control.masked.vcf
 #             grep -Ev "\./\." combined.control.masked.vcf > combined.control.masked2.vcf #These two lines are needed to remove ./. from the masked control file, otherwise they will be intersected
 #             mv combined.control.masked2.vcf combined.control.masked.vcf                 # and the corresponding mutations in the sample files will be removed leading to  incorrect numbers of LOH TO ALT.
 
@@ -473,8 +473,8 @@ fi
 #                     bedtools intersect -header -a $x -b sort.control.masked.vcf.gz -v > $n.isec.vcf
 #                     #vcf-isec -f -a -c $x sort.control.masked.vcf.gz 2>/dev/null > $n.isec.vcf #actual intersect command
 #                     if [[ $low = 1 ]] #filtering mutations from non-control samples based on quality
-#                             then cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter-lax.pl > $n.isec.filt.vcf #lax filter
-#                             else cat $n.isec.vcf  | vcf-annotate -f $DIR/../mareike/gt-filter.pl > $n.isec.filt.vcf #strict filter
+#                             then cat $n.isec.vcf  | vcf-annotate -f $DIR/../perl/gt-filter-lax.pl > $n.isec.filt.vcf #lax filter
+#                             else cat $n.isec.vcf  | vcf-annotate -f $DIR/../perl/gt-filter.pl > $n.isec.filt.vcf #strict filter
 #                     fi
 #                     mv $n.isec.filt.vcf $n.isec.vcf
 #                 done
@@ -483,7 +483,7 @@ fi
 
 #TO BE USED WHEN INVERSE INTERSECTING WITH MASKED REF
 #for x in ../ERS*.vcf
-#do  cat $x | vcf-annotate -f $DIR/../mareike/mask-hets.pl > masked.$x #mask all the hets in the samples but not in the control
+#do  cat $x | vcf-annotate -f $DIR/../perl/mask-hets.pl > masked.$x #mask all the hets in the samples but not in the control
 #cat masked.$x| vcf-sort > sort.masked.$x
 #bgzip -f sort.masked.$x
 #tabix -f -p vcf sort.masked.$x.gz
@@ -532,8 +532,8 @@ get_mut_summary_table.pl -i ../../name\ conversion.tsv -c ${formatcontrol} -p $p
     ##yeast_genelist_nameconv.tsv which contains the information for the more common names for genes.
     ##At "my $conversion_file=" you will need to specify the path to this file to make the script run well)
 printf "\n"
-perl $DIR/../mareike/vcf_to_gene_list.pl -i experiment_merge.vcf > hom.table.file
-perl $DIR/../mareike/vcf_to_gene_list_het.pl -i experiment_merge.vcf > het.table.file
+perl $DIR/../perl/vcf_to_gene_list.pl -i experiment_merge.vcf > hom.table.file
+perl $DIR/../perl/vcf_to_gene_list_het.pl -i experiment_merge.vcf > het.table.file
 
 #################################################
 #                                               #
@@ -593,7 +593,7 @@ printf "\e[0m\n=================================================================
 printf "\n"
 printf "\nSTATISTICS\n"
 printf "=======================================================================================================================================================================\n"
-perl $DIR/../mareike/vcf_stats_table_all.pl experiment_merge.vcf > stat_table.txt
+perl $DIR/../perl/vcf_stats_table_all.pl experiment_merge.vcf > stat_table.txt
 cat stat_table.txt
 vcf_stats_by_colony.pl  > stats_table_col.txt
 cat stats_table_col.txt
