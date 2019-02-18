@@ -254,7 +254,7 @@ foreach my $cfile (@files) {
     
     ## Count consequences
 
-    system ("perl $dirscript/../mareike/counting_consequences.pl -i $cfile > csq.file");
+    system ("perl $dirscript/../perl/counting_consequences.pl -i $cfile > csq.file");
     my $STOP = 0;
     my $MISS = 0;
     my $FS = 0;
