@@ -1,1 +1,0 @@
-../defaults/all_yeast_genes.txt
