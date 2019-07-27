@@ -47,12 +47,23 @@ This will create symlinks to the appropriate BAM and fastq files.
 
 #### Realignment to custom genomes for Ty and 2µ counting and mating type estimation:
 
-
+In the directory where the "samples.tsv" and "name conversion.tsv" files have been created run:
+`shell/experiment-ty-realigner.sh`
 
 #### Variant Calling
+In the directory where the "samples.tsv" and "name conversion.tsv" files have been created run:
+`shell/experiment-caller.sh`
 
 #### Running the Pipeline
+In the directory where the "samples.tsv" and "name conversion.tsv" files have been created run:
+`shell/experiment-analyser.sh`
 
 #### Recovering information on repetitive DNA and ploidy
+In the directory where the "samples.tsv" and "name conversion.tsv" files have been created run:
+`perl perl/gather-rep-data.pl` and redirect the output to a file (e.g. `>repDNA.txt`)
 
 #### Adjusting repetitive DNA estimates from samples across different sequencing lanes
+In the directory where the "samples.tsv" and "name conversion.tsv" files have been created run:
+`perl perl/lane-median-adjust.pl <repDNA file> <name conversion file>`, where <repDNA file> is the file containing the repetitive DNA data (e.g. "repDNA.txt") and <name conversion file> is "name conversion.tsv"
+
+
