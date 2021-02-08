@@ -1,0 +1,218 @@
+{
+  "__default__"         :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~NEMO~~",
+        "cpus-per-task" :   "1",
+        "out"           :   "slurm_files/%A-slurm.out",
+        "err"           :   "slurm_files/%A-slurm.err",
+        "mail_type"     :   "FAIL",
+        "mail"          :   "fp305@cam.ac.uk"
+    },
+
+    "trim" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~~trim",
+        "cpus-per-task" :   "4",
+    },
+    "align" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~bwAlign",
+        "cpus-per-task" :   "4",
+    },
+    "samTobam" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~sam>bam",
+        "cpus-per-task" :   "3",
+    },
+    "mark_duplicates_and_sort" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~SoMaDup",
+        "cpus-per-task" :   "2",
+    },
+    "bamTocram" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~bam>crm",
+        "cpus-per-task" :   "3",
+    },
+    "merge_crams" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~mrgcrm",
+        "cpus-per-task" :   "3",
+    },
+    "rehead_crams" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~rhcrm",
+        "cpus-per-task" :   "1",
+    },
+    "index_bams" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~idxBAMs",
+        "cpus-per-task" :   "1",
+    },
+    "extract_fastq" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~XFastq",
+        "cpus-per-task" :   "3",
+    },
+    "detect_tags":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~findTag",
+        "cpus-per-task" :   "1",
+    },
+    "detect_deletion":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~findDel",
+        "cpus-per-task" :   "2",
+    },
+    "ty_realign" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~tyAlig",
+        "cpus-per-task" :   "4",
+    },
+    "ty_index" :
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~tyIdx",
+        "cpus-per-task" :   "1"
+    },
+    "repetitive_dna_estimation":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~rDNAcnv",
+        "cpus-per-task" :   "4",
+    },
+    "telomeres":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~telom",
+        "cpus-per-task" :   "2",
+    },
+    "basic_variant_caller":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~VarCalS",
+        "cpus-per-task" :   "2",
+    },
+    "freebayes_variant_caller":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~VarCalF",
+    "cpus-per-task" :   "2",
+    },
+    "merge_chr_vcf":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~mrgVCF",
+        "cpus-per-task" :   "2",
+    },
+      "karyotype":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~Karyo",
+        "cpus-per-task" :   "2",
+    },
+    "circos":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~circos",
+        "cpus-per-task" :   "2",
+    },
+
+    "variant_effect_predictor":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~~~vep",
+        "cpus-per-task" :   "1",
+    },
+    "prepare_vcf":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~~prep"
+    },
+    "repetitive_table":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~RepTab",
+
+    },
+    "create_control":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~mkCtrl",
+
+    },
+    "pre_filtering":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~PreFilt",
+
+    },
+    "intersections":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~iSect",
+
+    },
+    "post_filtering":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~PosFilt",
+
+    },
+    "merge_experiment_vcf":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~merge",
+
+    },
+    "vcf_to_gene_list":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~vcf2gn",
+
+    },
+    "mutation_stats":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~MutStat",
+
+    },
+    "rehead_vcf":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~rh-vcf",
+
+    },
+    "genotype":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~~gtype",
+
+    },
+
+    "inverse_intersections":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~INViSec",
+
+    },
+    "mutation_table":
+    {
+        "partition"     :   "LO18",
+        "job_name"      :   "~~MutTbl",
+
+    }
+}

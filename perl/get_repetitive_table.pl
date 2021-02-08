@@ -4,172 +4,154 @@ use warnings;
 use Data::Dumper;
 use Term::ANSIColor;
 use Getopt::Long;
-
+use Sort::Naturally;
+use Cwd;
 #################################################
 #                                               #
 #  CALCULATING/DISPLAYING REP DNA TABLE	        #
 #                                               #
 #################################################
-
 my ($input);
+my ($output);
 my $control='';
 GetOptions
 (
 'i|input=s'	  => \$input,
 'c|control=s'	  => \$control,
+'o|input=s'	  => \$output,
 );
 ( $input && -f $input) or die qq[Usage: $0 \n
 					 	-i name conversion file\n
 						-c control ERS number(s), comma separated if > 1
 						];
-						
-						
+my $DELdir=(split "/", $output)[0];
 open (my $nameconversion, '<', $input) or die "cannot open name conversion file";
-chomp(my @NC = <$nameconversion>);
+chomp(my @NCfile = <$nameconversion>);
 close ($nameconversion);
-my %nc;
+my %nc;my %NC;
 my %bcID;
 my %flnm;
 my %delnm;
 my %is_control;
-
-my $multiref=0;
-if (length $control>0){
-	if ($control =~ m/,/) {
-    		$multiref=1;
-	}
+my @CONTROLS;
+for my $line (@NCfile){
+	my ($barcodeID,$delname,$plate,$aka,$filename,$ERSNO,$plo,$url,$ctrl)=split("\t", $line);
+	next unless $delname eq $DELdir;
+	$nc{$barcodeID}=substr($aka,0,10);
+	$NC{$barcodeID}=$aka;
+	$delnm{$barcodeID}=$delname;
+	$is_control{$barcodeID} = ($ctrl == 1) ? '+' : '-';
+	push @CONTROLS, $barcodeID if $ctrl;
 }
-
-for my $line (@NC){
-		(my $barcodeID, my $delname, my $plate, my $aka, my $filename, my $ERSNO)=split("\t", $line);
-    # Removed 'undef' between my $filename and my $ERSNO, because the empty column was not being recognised
-		$nc{$ERSNO}=substr($aka,0,10);
-		$bcID{$ERSNO}=$barcodeID;
-        if ($filename){ # If variable is empty, use the barcodeID (for SC_MFY samples)
-            $flnm{$ERSNO}=$filename;
-        } else{
-            $flnm{$ERSNO}=$barcodeID;
-        }
-		$delnm{$ERSNO}=$delname;
-		if (length $control > 0){
-			if ($control =~ $ERSNO){$is_control{$ERSNO}='+'}
-			else{$is_control{$ERSNO}='-'}
-			# if ($plate =~ /C/){$is_control{$ERSNO}='+'}
-	# 		elsif ($plate =~ /S/){$is_control{$ERSNO}='-'}	
-	# 		else{$is_control{$ERSNO}='?'}
-		}
-		else{$is_control{$ERSNO}='?'}
-}
-
-my %rDNA;
-my %CUP1;
-my %mito;
-my %twom;
-my %ty1;
-my %ty2;
-my %ty3;
-my %ty4;
-my %ty5; 
-my %gwm;
-my %telo;
-my @SAMPLES;
-my @LINE;
-my %sex;
-foreach my $ERSNO (keys %bcID) {
-	if (-e "$flnm{$ERSNO}".'.txt'){
-		open (my $res_file, '<', $flnm{$ERSNO}.'.txt');
-		chomp(my @LNR = <$res_file>);	
+my %rDNA;my %CUP1;my %mito;my %twom;
+my %ty1;my %ty2;my %ty3;my %ty4;my %ty5;
+my %gwm;my %telo;my %sex;
+my @SAMPLES;my @LINE;
+foreach my $bcID (keys %nc) {
+	if (-e "$DELdir/repDNA/$bcID.txt"){
+		open (my $res_file, '<', "$delnm{$bcID}/repDNA/$bcID.txt");
+		chomp(my @LNR = <$res_file>);
 		close($res_file);
 		my @LINE=split("\t", $LNR[1]);
-		$rDNA{$ERSNO}= (defined $LINE[1] and $LINE[1] ne "-1" and $LINE[1] ne "") ? sprintf "%.1f",$LINE[1] : "N/A" ;
-		$CUP1{$ERSNO}=(defined $LINE[2] and $LINE[2] ne "-1" and $LINE[2] ne "") ? sprintf "%.1f",$LINE[2] : "N/A" ;
-		$mito{$ERSNO}=(defined $LINE[3] and $LINE[3] ne "-1" and $LINE[3] ne "") ? sprintf "%.1f",$LINE[3] : "N/A" ;
-        $twom{$ERSNO}=(defined $LINE[4] and $LINE[4] ne "-1" and $LINE[4] ne "") ? sprintf "%.1f",$LINE[4] : "N/A" ;
-        $ty1{$ERSNO}=(defined $LINE[5] and $LINE[5] ne "-1" and $LINE[4] ne "") ? sprintf "%.1f",$LINE[5] : "N/A" ;
-        $ty2{$ERSNO}=(defined $LINE[6] and $LINE[6] ne "-1" and $LINE[5] ne "") ? sprintf "%.1f",$LINE[6] : "N/A" ;;
-        $ty3{$ERSNO}=(defined $LINE[7] and $LINE[7] ne "-1" and $LINE[6] ne "") ? sprintf "%.1f",$LINE[7] : "N/A" ;;
-        $ty4{$ERSNO}=(defined $LINE[8] and $LINE[8] ne "-1" and $LINE[7] ne "") ? sprintf "%.1f",$LINE[8] : "N/A" ;;
-        $ty5{$ERSNO}=(defined $LINE[9] and $LINE[9] ne "-1" and $LINE[8] ne "") ? sprintf "%.1f",$LINE[9] : "N/A" ;;
-        $gwm{$ERSNO}=(defined $LINE[10] and $LINE[10] ne "-1" and $LINE[9] ne "") ? sprintf "%.1f",$LINE[10]  : "N/A" ;;
-        $sex{$ERSNO}=(defined $LINE[11] and $LINE[11] ne "-1" and $LINE[11] ne "") ? $LINE[11]  : "N/A" ;;
-
-		push @SAMPLES, $ERSNO, ;
+		$rDNA{$bcID}=(defined $LINE[1]  and $LINE[1]  ne "-1" and $LINE[1]  ne "") ? sprintf "%.1f",$LINE[1]  : "N/A" ;
+		$CUP1{$bcID}=(defined $LINE[2]  and $LINE[2]  ne "-1" and $LINE[2]  ne "") ? sprintf "%.1f",$LINE[2]  : "N/A" ;
+		$mito{$bcID}=(defined $LINE[3]  and $LINE[3]  ne "-1" and $LINE[3]  ne "") ? sprintf "%.1f",$LINE[3]  : "N/A" ;
+		$twom{$bcID}=(defined $LINE[4]  and $LINE[4]  ne "-1" and $LINE[4]  ne "") ? sprintf "%.1f",$LINE[4]  : "N/A" ;
+		$ty1{$bcID}= (defined $LINE[5]  and $LINE[5]  ne "-1" and $LINE[4]  ne "") ? sprintf "%.1f",$LINE[5]  : "N/A" ;
+		$ty2{$bcID}= (defined $LINE[6]  and $LINE[6]  ne "-1" and $LINE[5]  ne "") ? sprintf "%.1f",$LINE[6]  : "N/A" ;;
+		$ty3{$bcID}= (defined $LINE[7]  and $LINE[7]  ne "-1" and $LINE[6]  ne "") ? sprintf "%.1f",$LINE[7]  : "N/A" ;;
+		$ty4{$bcID}= (defined $LINE[8]  and $LINE[8]  ne "-1" and $LINE[7]  ne "") ? sprintf "%.1f",$LINE[8]  : "N/A" ;;
+		$ty5{$bcID}= (defined $LINE[9]  and $LINE[9]  ne "-1" and $LINE[8]  ne "") ? sprintf "%.1f",$LINE[9]  : "N/A" ;;
+		$gwm{$bcID}= (defined $LINE[10] and $LINE[10] ne "-1" and $LINE[9]  ne "") ? sprintf "%.1f",$LINE[10] : "N/A" ;;
+		$sex{$bcID}= (defined $LINE[11] and $LINE[11] ne "-1" and $LINE[11] ne "") ? 		    $LINE[11] : "N/A" ;;
+		push @SAMPLES, $bcID, ;
 	}
-	if (-e "$flnm{$ERSNO}".'.tel'){
-		open (my $tel_file, '<', $flnm{$ERSNO}.'.tel');
-		chomp(my @LNT = <$tel_file>);	
+	if (-e "$DELdir/repDNA/$bcID.tel"){
+		open (my $tel_file, '<', "$DELdir/repDNA/$bcID.tel");
+		chomp(my @LNT = <$tel_file>);
 		close($tel_file);
 		@LINE=split("\t", $LNT[0]);
-		$telo{$ERSNO}=(defined $LINE[0] and $LINE[0] ne "-1" and $LINE[0] ne "") ? sprintf "%.1f", $LINE[0] : "N/A" ;;
+		$telo{$bcID}=(defined $LINE[0] and $LINE[0] ne "-1" and $LINE[0] ne "") ? sprintf "%.1f", $LINE[0] : "N/A" ;;
 	}
 }
 
 print "REPETITIVE DNA QUANTIFICATION";
-my   $header="%-13s%10s%7s%6s%11s%12s%7s%6s%6s%6s%6s%6s%6s%20s%7s%14s%14s%8s%15s%8s\n";
-my $format="\n%-13s%10s%8s%7s%13s%9s%8s%6s%6s%6s%6s%6s%5s%18s%10s%12s%12s%10s%+15s%8s";
-print "\n====================================================================================================================================================================\n";
-printf $header, ("ERS NO."," SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "2-micron", "║", "Mating Type", "║");
-print "====================================================================================================================================================================";
+my   $header="%-16s %-14s %-4s %-6s %-14s %-5s %-4s %-6s %-6s %-6s %-6s %-6s %-6s %-16s %-4s %-16s %-13s %-1s %-2s %-2s\n";
+my $format=  "\n%-16s %-14s %-4s %-4s %-25s %-5s %-4s %-6s %-6s %-6s %-6s %-6s %-6s %-25s %-4s %-24s %-23s %-5s %-9s %-2s";
+print "\n============================================================================================================================================================================\n";
+printf $header, ("ERS NO.","SAMPLE NAME", "REF", "║", "rDNA", "CUP1", "║", "Ty1", "Ty2", "Ty3", "Ty4", "Ty5", "║", "TELOMERES (rpm)", "║", "Mitochondria", "2-micron", "║", "Mating Type", "║");
+print "============================================================================================================================================================================";
 
 my $refrDNA=0;
 my $refmito=0;
 my $reftelo=0;
 my $reftwom=0;
 
-if (length $control>0){
-	if ($multiref){
-    		my @allrefs;
-    		my $i=0;
-    		@allrefs=split(',', $control);
-    		foreach my $ncontrol (sort @allrefs){
-        		$refrDNA+=$rDNA{$ncontrol};
-        		$refmito+=$mito{$ncontrol};
-        		$reftelo+=$telo{$ncontrol};
-        		$reftwom+=$twom{$ncontrol};
-        		$i++;
-    		}
-    		$refrDNA/=$i;
-    		$refmito/=$i;
-    		$reftelo/=$i;
-    		$reftwom/=$i;
+if (scalar @CONTROLS>0){
+	foreach my $control (@CONTROLS){
+		$refrDNA+=$rDNA{$control};
+		$refmito+=$mito{$control};
+		$reftelo+=$telo{$control};
+		$reftwom+=$twom{$control};
 	}
-	else{
-    		$refrDNA=$rDNA{$control};
-    		$refmito=$mito{$control};
-    		$reftelo=$telo{$control};
-    		$reftwom=$twom{$control};
-
-	}
+	$refrDNA/=scalar @CONTROLS;
+	$refmito/=scalar @CONTROLS;
+	$reftelo/=scalar @CONTROLS;
+	$reftwom/=scalar @CONTROLS;
 }
 else{
 	$refrDNA='N/A';
-        $refmito='N/A';
-        $reftelo='N/A';
-        $reftwom='N/A';
+	$refmito='N/A';
+	$reftelo='N/A';
+	$reftwom='N/A';
 }
-foreach my $ERSNO (sort @SAMPLES){
-    my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A'; my $twom_var='N/A';
-		if ($refrDNA ne 'N/A' and $rDNA{$ERSNO} ne 'N/A'){$rDNA_var=sprintf "%.2f", $rDNA{$ERSNO}/$refrDNA;}
-        	if ($refmito ne 'N/A' and $mito{$ERSNO} ne 'N/A'){$mito_var=sprintf "%.2f", $mito{$ERSNO}/$refmito;}
-        	if ($reftelo ne 'N/A' and $telo{$ERSNO} ne 'N/A'){$tel_var=sprintf "%.2f", $telo{$ERSNO}/$reftelo;}
-        	if ($reftwom ne 'N/A' and $twom{$ERSNO} ne 'N/A'){$twom_var=sprintf "%.2f", $twom{$ERSNO}/$reftwom;}
-    		if ($control =~ $ERSNO){
-			printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} (-)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} (-)","║","$mito{$ERSNO} (-)",  "$twom{$ERSNO} (-)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
+
+foreach my $bcID (sort {ncmp($NC{$a},$NC{$b})} @SAMPLES){
+	my $rDNA_var='N/A'; my $mito_var='N/A'; my $tel_var='N/A'; my $twom_var='N/A';
+		if ($refrDNA ne 'N/A' and $rDNA{$bcID} ne 'N/A'){
+			$rDNA_var=sprintf "%.2f", $rDNA{$bcID}/$refrDNA;
+			$rDNA_var= ($rDNA_var >1.5 || $rDNA_var <0.5) ? sprintf ("%4s", colored($rDNA_var, 'red') ): sprintf ("%10s", colored($rDNA_var, 'white') );
+		}
+	if ($refmito ne 'N/A' and $mito{$bcID} ne 'N/A'){
+			if ($refmito == 0 and $mito{$bcID} ==0){
+				$mito_var = 0;
+			}
+			else{
+				$mito_var= $refmito > 0 ? sprintf "%.2f", $mito{$bcID}/$refmito : "inf";
+			}
+			$mito_var= ($mito_var >1.5 || $mito_var <0.5) ? sprintf ("%4s", colored($mito_var, 'red') ): sprintf ("%10s", colored($mito_var, 'white') );
+		}
+	if ($reftelo ne 'N/A' and $telo{$bcID} ne 'N/A'){
+			$tel_var =sprintf "%.2f", $telo{$bcID}/$reftelo;
+			$tel_var= ($tel_var >1.2 || $tel_var <0.8) ? sprintf ("%4s", colored($tel_var, 'red') ): sprintf ("%10s", colored($tel_var, 'white') );
+		}
+		if ($reftwom ne 'N/A' and $twom{$bcID} ne 'N/A'){
+			if ($reftwom == 0 and $twom{$bcID} ==0){
+				$twom_var = 1;
+			}
+			else{
+				$twom_var= $reftwom>0 ? sprintf "%.2f", $twom{$bcID}/$reftwom : "inf";
+			}
+			$twom_var= ($twom_var >1.2 || $twom_var <0.8) ? sprintf ("%4s", colored($twom_var, 'red') ): sprintf ("%10s", colored($twom_var, 'white') );
+		}
+	if ($control =~ $bcID){
+			printf $format, ("$bcID","$NC{$bcID}","$is_control{$bcID}","║","$rDNA{$bcID} (-)","$CUP1{$bcID}","║","$ty1{$bcID}","$ty2{$bcID}","$ty3{$bcID}","$ty4{$bcID}","$ty5{$bcID}","║","$telo{$bcID} (-)","║","$mito{$bcID} (-)",  "$twom{$bcID} (-)", "║", $sex{$bcID},"║");#print the key (current sample ERS number)
 		}
 		else{
-			printf $format, ("$ERSNO","$nc{$ERSNO}","$is_control{$ERSNO}","║","$rDNA{$ERSNO} ($rDNA_var)","$CUP1{$ERSNO}","║","$ty1{$ERSNO}","$ty2{$ERSNO}","$ty3{$ERSNO}","$ty4{$ERSNO}","$ty5{$ERSNO}","║","$telo{$ERSNO} ($tel_var)","║","$mito{$ERSNO} ($mito_var)", "$twom{$ERSNO} ($twom_var)", "║", $sex{$ERSNO},"║");#print the key (current sample ERS number)
-	
-		}
-}	
-print "\n====================================================================================================================================================================\n";
+			printf $format, ("$bcID","$NC{$bcID}","$is_control{$bcID}","║","$rDNA{$bcID} ($rDNA_var)","$CUP1{$bcID}","║","$ty1{$bcID}","$ty2{$bcID}","$ty3{$bcID}","$ty4{$bcID}","$ty5{$bcID}","║","$telo{$bcID} ($tel_var)","║","$mito{$bcID} ($mito_var)", "$twom{$bcID} ($twom_var)", "║", $sex{$bcID},"║");#print the key (current sample ERS number)
 
-open (my $outfile, '>', 'results.txt');
-#print $outfile, "REPETITIVE DNA QUANTIFICATION";
-#print $outfile, "\n=========================================================================================================================================================================\n";
-#print $outfile, "ERSNumber\tSample name\trDNA\tCUP1\tTy1\tTy2\tTy3\tTy4\tTy5\tTelomeres\tMitochondrial DNA\n";
-#print $outfile, "=========================================================================================================================================================================\n";
+		}
+}
+print "\n============================================================================================================================================================================\n";
+open (my $outfile, '>', $output);
 #run through the has sorted by keys name
-foreach my $ERSNO (sort @SAMPLES){
-    print $outfile "$flnm{$ERSNO}\t$rDNA{$ERSNO}\t$CUP1{$ERSNO}\t$mito{$ERSNO}\t$twom{$ERSNO}\t$ty1{$ERSNO}\t$ty2{$ERSNO}\t$ty3{$ERSNO}\t$ty4{$ERSNO}\t$ty5{$ERSNO}\t$gwm{$ERSNO}\t$telo{$ERSNO}\t$ERSNO\t$delnm{$ERSNO}\t$sex{$ERSNO}\n";
+foreach my $bcID (sort {ncmp($NC{$a},$NC{$b})} @SAMPLES){
+    if ($bcID ~~ @CONTROLS){
+			print $outfile "*$bcID\t$rDNA{$bcID}\t$CUP1{$bcID}\t$mito{$bcID}\t$twom{$bcID}\t$ty1{$bcID}\t$ty2{$bcID}\t$ty3{$bcID}\t$ty4{$bcID}\t$ty5{$bcID}\t$telo{$bcID}\t$sex{$bcID}\t$gwm{$bcID}\t$NC{$bcID}\n";
+		}
+		else{
+			print $outfile "$bcID\t$rDNA{$bcID}\t$CUP1{$bcID}\t$mito{$bcID}\t$twom{$bcID}\t$ty1{$bcID}\t$ty2{$bcID}\t$ty3{$bcID}\t$ty4{$bcID}\t$ty5{$bcID}\t$telo{$bcID}\t$sex{$bcID}\t$gwm{$bcID}\t$NC{$bcID}\n";
+
+		}
 }
 close ($outfile);

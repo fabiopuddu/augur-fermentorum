@@ -1,34 +1,34 @@
 #!/usr/bin/env perl
 
-# Author:		Fabio Puddu  
+# Author:		Fabio Puddu
 # Maintainer:	Fabio Puddu
 # Created:	Sep 2016
 # Description:	Once the analysis has been run, run this program from the main analysis folder to gather all the repetitive DNA data in one fole called and redirect the output to a file
 
 use strict;
 use warnings;
-my @FILES=`ls */ploidy_data/*_plstats.txt`;
-my @SAMPLES=`cat "name conversion.tsv"`;
-printf "#SDname\trDNA\tCUP1\tmitochondria\t2-micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGWM\tMatType\tTelomeres\tERSno\tDeletion\tchr01\tchr02\tchr03\tchr04\tchr05\tchr06\tchr07\tchr08\tchr09\tchr10\tchr11\tchr12\tchr13\tchr14\tchr15\tchr16\tANtot\tANchr\tGCR\n";
+use Data::Dumper;
+my @FILES=`ls */ploidy/*_plstats.txt`;
+my @SAMPLES=`cat "name_conversion.tsv" | cut -f1,2,6,7 | sort | uniq`;
+printf "#bcID\trDNA\tCUP1\tmito\t2micron\tTy1\tTy2\tTy3\tTy4\tTy5\tGWM\tMatscore\tTelo\tERSno\tDeletion\tchr1\tchr2\tchr3\tchr4\tchr5\tchr6\tchr7\tchr8\tchr9\tchr10\tchr11\tchr12\tchr13\tchr14\tchr15\tchr16\tAneup\tAneupChrom\tCR\n";
 my $rep_group;
 my $telo;
 my @CHROMOSOMES=('chr01', 'chr02', 'chr03', 'chr04', 'chr05', 'chr06', 'chr07', 'chr08', 'chr09', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16');
 for my $line (@SAMPLES){
 	chomp($line);
-	(my $sample_code, my $delname, my $plate, my $aka, my $fname, my $ERS, my $sample_ploidy)=split("\t", $line);
-	if (-e "$delname/repDNA/$fname.txt"){ 
-		$rep_group=`cat "$delname/repDNA/$fname.txt" | grep -v Sample`;
+	(my $sample_code, my $delname, my $ERS,  my $pl_exp)=split("\t", $line);
+	if (-e "$delname/repDNA/$sample_code.txt"){
+		$rep_group=`cat "$delname/repDNA/$sample_code.txt" | grep -v Sample`;
 		chomp($rep_group);
-        	$telo=`cat "$delname/repDNA/$fname.tel"`;
+        	$telo=`cat "$delname/repDNA/$sample_code.tel"`;
 		chomp($telo);
 	}
 	else{
 		$rep_group=undef;
 		$telo=undef;
 	}
-	
-	my $ploidy_ref=&get_ploidy($fname,$delname);
-	my $gcr=get_gcr($fname,$delname,$ploidy_ref);
+  my $ploidy_ref=&get_ploidy($sample_code,$delname, $pl_exp);
+	my $gcr=get_gcr($sample_code,$delname,$ploidy_ref);
 	if (defined $ploidy_ref and defined $rep_group and defined $telo and defined $gcr){
 		my $ploidy=join("\t", @$ploidy_ref);
 		print "$rep_group\t$telo\t$ERS\t$delname\t$ploidy\t$gcr\n";
@@ -45,8 +45,8 @@ sub get_gcr{
 	for (my $i=0; $i<16; $i++){
 		$ploidy_by_chr{$CHROMOSOMES[$i]}=${$pref}[$i];
 	}
-	if ( -e "$dname/ploidy_data/".$fn."_breakpoints.txt" && !-z "$dname/ploidy_data/".$fn."_breakpoints.txt"){
-		open (my $fh, '<', "$dname/ploidy_data/$fn"."_breakpoints.txt");
+	if ( -e "$dname/ploidy/".$fn."_breakpoints.txt" && !-z "$dname/ploidy/".$fn."_breakpoints.txt"){
+		open (my $fh, '<', "$dname/ploidy/$fn"."_breakpoints.txt");
 		my @BKP=<$fh>;
 		chomp @BKP;
 		close $fh;
@@ -70,24 +70,25 @@ sub get_gcr{
 sub get_ploidy(){
 	my $fn=$_[0];
 	my $dname=$_[1];
+	my $pl_exp=$_[2];
 	my $delta;
 	$delta=0;
 	my $cc_aff=0;
-	my $filename="$dname/ploidy_data/$fn"."_plstats.txt";
+	my $filename="$dname/ploidy/$fn"."_plstats.txt";
 	if (-e $filename){
 		open (my $fh, '<', $filename);
 		chomp(my @CCN = <$fh>);
 		close ($fh);
 		my @output;
-		#Go through each chromosome		
+		#Go through each chromosome
         	for my $chr (@CHROMOSOMES){
                 	my $matching_line = (grep { /$chr/ } @CCN)[0];
 			my $ccn=(split "\t", $matching_line)[1];
 			push @output, $ccn;
-			#increase total aneuploidy and number of chromosomes affected; 
+			#increase total aneuploidy and number of chromosomes affected;
 			#if ($ccn <=1 or $ccn >=3){
-			 $delta += abs($ccn-2);
-			$cc_aff++ if $ccn != 2;
+			 $delta += abs($ccn-$pl_exp);
+			$cc_aff++ if $ccn != $pl_exp;
 			#}
         	}
         	push @output, $delta;
@@ -98,4 +99,3 @@ sub get_ploidy(){
 	return undef;
 	}
 }
-

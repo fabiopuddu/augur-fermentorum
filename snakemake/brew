@@ -1,0 +1,51 @@
+#!/bin/bash
+#source /mnt/home1/jackson/fp305/sw/miniconda3/etc/profile.d/conda.sh
+
+#####
+if [[ $1 == "" ]]
+then
+    echo "USAGE"
+    echo "brew [--config {config}] {target}"
+    echo
+    echo "  Targets:"
+    echo "     n_c:                   query the sql database and create a name conversion file"
+    echo "     reassign:              check expected deletion and reassign non-deleted samples based on their barcodes (yeast only)"
+    echo "                               !Remember to delete all the data and rerun brew n_c after reassigning"
+    echo "     sql:                   insert results in sql database"
+    echo "     snapshots:             take snapshots from IGV of the genes in the DelFolder name(default behaviour)"
+    echo "     all:                   run the pipeling producing the full report"
+    echo "     clean_all:             remove all the data from the working directory"
+    echo "     clean_working_crams:   remove all the data of the current experiment from the repository of realigned data"
+    echo "     clean_merged_crams:    remove all the data of the current experiment from the repository of merged data"
+    echo
+    echo "  Config:"
+    echo "     org=\"organism\"        choose from yeast(Default), mouse, human(under developemnt)"
+    echo "     snap=\"gene\"           take a snapshot from the selected gene instead of default"
+    echo "     exper=\"experiment\"    experiment number; must be used in conjunction with n_c"
+    echo "     vc=\"variant_caller\"   choose from mpileup(Default) or freebayes"
+    exit 0
+fi
+if [ "$CONDA_PREFIX" != "snakemake*" ]
+  then echo "Activating the conda environment ..." >&2
+       #conda activate snakemake >&2
+fi
+
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) #get the directory this program is stored in
+
+
+if [[ $@ =~ "man" || $@ =~ "mouse" ]]
+  then clust_config="$DIR/cluster-human.json"
+else clust_config="$DIR/cluster-yeast-1804.json"
+fi
+
+mkdir -p slurm_files
+snakemake -p -s $DIR/1_main.Snakefile \
+	      --jobs 1000 \
+        --resources load=100 \
+              --local-cores 20 \
+              --latency-wait 60 \
+              --max-jobs-per-second 4 \
+              --cluster-config "${clust_config}" \
+              --cluster "sbatch -p {cluster.partition} -J {cluster.job_name} --parsable -c {cluster.cpus-per-task} --mail-user {cluster.mail} --mail-type {cluster.mail_type}  \
+         			-e {cluster.err} -o {cluster.out}"\
+ 	      --rerun-incomplete $@

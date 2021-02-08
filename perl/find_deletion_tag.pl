@@ -8,7 +8,7 @@ use strict;
 use Cwd;
 use warnings;
 use Parallel::Loops;
-use List::Util qw( uniq reduce );
+use List::Util qw(sum uniq reduce );
 use Data::Dumper;
 
 
@@ -22,13 +22,6 @@ $path = (join "/",  @path_components);
 my $tag_seq_ref="$path".'/defaults/strain_heterozygous_diploid.txt';
 my $gene_name_ref="$path".'/defaults/all_yeast_genes.txt';
 my $common_seq_ref="$path".'/defaults/common_tag_seqs.txt';
-
-my $dir = cwd;
-
-
-# Create empty output file
-open (my $outfile, '>', 'deletion_tag_results.txt');
-close ($outfile);
 
 # Import sequences that are common to all samples and next to the gene-specific 20mer
 open (my $ifh, $common_seq_ref) or die $!;
@@ -50,39 +43,40 @@ $revdnaft =~ tr/ACGT/TGCA/;
 
 
 # Define all Fastq files
-my $fqdir = "$dir"."/BAM";
-opendir(my $dh, $fqdir);
-my @fqfiles = grep(/\.fq[12]\.gz/, readdir($dh));
-closedir($dh);
-@fqfiles = sort @fqfiles;
-my @sdnames; my $fq;
-for (my $fi=0; $fi<$#fqfiles; $fi++){
-    $fq = $fqfiles[$fi];
-    $fq =~ s/\.fq[12]\.gz//;
-    $sdnames[$fi] = $fq;
-}
-
-@sdnames = uniq @sdnames;
-
-
+# my $fqdir = "$dir"."/BAM";
+# opendir(my $dh, $fqdir);
+# my @fqfiles = grep(/\.fq[12]\.gz/, readdir($dh));
+# closedir($dh);
+# @fqfiles = sort @fqfiles;
+# my @sdnames; my $fq;
+# for (my $fi=0; $fi<$#fqfiles; $fi++){
+#     $fq = $fqfiles[$fi];
+#     $fq =~ s/\.fq[12]\.gz//;
+#     $sdnames[$fi] = $fq;
+# }
+#
+# @sdnames = uniq @sdnames;
+my $SDname=shift;
+my $DELdir=shift;
+$DELdir = $DELdir =~ /Del[0-9]+_.*/ ? $DELdir."/": "";
 # Find occurrences of the tag sequences in all fastq files
 # Run in parallel
-my $maxProcs = 20;
-my $pl = Parallel::Loops->new($maxProcs);
+# my $maxProcs = 20;
+# my $pl = Parallel::Loops->new($maxProcs);
 my %returnValues;
-$pl->share( \%returnValues );
-$pl->foreach( [ 0..($#sdnames) ], sub {
-        my $l = $_;
-        my $prefix = "BAM/"."$sdnames[$l]";
-        my @opfiles = ( "$prefix".".fq1.gz" , "$prefix".".fq2.gz");
+# $pl->share( \%returnValues );
+# $pl->foreach( [ 0..($#sdnames) ], sub {
+        # my $l = $_;
+        my $prefix = $DELdir."BAM/"."$SDname";
+        #my @opfiles = ( "$prefix".".fq1.gz" , "$prefix".".fq2.gz");
         # Parameters derived from which sequence is found
         my $up_down; my $reverse; my $bef_aft; my $seq;
         # Dictionary for genewise results
         my %genewise;
-        foreach my $opf (@opfiles){
-            open($ifh, qq[gunzip -c "$opf"|]) or die $!;
+        #foreach my $opf (@opfiles){
+            open($ifh, qq[samtools view -F 2048 "$prefix.cram" | cut -f10 |]) or die $!;
             while ( my $line = <$ifh> ){
-                chomp;
+                chomp $line;
                 if ($line =~ $upbef){
                     $seq = $upbef;
                     $up_down = 'up';
@@ -132,13 +126,13 @@ $pl->foreach( [ 0..($#sdnames) ], sub {
                     $bef_aft = 0;
                 }
                 next unless ($up_down); # Skip line if up_down is not defined (aka no match)
-                
+
                 # Based on the parameters, select the sequence that belongs to the unique 20mer
                 my @splitres = split($seq, $line);
                 next unless ((scalar @splitres) == 2); # To avoid cases where $seq is in one of the ends, leaving one single subsequence
                 my $index = abs($bef_aft - $reverse);
                 my $s20mer = $splitres[$index];
-                
+
                 # Lookup the 20mer in the reference table and get what gene it belongs to
                 open (my $iftag, $tag_seq_ref) or die $!;
                 my $tagseq; my $matchcounter = 0; my $matchgene;
@@ -165,43 +159,43 @@ $pl->foreach( [ 0..($#sdnames) ], sub {
                 $genewise{$matchgene}++;
             }
             close($ifh);
-        }
-        
-        $returnValues{$sdnames[$l]} = \%genewise;
-    });
-    
-    
+        #}
+
+        $returnValues{$SDname} = \%genewise;
+  #  });
+
+
 # Get common name of expected gene
-my $gene = uc((split '_', $dir)[-1]);
+my $gene = uc((split '_', $DELdir)[-1]);
 $gene =~ s/^\s+|\s+$//g;
-    
+$gene = substr $gene, 0, -1;
 # Print results to output file
-open ($outfile, '>>', 'deletion_tag_results.txt');
-for (my $i=0; $i<=$#sdnames; $i++) {
-    my $reshash = $returnValues{$sdnames[$i]};
+
+# for (my $i=0; $i<=$#sdnames; $i++) {
+    open (my $outfile, '>', $DELdir.'del+bcd/'.$SDname.'.bcd');
+    my $reshash = $returnValues{$SDname};
     my %reshash2 = %$reshash;
-    # printf "$sdnames[$i]\n"; 
+    # printf "$sdnames[$i]\n";
     # print Dumper(\%reshash2);
-    print $outfile "$gene\t$sdnames[$i]\t";
+    print $outfile "$gene\t$SDname\t";
     # Look up common name from systematic name
-     my %commonname;
+    my %commonname;
     open (my $ifgene, $gene_name_ref) or die $!;
     while ( my $geneline = <$ifgene> ){
-         chomp $geneline;
-        my ($systname, $aka) = (split "\t", $geneline)[0, 4];
-	if (! $aka){
-            $aka = $systname;
-	}
-        $commonname{$systname} = $aka;
+            chomp $geneline;
+            my ($systname, $aka) = (split "\t", $geneline)[0, 4];
+	          if (! $aka){
+                    $aka = $systname;
+	          }
+            $commonname{$systname} = $aka;
     }
     close ($ifgene);
-    foreach my $key (keys %reshash2) {
-        my $printcomname = $commonname{$key};
-        print $outfile "$printcomname\t$reshash2{$key}\t";
+    my $tot=sum values %reshash2;
+    foreach my $key (sort {$reshash2{$b}<=>$reshash2{$a}} keys %reshash2) {
+            my $printcomname = $commonname{$key};
+	          my $perc = sprintf ("%.1f", $reshash2{$key}/$tot*100);
+            print $outfile "$printcomname $perc% ($reshash2{$key});";
     }
     print $outfile "\n";
-        
-}
-close ($outfile);
-    
-
+    close ($outfile);
+# }
